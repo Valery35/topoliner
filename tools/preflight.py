@@ -56,6 +56,18 @@ def main():
     if general.get("experimental", "").lower() not in ("false", ""):
         warnings.append("плагин помечен как experimental")
 
+    # Без qgisMaximumVersion QGIS подставляет 3.99 и на четвёртой версии
+    # объявляет плагин несовместимым.
+    maximum = general.get("qgisMaximumVersion", "").strip()
+    if not maximum:
+        errors.append("metadata.txt: не задано qgisMaximumVersion, "
+                      "на QGIS 4 плагин будет отключён")
+    elif maximum.split(".")[0] < "4":
+        warnings.append("qgisMaximumVersion=%s не покрывает QGIS 4" % maximum)
+
+    if general.get("hasProcessingProvider", "").lower() != "yes":
+        warnings.append("не задано hasProcessingProvider=yes")
+
     for name in ("__init__.py", "metadata.txt", "icons/icon.png", "LICENSE",
                  "doc/Topoliner.pdf", "doc/Topoliner_en.pdf"):
         if not os.path.exists(os.path.join(ROOT, PLUGIN, name)):
