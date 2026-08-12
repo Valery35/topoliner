@@ -91,7 +91,7 @@ def collect_repo():
         if os.path.exists(path):
             yield path, name
 
-    for folder_name in ("doc", "tools", ".github"):
+    for folder_name in ("doc", "tools", "site", ".github"):
         base = os.path.join(ROOT, folder_name)
         if not os.path.isdir(base):
             continue

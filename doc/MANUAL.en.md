@@ -119,7 +119,7 @@ is not.
 
 ## 5. Tool 1.01 Polygon topology check
 
-![A neighbour vertex lies on the edge, but there is no node there.](figures/missing_node.png)
+![A neighbour vertex lies on the edge, but there is no node there.](figures/missing_node_en.png)
 
 
 **Input.** A polygon layer. Selected features only is supported.
@@ -154,7 +154,7 @@ always part of the design.
 ## 6. Tool 1.02 Line topology check
 
 ![Three cases at a line end. Undershoots and overshoots are fixed,
-a dangle is left to the operator.](figures/line_ends.png)
+a dangle is left to the operator.](figures/line_ends_en.png)
 
 
 The layer is not modified. The output is a point layer with the findings
@@ -182,7 +182,7 @@ is deliberate.
 
 ## 7. Tool 1.03 Polygon topology cleanup
 
-![An overlap is judged by width, not by area.](figures/overlap_width.png)
+![An overlap is judged by width, not by area.](figures/overlap_width_en.png)
 
 
 **Fixed silently**: repeated vertices, spikes, vertices lying on a neighbour
@@ -227,7 +227,7 @@ run over the result changes nothing.
 
 ## 9. Tool 1.05 Node and vertex snapping
 
-![A gap below the tolerance is closed by merging vertices.](figures/snap.png)
+![A gap below the tolerance is closed by merging vertices.](figures/snap_en.png)
 
 
 Use it when the coverage is otherwise fine and only the borders need
@@ -271,7 +271,7 @@ precision; setting metres is wrong.
 
 ## 11. Tool 1.07 Assembly check by attribute
 
-![A group either assembles into one body or falls apart.](figures/assembly.png)
+![A group either assembles into one body or falls apart.](figures/assembly_en.png)
 
 
 Checks that the union of objects sharing an attribute value gives exactly one
@@ -295,7 +295,7 @@ if `note` holds hundreds of metres, these are not assembly defects.
 
 ## 12. Tool 2.01 Topology-preserving simplify
 
-![Independent simplification tears a shared border apart.](figures/simplify.png)
+![Independent simplification tears a shared border apart.](figures/simplify_en.png)
 
 
 Thins vertices so that a border shared by two neighbours stays shared.

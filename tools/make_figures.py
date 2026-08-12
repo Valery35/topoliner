@@ -22,6 +22,55 @@ from matplotlib.patches import Polygon as MplPolygon  # noqa: E402
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "doc", "figures")
 
+# Подписи внутри схем. Картинка не переключается на лету, поэтому каждая
+# схема рисуется дважды: имя_ru.png и имя_en.png. Иначе на английской
+# странице получаются английские тексты с русскими рисунками.
+WORDS = {
+    "before":      ("до сшивки", "before snapping"),
+    "after":       ("после", "after"),
+    "gap":         ("зазор", "gap"),
+    "no_node":     ("узла нет", "no node"),
+    "node_added":  ("узел вставлен", "node inserted"),
+    "neighbour":   ("вершина соседа\nбез узла слева",
+                    "neighbour vertex,\nno node on the left"),
+    "undershoot":  ("недовод", "undershoot"),
+    "overshoot":   ("перелёт", "overshoot"),
+    "dangle":      ("висячий конец", "dangle"),
+    "fixed":       ("чинится", "fixed"),
+    "operator":    ("решает человек", "operator decides"),
+    "to_lines":    ("перевод в линии: две линии",
+                    "polygons to lines: two lines"),
+    "tool_202":    ("инструмент 2.02: одна", "tool 2.02: one"),
+    "two_lines":   ("две линии\nодна поверх другой",
+                    "two lines,\none on top of the other"),
+    "kind_shared": ("kind = shared\nfid_a, fid_b",
+                    "kind = shared\nfid_a, fid_b"),
+    "separate":    ("по отдельности:", "separately:"),
+    "became_two":  ("одна граница стала двумя", "one border became two"),
+    "topological": ("топологическое:", "topological:"),
+    "thinned_once":("граница прорежена один раз", "border thinned once"),
+    "one_body":    ("одно тело", "one body"),
+    "split":       ("разрыв", "break"),
+    "two_bodies":  ("два тела: смотреть note", "two bodies: see note"),
+    "narrow_strip":("узкая полоса: мусор, вычитается",
+                    "narrow strip: debris, subtracted"),
+    "wide_strip":  ("шире допуска: решает человек",
+                    "wider than the tolerance: operator decides"),
+    "width_less":  ("ширина меньше допуска", "width below the tolerance"),
+    "kept_anchor": ("не изменяется, служит опорой",
+                    "left unchanged, serves as an anchor"),
+    "would_collapse": ("без защиты схлопнулся бы",
+                       "without protection it would collapse"),
+    "to_zero_area":("в линию нулевой площади", "into a line of zero area"),
+}
+
+LANG = "ru"
+
+
+def W(key):
+    """Подпись на текущем языке."""
+    return WORDS[key][0 if LANG == "ru" else 1]
+
 # Единая палитра: спокойные заливки, тёмный контур, красный для дефекта.
 FILL_A = "#cfe3f2"
 FILL_B = "#f6ddc0"
@@ -63,8 +112,10 @@ def caption(ax, x, y, text, color=EDGE, size=8.5, ha="center"):
 
 
 def save(fig, name):
+    """Кладёт схему с суффиксом языка: snap_ru.png, snap_en.png."""
     os.makedirs(OUT, exist_ok=True)
-    path = os.path.join(OUT, name)
+    stem, ext = os.path.splitext(name)
+    path = os.path.join(OUT, "%s_%s%s" % (stem, LANG, ext))
     fig.savefig(path, dpi=170, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     return path
@@ -77,7 +128,7 @@ def save(fig, name):
 def fig_snap_leader():
     """Слияние вершин по лидеру: гарантия по смещению."""
     fig, ax = new_axes(5.6, 2.4)
-    for shift, title, done in ((0, "до сшивки", False), (7.2, "после", True)):
+    for shift, title, done in ((0, W("before"), False), (7.2, W("after"), True)):
         left = [(0.2 + shift, 0), (3 + shift, 0), (3 + shift, 2.2),
                 (0.2 + shift, 2.2)]
         gap = 0.0 if done else 0.45
@@ -87,7 +138,7 @@ def fig_snap_leader():
         poly(ax, right, FILL_B)
         if not done:
             # Зазор мелкий, поэтому подпись выносится в сторону с выноской.
-            ax.annotate("зазор", xy=(3.22 + shift, 1.1),
+            ax.annotate(W("gap"), xy=(3.22 + shift, 1.1),
                         xytext=(3.22 + shift, 3.1), color=BAD, fontsize=8.5,
                         ha="center",
                         arrowprops=dict(arrowstyle="-", color=BAD, lw=1.0))
@@ -102,7 +153,7 @@ def fig_snap_leader():
 def fig_missing_node():
     """Вершина на ребре соседа без узла."""
     fig, ax = new_axes(5.6, 2.4)
-    for shift, title, done in ((0, "узла нет", False), (7.2, "узел вставлен", True)):
+    for shift, title, done in ((0, W("no_node"), False), (7.2, W("node_added"), True)):
         left = [(0.2 + shift, 0), (3 + shift, 0), (3 + shift, 2.2),
                 (0.2 + shift, 2.2)]
         right = [(3 + shift, 0), (5.8 + shift, 0), (5.8 + shift, 2.2),
@@ -114,7 +165,7 @@ def fig_missing_node():
         dots(ax, left_dots, EDGE, size=22)
         caption(ax, 3 + shift, -0.5, title, GREY)
         if not done:
-            ax.annotate("вершина соседа\nбез узла слева", xy=(3 + shift, 1.1),
+            ax.annotate(W("neighbour"), xy=(3 + shift, 1.1),
                         xytext=(3.4 + shift, 2.9), color=BAD, fontsize=8,
                         ha="left",
                         arrowprops=dict(arrowstyle="-", color=BAD, lw=1.0))
@@ -130,18 +181,18 @@ def fig_line_ends():
     # недовод
     line(ax, [(2.0, 2.0), (2.0, 1.28)], BAD, 1.8)
     dots(ax, [(2.0, 1.28)], BAD)
-    caption(ax, 2.0, 2.25, "недовод", BAD)
-    caption(ax, 2.0, 0.62, "чинится", GOOD, 7.5)
+    caption(ax, 2.0, 2.25, W("undershoot"), BAD)
+    caption(ax, 2.0, 0.62, W("fixed"), GOOD, 7.5)
     # перелёт
     line(ax, [(5.5, 2.0), (5.5, 0.55)], BAD, 1.8)
     dots(ax, [(5.5, 0.55)], BAD)
-    caption(ax, 5.5, 2.25, "перелёт", BAD)
-    caption(ax, 5.5, 0.22, "чинится", GOOD, 7.5)
+    caption(ax, 5.5, 2.25, W("overshoot"), BAD)
+    caption(ax, 5.5, 0.22, W("fixed"), GOOD, 7.5)
     # висячий конец
     line(ax, [(9.2, 2.0), (9.2, 1.0)], EDGE, 1.8)
     dots(ax, [(9.2, 2.0)], GREY)
-    caption(ax, 9.2, 2.28, "висячий конец", GREY)
-    caption(ax, 9.2, 0.62, "решает человек", GREY, 7.5)
+    caption(ax, 9.2, 2.28, W("dangle"), GREY)
+    caption(ax, 9.2, 0.62, W("operator"), GREY, 7.5)
     ax.set_xlim(0, 12)
     ax.set_ylim(0, 2.6)
     return save(fig, "line_ends.png")
@@ -150,8 +201,8 @@ def fig_line_ends():
 def fig_shared_border():
     """Общая граница один раз против двух совпадающих линий."""
     fig, ax = new_axes(5.8, 2.5)
-    for shift, title in ((0, "перевод в линии: две линии"),
-                         (7.0, "инструмент 2.02: одна")):
+    for shift, title in ((0, W("to_lines")),
+                         (7.0, W("tool_202"))):
         poly(ax, [(0.2 + shift, 0), (2.8 + shift, 0), (2.8 + shift, 2.2),
                   (0.2 + shift, 2.2)], FILL_A, alpha=0.35)
         poly(ax, [(2.8 + shift, 0), (5.4 + shift, 0), (5.4 + shift, 2.2),
@@ -159,11 +210,11 @@ def fig_shared_border():
         if shift == 0:
             line(ax, [(2.72 + shift, 0), (2.72 + shift, 2.2)], BAD, 2.2)
             line(ax, [(2.88 + shift, 0), (2.88 + shift, 2.2)], BAD, 2.2)
-            caption(ax, 3.9 + shift, 1.1, "две линии\nодна поверх другой",
+            caption(ax, 3.9 + shift, 1.1, W("two_lines"),
                     BAD, 8, "left")
         else:
             line(ax, [(2.8 + shift, 0), (2.8 + shift, 2.2)], GOOD, 2.2)
-            caption(ax, 4.0 + shift, 1.1, "kind = shared\nfid_a, fid_b",
+            caption(ax, 4.0 + shift, 1.1, W("kind_shared"),
                     GOOD, 8, "left")
         caption(ax, 2.8 + shift, -0.5, title, GREY)
     ax.set_xlim(-0.3, 15.4)
@@ -195,12 +246,12 @@ def fig_simplify():
             line(ax, [(x + shift, y) for x, y in left_line], GOOD, 2.2)
 
     block(0.0, thin_a, thin_b, True)
-    caption(ax, 0.1, -0.6, "по отдельности:", BAD)
-    caption(ax, 0.1, -1.05, "одна граница стала двумя", BAD, 8)
+    caption(ax, 0.1, -0.6, W("separate"), BAD)
+    caption(ax, 0.1, -1.05, W("became_two"), BAD, 8)
 
     block(7.0, detailed, detailed, False)
-    caption(ax, 7.1, -0.6, "топологическое:", GOOD)
-    caption(ax, 7.1, -1.05, "граница прорежена один раз", GOOD, 8)
+    caption(ax, 7.1, -0.6, W("topological"), GOOD)
+    caption(ax, 7.1, -1.05, W("thinned_once"), GOOD, 8)
 
     ax.set_xlim(-2.8, 10.0)
     ax.set_ylim(-1.5, 2.6)
@@ -213,14 +264,14 @@ def fig_assembly():
     # собирается
     poly(ax, [(0.2, 0), (1.6, 0), (1.6, 2.2), (0.2, 2.2)], FILL_C)
     poly(ax, [(1.6, 0), (3.2, 0), (3.2, 2.2), (1.6, 2.2)], FILL_C)
-    caption(ax, 1.7, -0.5, "одно тело", GOOD)
+    caption(ax, 1.7, -0.5, W("one_body"), GOOD)
     # распадается
     poly(ax, [(5.4, 0), (6.8, 0), (6.8, 2.2), (5.4, 2.2)], FILL_C)
     poly(ax, [(7.3, 0), (8.9, 0), (8.9, 2.2), (7.3, 2.2)], FILL_C)
     ax.annotate("", xy=(7.3, 1.1), xytext=(6.8, 1.1),
                 arrowprops=dict(arrowstyle="<->", color=BAD, lw=1.4))
-    caption(ax, 7.05, 1.5, "разрыв", BAD)
-    caption(ax, 7.15, -0.5, "два тела: смотреть note", BAD)
+    caption(ax, 7.05, 1.5, W("split"), BAD)
+    caption(ax, 7.15, -0.5, W("two_bodies"), BAD)
     ax.set_xlim(-0.2, 9.3)
     ax.set_ylim(-1.0, 2.6)
     return save(fig, "assembly.png")
@@ -231,10 +282,10 @@ def fig_overlap_width():
     fig, ax = new_axes(6.0, 2.5)
     poly(ax, [(0.2, 0.9), (5.4, 0.9), (5.4, 2.1), (0.2, 2.1)], FILL_A, alpha=0.6)
     poly(ax, [(0.2, 0.75), (5.4, 0.75), (5.4, 1.05), (0.2, 1.05)], FILL_B, alpha=0.9)
-    caption(ax, 2.8, 0.35, "узкая полоса: мусор, вычитается", GOOD, 8.5)
+    caption(ax, 2.8, 0.35, W("narrow_strip"), GOOD, 8.5)
     poly(ax, [(7.0, 1.4), (11.6, 1.4), (11.6, 2.4), (7.0, 2.4)], FILL_A, alpha=0.6)
     poly(ax, [(7.0, 0.5), (11.6, 0.5), (11.6, 1.9), (7.0, 1.9)], FILL_B, alpha=0.6)
-    caption(ax, 9.3, 0.1, "шире допуска: решает человек", BAD, 8.5)
+    caption(ax, 9.3, 0.1, W("wide_strip"), BAD, 8.5)
     ax.set_xlim(0, 11.8)
     ax.set_ylim(-0.2, 2.7)
     return save(fig, "overlap_width.png")
@@ -246,11 +297,11 @@ def fig_narrow_object():
     poly(ax, [(0.2, 0.9), (4.6, 0.9), (4.6, 1.25), (0.2, 1.25)], FILL_B)
     ax.annotate("", xy=(0.2, 1.6), xytext=(4.6, 1.6),
                 arrowprops=dict(arrowstyle="<->", color=GREY, lw=1.0))
-    caption(ax, 2.4, 1.85, "ширина меньше допуска", GREY, 8)
-    caption(ax, 2.4, 0.45, "не изменяется, служит опорой", GOOD, 8.5)
+    caption(ax, 2.4, 1.85, W("width_less"), GREY, 8)
+    caption(ax, 2.4, 0.45, W("kept_anchor"), GOOD, 8.5)
     line(ax, [(7.0, 1.05), (11.4, 1.05)], BAD, 2.4)
-    caption(ax, 9.2, 1.55, "без защиты схлопнулся бы", BAD, 8.5)
-    caption(ax, 9.2, 0.45, "в линию нулевой площади", BAD, 8)
+    caption(ax, 9.2, 1.55, W("would_collapse"), BAD, 8.5)
+    caption(ax, 9.2, 0.45, W("to_zero_area"), BAD, 8)
     ax.set_xlim(0, 11.6)
     ax.set_ylim(0.1, 2.2)
     return save(fig, "narrow.png")
@@ -261,9 +312,13 @@ FIGURES = [fig_snap_leader, fig_missing_node, fig_line_ends, fig_shared_border,
 
 
 def main():
+    global LANG
     made = []
-    for func in FIGURES:
-        made.append(func())
+    for language in ("ru", "en"):
+        LANG = language
+        for func in FIGURES:
+            made.append(func())
+    LANG = "ru"
     print("Схем нарисовано: %d" % len(made))
     for path in made:
         size = os.path.getsize(path) / 1024.0
