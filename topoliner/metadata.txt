@@ -3,7 +3,7 @@ name=Topoliner
 qgisMinimumVersion=3.16
 qgisMaximumVersion=4.99
 description=Topology check and cleanup for polygon and line layers: snapping, missing nodes, dangles and overshoots, assembly check, topology-preserving simplification
-version=0.6.4
+version=0.6.5
 author=ООО «Информ++»
 email=xbbster@gmail.com
 about=Brings polygon coverages into order. Finds topology violations and separates
@@ -26,7 +26,9 @@ icon=icons/icon.png
 experimental=False
 deprecated=False
 hasProcessingProvider=yes
-changelog=0.6.4 Plugin page on the site added to the help footer.
+changelog=0.6.5 The diagram about missing nodes now shows the real case,
+      a T-junction of three polygons.
+      0.6.4 Plugin page on the site added to the help footer.
       0.6.3 Diagrams in the manual and on the site page are now drawn
       in both languages.
       0.6.2 Fixed: the plugin was disabled on QGIS 4 because

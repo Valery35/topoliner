@@ -119,7 +119,8 @@ is not.
 
 ## 5. Tool 1.01 Polygon topology check
 
-![A neighbour vertex lies on the edge, but there is no node there.](figures/missing_node_en.png)
+![A T-junction: two polygons on the right meet at a point on the left
+polygon edge, and the left one has no vertex there.](figures/missing_node_en.png)
 
 
 **Input.** A polygon layer. Selected features only is supported.

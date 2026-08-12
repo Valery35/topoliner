@@ -226,13 +226,16 @@ TEXTS = {
                "bilingual, the language comes from the QGIS locale. All tools work "
                "in models and in batch mode, and the input layer is never "
                "modified."),
-"docs.fig":   ("Границы совпадают геометрически, а вершинность у соседей разная. "
-               "Отрисовке это не мешает и на глаз не видно, но мешает объединению "
-               "по атрибуту, оверлеям и загрузке в базу со строгой топологией.",
-               "The borders coincide geometrically while the neighbours have "
-               "different vertices. This does not affect rendering and is invisible "
-               "to the eye, but it breaks dissolve by attribute, overlays and "
-               "loading into a database with strict topology."),
+"docs.fig":   ("Т-образный стык: справа два полигона сходятся в точке на ребре "
+               "левого, а вершины там у левого нет. Границы совпадают "
+               "геометрически, отрисовке это не мешает и на глаз не видно, "
+               "но объединение по атрибуту оставляет в этом месте волосяную "
+               "щель.",
+               "A T-junction: two polygons on the right meet at a point on the "
+               "left polygon edge, and the left one has no vertex there. The "
+               "borders coincide geometrically, this does not affect rendering "
+               "and is invisible to the eye, but a dissolve by attribute leaves "
+               "a hairline sliver in that spot."),
 
 "ftr.line1":  ("лицензия GNU GPL v3 или новее · QGIS 3.16 и новее",
                "GNU GPL v3 or later · QGIS 3.16 and newer"),

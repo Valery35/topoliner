@@ -31,8 +31,8 @@ WORDS = {
     "gap":         ("зазор", "gap"),
     "no_node":     ("узла нет", "no node"),
     "node_added":  ("узел вставлен", "node inserted"),
-    "neighbour":   ("вершина соседа\nбез узла слева",
-                    "neighbour vertex,\nno node on the left"),
+    "neighbour":   ("здесь стыкуются два правых полигона,\nа у левого узла нет",
+                    "the two right polygons meet here,\nthe left one has no node"),
     "undershoot":  ("недовод", "undershoot"),
     "overshoot":   ("перелёт", "overshoot"),
     "dangle":      ("висячий конец", "dangle"),
@@ -151,26 +151,40 @@ def fig_snap_leader():
 
 
 def fig_missing_node():
-    """Вершина на ребре соседа без узла."""
-    fig, ax = new_axes(5.6, 2.4)
-    for shift, title, done in ((0, W("no_node"), False), (7.2, W("node_added"), True)):
+    """
+    Т-образный стык: слева один полигон, справа два.
+
+    Именно этот случай встречается на данных. Точка стыка двух правых
+    полигонов лежит на ребре левого, и вершины там у левого нет: справа
+    граница разбита на две, слева она одна сплошная. Пока узла нет,
+    объединение по атрибуту оставляет в этом месте волосяную щель.
+    """
+    fig, ax = new_axes(5.8, 2.6)
+    for shift, title, done in ((0, W("no_node"), False),
+                               (7.4, W("node_added"), True)):
         left = [(0.2 + shift, 0), (3 + shift, 0), (3 + shift, 2.2),
                 (0.2 + shift, 2.2)]
-        right = [(3 + shift, 0), (5.8 + shift, 0), (5.8 + shift, 2.2),
+        upper = [(3 + shift, 1.1), (5.8 + shift, 1.1), (5.8 + shift, 2.2),
                  (3 + shift, 2.2)]
+        lower = [(3 + shift, 0), (5.8 + shift, 0), (5.8 + shift, 1.1),
+                 (3 + shift, 1.1)]
         poly(ax, left, FILL_A)
-        poly(ax, right, FILL_B)
-        dots(ax, [(3 + shift, 1.1)], BAD if not done else GOOD)
-        left_dots = [(3 + shift, 0), (3 + shift, 2.2)]
-        dots(ax, left_dots, EDGE, size=22)
+        poly(ax, upper, FILL_B)
+        poly(ax, lower, FILL_C)
+
+        # Углы, общие для всех трёх
+        dots(ax, [(3 + shift, 0), (3 + shift, 2.2)], EDGE, size=22)
+        # Точка стыка двух правых на ребре левого
+        dots(ax, [(3 + shift, 1.1)], GOOD if done else BAD)
         caption(ax, 3 + shift, -0.5, title, GREY)
+
         if not done:
             ax.annotate(W("neighbour"), xy=(3 + shift, 1.1),
-                        xytext=(3.4 + shift, 2.9), color=BAD, fontsize=8,
+                        xytext=(3.5 + shift, 3.15), color=BAD, fontsize=8,
                         ha="left",
                         arrowprops=dict(arrowstyle="-", color=BAD, lw=1.0))
-    ax.set_xlim(-0.3, 13.6)
-    ax.set_ylim(-1.0, 3.6)
+    ax.set_xlim(-0.3, 14.0)
+    ax.set_ylim(-1.0, 3.7)
     return save(fig, "missing_node.png")
 
 
