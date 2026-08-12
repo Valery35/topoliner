@@ -93,12 +93,12 @@ def print_line_summary(feedback, summary):
     if not summary:
         feedback.pushInfo(tr("Нарушений не найдено."))
         return
+    # У линий свои нарушения, но встречаются и общие с полигонами:
+    # повторяющиеся вершины, иглы, дубликаты. Их названия берутся оттуда.
+    from . import topo_checks as tc
+
     labels = dict(lc.LINE_TYPE_LABELS)
-    try:
-        from . import topo_checks as tc
-        labels.update(tc.TYPE_LABELS)
-    except ImportError:
-        pass
+    labels.update(tc.TYPE_LABELS)
     feedback.pushInfo("%-40s %8s %8s %12s %12s"
                       % (tr("нарушение"), tr("чинится"), tr("решать"),
                          tr("медиана"), tr("максимум")))

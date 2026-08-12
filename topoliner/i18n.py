@@ -24,9 +24,10 @@ def _detect():
     try:
         from qgis.core import QgsSettings
     except ImportError:
-        # QGIS недоступен: значит идут headless-тесты.
-        pass
-    else:
+        # QGIS недоступен: значит идут headless-тесты, язык берётся
+        # из локали системы ниже.
+        QgsSettings = None
+    if QgsSettings is not None:
         value = QgsSettings().value("locale/userLocale", "") or ""
 
     if not value:

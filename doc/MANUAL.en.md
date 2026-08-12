@@ -386,7 +386,207 @@ the operator.
 
 ---
 
-## 17. Verifying the code
+## 17. Parameter reference
+
+Tables for quick lookup: what a field in the dialog means and what it changes.
+The reasoning behind each choice stays in the tool sections; this is a summary.
+
+The mark **optional** means the parameter may be left empty.
+
+### 1.01 Polygon topology check
+
+| Parameter | Default | What it sets |
+|---|---|---|
+| Layer to check (polygons) | - | The layer is not modified |
+| Tolerance (in layer CRS units) | 2 | The distance below which a discrepancy counts as a digitising error |
+| Debris area threshold (square CRS units) | 1 | The area below which a fragment counts as technical debris |
+| Grouping field or fields, *optional* | - | Violations are searched within each group separately. Needed when a layer holds several coverages |
+| Cavity larger than this area is not counted as a gap | 0 | A pillar, a lake, an unmapped area. Zero switches it off |
+| Find overlaps, duplicates and nested objects | yes | |
+| Find gaps in the coverage | yes | |
+| Find vertices without a node on a neighbour edge | yes | |
+| Findings | - | Output point layer |
+
+### 1.02 Line topology check
+
+| Parameter | Default | What it sets |
+|---|---|---|
+| Layer to check (lines) | - | The layer is not modified |
+| Tolerance (in layer CRS units) | 2 | Undershoots and overshoots below the tolerance count as debris |
+| Line length threshold | 0 | Shorter lines land in the findings. Zero switches it off |
+| Find dangles, undershoots and overshoots | yes | |
+| Find crossings without a node | yes | |
+| Find pseudo nodes | no | Off on purpose: in many layers the splitting into segments is deliberate |
+| Findings | - | Output point layer |
+
+### 1.03 Polygon topology cleanup
+
+| Parameter | Default | What it sets |
+|---|---|---|
+| Input layer (polygons) | - | |
+| Tolerance (in layer CRS units) | 2 | The maximum vertex displacement |
+| Debris area threshold (square CRS units) | 1 | The line between debris and possible meaning |
+| Grouping field or fields, *optional* | - | Objects of different groups are neither snapped nor disputed |
+| On overlap the area is kept by | the larger object | The other option: the object with the smaller identifier |
+| Delete objects smaller than the area threshold | no | Off: deleting destroys the attributes too |
+| Cavity larger than this area is not counted as a gap | 0 | |
+| Spike angle threshold, degrees | 1 | A turn back within this angle counts as a spike |
+| Snap vertices and nodes | yes | |
+| Repair invalid geometry | yes | With area loss control |
+| Remove small overlaps | yes | Narrow strips, below the tolerance in width |
+| Fill small gaps | yes | A gap goes to the neighbour with the longest shared border |
+| Restore Z values | yes | From the nearest original vertex |
+| Cleaned layer | - | Always of multi type |
+| Remaining problems, *optional* | - | Point layer: what the operator decides |
+
+### 1.04 Line topology cleanup
+
+| Parameter | Default | What it sets |
+|---|---|---|
+| Input layer (lines) | - | |
+| Tolerance (in layer CRS units) | 2 | The maximum end displacement and the maximum trimmed tail length |
+| Line length threshold | 0 | |
+| Trim overshoots past a node | yes | The tail is cut back to the intersection point itself |
+| Close undershoots onto the neighbouring line | yes | The end is moved onto its projection |
+| Insert missing nodes | yes | |
+| Delete lines shorter than the length threshold | no | Off: deleting destroys the attributes too |
+| Spike angle threshold, degrees | 1 | |
+| Cleaned layer | - | |
+| Remaining problems, *optional* | - | |
+
+### 1.05 Node and vertex snapping
+
+| Parameter | Default | What it sets |
+|---|---|---|
+| Input layer (polygons or lines) | - | |
+| Tolerance (in layer CRS units) | 2 | The maximum vertex displacement |
+| Mode | merge and insert | Options: insert nodes only, merge vertices only |
+| Reference layer, *optional* | - | Its vertices are fixed and attract the input layer. It is not modified |
+| Which object attracts which | larger attract smaller | The other option: by object order in the layer |
+| Z value of an inserted node | interpolate along the edge | The other option: take from the attracted vertex |
+| Insert nodes at edge intersections | yes | |
+| Do not modify objects narrower than the tolerance | yes | Such an object would collapse into itself, so it stays as an anchor |
+| If snapping broke the geometry | repair, otherwise restore | Other options: restore the original, leave as is |
+| Check geometry validity before and after | yes | |
+| Snapped layer | - | |
+| Edit points, *optional* | - | Where vertices moved and nodes were inserted |
+
+### 1.06 Insertion of missing nodes
+
+| Parameter | Default | What it sets |
+|---|---|---|
+| Input layer (polygons or lines) | - | |
+| Donor layer, *optional* | - | A source of nodes. Not modified and not present in the result |
+| Allowed vertex deviation from the edge | 0.000001 | Not a tolerance but a safeguard. Metres should not be used here |
+| Insert nodes at edge intersections | yes | |
+| Layer with nodes | - | |
+| Inserted nodes, *optional* | - | The points where nodes appeared |
+
+### 1.07 Assembly check by attribute
+
+| Parameter | Default | What it sets |
+|---|---|---|
+| Layer (polygons or lines) | - | The layer is not modified |
+| Grouping field or fields | - | Required. With several fields their combination becomes the key |
+| Debris area threshold | 1 | Below this area an interior ring counts as debris |
+| Maximum gap within one body | 0 | How far apart parts still count as one body. Zero means the group must be whole |
+| Interior rings are acceptable | no | For data where a cavity is part of the design |
+| Assembly findings | - | Output point layer |
+
+### 2.01 Topology-preserving simplification
+
+| Parameter | Default | What it sets |
+|---|---|---|
+| Input layer (polygons or lines) | - | |
+| Simplification tolerance | 1 | The maximum deviation of the simplified line from the original |
+| Do not simplify arcs shorter than, vertices | 0 | Protection for short border stretches. Zero switches it off |
+| Smoothing, number of passes | 0 | Corner cutting after thinning. Each pass roughly doubles the vertex count |
+| Precision for matching shared vertices | 0.000001 | Not a simplification tolerance. Needed when neighbours are stored with different coordinate precision |
+| Grouping field or fields, *optional* | - | Borders of different groups are not treated as shared |
+| Keep Z values | yes | |
+| Simplified layer | - | |
+
+### 2.02 Polygon borders as lines
+
+| Parameter | Default | What it sets |
+|---|---|---|
+| Input layer (polygons) | - | The layer is not modified |
+| Field whose values to record on both sides, *optional* | - | The value of that field for each neighbour ends up in the line attributes |
+| Deviation when matching shared vertices | 0.000001 | Nodes are added before the analysis, the vertices do not move. Zero switches it off |
+| Precision for matching shared vertices | 0.000001 | |
+| Borders | - | Output line layer |
+
+---
+
+## 18. Output layer field reference
+
+### The findings layer
+
+Produced by **1.01**, **1.02**, **1.07**, and by the cleanup tools as the
+remaining problems layer. The geometry is a point placed where the violation
+was found.
+
+| Field | Type | What it holds |
+|---|---|---|
+| `type` | string | Violation code: `overlap`, `gap`, `on_edge`, `dangle` and others. Convenient for filtering |
+| `label` | string | The same in the interface language, for reading |
+| `severity` | string | `auto` - debris, the cleanup tool will fix it. `review` - the operator decides |
+| `fid_a` | integer | Object identifier. For paired violations, the first of the pair |
+| `fid_b` | integer | The second object of the pair, or -1 if the violation concerns one object |
+| `value` | real | The measured quantity: the area of an overlap or a gap, the distance to a neighbouring line, the number of removed vertices. The meaning depends on the type |
+| `note` | string | An explanation with the measured value: how this case differs from the next one of the same type |
+| `grp` | string | The group key, if a grouping field was set |
+
+**How to style it.** A rule on `severity`: `review` in red and larger, `auto`
+small and grey. The working list is then visible at once.
+
+### The edit points layer
+
+Produced by **1.05**.
+
+| Field | Type | What it holds |
+|---|---|---|
+| `kind` | string | `move` - a vertex was moved, `insert` - a node was inserted |
+| `dist` | real | The amount of displacement. Zero for an inserted node |
+| `ring` | integer | The number of the ring the edit belongs to |
+
+### The inserted nodes layer
+
+Produced by **1.06**.
+
+| Field | Type | What it holds |
+|---|---|---|
+| `kind` | string | `insert` - a node on an edge, `cross` - a node at an edge intersection |
+| `dist` | real | The deviation of the vertex from the edge. Usually zero |
+
+### The borders layer
+
+Produced by **2.02**. The geometry is linear, each line runs from node to node.
+
+| Field | Type | What it holds |
+|---|---|---|
+| `kind` | string | `shared` - a border between two objects, `outer` - the outer edge of the coverage, `hole` - the edge of a cavity |
+| `label` | string | The same in the interface language |
+| `fid_a` | integer | The identifier of the object on one side |
+| `fid_b` | integer | On the other side. For an outer edge and a cavity edge, -1 |
+| `length` | real | The length of the stretch |
+| `val_a` | string | The value of the chosen field for the first neighbour. Only if a field was set |
+| `val_b` | string | The same for the second neighbour. Empty for an outer edge |
+
+**How to style it.** A rule on `kind`: the outer edge thicker, borders between
+objects thinner, a cavity edge dashed. For geological borders, a rule on the
+pair `val_a` and `val_b`: the border between two particular seams gets its own
+style.
+
+### The cleaned and snapped layers
+
+The attributes of the input layer are preserved in full. No fields are added.
+The geometry of a cleaned layer is always of multi type: a repair may split
+an object into several parts.
+
+---
+
+## 19. Verifying the code
 
 The geometric logic is kept out of QGIS and covered by tests:
 

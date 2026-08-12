@@ -226,7 +226,11 @@ class TestCodeHygiene(unittest.TestCase):
                 yield os.path.join(PLUGIN, name)
 
     def test_no_silent_exception_handlers(self):
-        """except с одним pass глушит и те ошибки, о которых надо знать."""
+        """
+        Обработчик, состоящий из одного pass, continue или break, глушит
+        и те ошибки, о которых надо знать. Линтер каталога считает это
+        замечанием, и справедливо.
+        """
         import ast
         found = []
         for path in self.source_files():
@@ -236,12 +240,35 @@ class TestCodeHygiene(unittest.TestCase):
                 if not isinstance(node, ast.Try):
                     continue
                 for handler in node.handlers:
-                    body_is_pass = (len(handler.body) == 1
-                                    and isinstance(handler.body[0], ast.Pass))
-                    if body_is_pass and handler.type is None:
+                    if len(handler.body) != 1:
+                        continue
+                    if isinstance(handler.body[0],
+                                  (ast.Pass, ast.Continue, ast.Break)):
                         found.append("%s:%d" % (os.path.basename(path),
                                                 handler.lineno))
-        self.assertEqual(found, [], "Голый except с pass: %r" % found)
+        self.assertEqual(found, [], "Обработчик без обработки: %r" % found)
+
+    def test_no_broad_exception_handlers(self):
+        """
+        except Exception ловит и ошибки в собственном коде. Там, где нужно
+        запасное поведение, исключение сужается до конкретного.
+        """
+        import ast
+        found = []
+        for path in self.source_files():
+            with open(path, encoding="utf-8") as fh:
+                tree = ast.parse(fh.read())
+            for node in ast.walk(tree):
+                if not isinstance(node, ast.Try):
+                    continue
+                for handler in node.handlers:
+                    if handler.type is None:
+                        continue
+                    name = ast.unparse(handler.type)
+                    if "Exception" in name or "BaseException" in name:
+                        found.append("%s:%d %s" % (os.path.basename(path),
+                                                   handler.lineno, name))
+        self.assertEqual(found, [], "Слишком широкий except: %r" % found)
 
     def test_no_bare_except(self):
         import ast

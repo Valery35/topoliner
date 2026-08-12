@@ -123,6 +123,12 @@ class ShapelyBackend(_BackendBase):
             Polygon,
         )
         from shapely import ops, validation  # noqa: F401
+        from shapely.errors import ShapelyError
+
+        # GEOS отказывается работать с самопересекающейся геометрией
+        # и сообщает об этом именно этим исключением. Ловим его точечно,
+        # чтобы ошибки в собственном коде не глохли вместе с ним.
+        self._GeometryError = ShapelyError
 
         self._Polygon = Polygon
         self._MultiPolygon = MultiPolygon
@@ -214,16 +220,16 @@ class ShapelyBackend(_BackendBase):
     def intersection(self, a, b):
         try:
             return a.intersection(b)
-        except Exception:  # noqa: BLE001
-            # GEOS отказывается пересекать некорректную геометрию.
-            # Инструменты обязаны такую принимать, поэтому пробуем
-            # исправленную копию, а при неудаче считаем пересечение пустым.
+        except self._GeometryError:
+            # Инструменты топологии обязаны принимать некорректную геометрию:
+            # именно её они и ищут. Поэтому пробуем исправленную копию,
+            # а при неудаче считаем пересечение пустым.
             return self._retry(a, b, lambda x, y: x.intersection(y))
 
     def difference(self, a, b):
         try:
             return a.difference(b)
-        except Exception:  # noqa: BLE001
+        except self._GeometryError:
             return self._retry(a, b, lambda x, y: x.difference(y))
 
     def _retry(self, a, b, operation):
@@ -231,8 +237,15 @@ class ShapelyBackend(_BackendBase):
             fixed_a = self._validation.make_valid(a)
             fixed_b = self._validation.make_valid(b)
             return operation(fixed_a, fixed_b)
-        except Exception:  # noqa: BLE001
+        except self._GeometryError:
             return self._Polygon()
+
+    def _fixed_or_none(self, g):
+        """Исправленная копия геометрии, либо None, если GEOS не справился."""
+        try:
+            return self._validation.make_valid(g)
+        except self._GeometryError:
+            return None
 
     def union_all(self, geoms):
         geoms = [g for g in geoms if g is not None and not g.is_empty]
@@ -240,13 +253,9 @@ class ShapelyBackend(_BackendBase):
             return self._Polygon()
         try:
             return self._ops.unary_union(geoms)
-        except Exception:  # noqa: BLE001
-            fixed = []
-            for g in geoms:
-                try:
-                    fixed.append(self._validation.make_valid(g))
-                except Exception:  # noqa: BLE001
-                    continue
+        except self._GeometryError:
+            repaired = [self._fixed_or_none(g) for g in geoms]
+            fixed = [g for g in repaired if g is not None]
             if not fixed:
                 return self._Polygon()
             return self._ops.unary_union(fixed)
