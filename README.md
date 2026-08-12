@@ -3,7 +3,7 @@
 [English](README.en.md) · **Русский**
 
 [![Установить в QGIS](https://img.shields.io/badge/%D0%A3%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%B8%D1%82%D1%8C%20%D0%B2%20QGIS-blue.svg)](https://plugins.qgis.org/plugins/topoliner/)
-[![Страница плагина](https://img.shields.io/badge/%D0%A1%D1%82%D1%80%D0%B0%D0%BD%D0%B8%D1%86%D0%B0%20%D0%BF%D0%BB%D0%B0%D0%B3%D0%B8%D0%BD%D0%B0-0f766e.svg)](https://www.informpp.ru/)
+[![Страница плагина](https://img.shields.io/badge/%D0%A1%D1%82%D1%80%D0%B0%D0%BD%D0%B8%D1%86%D0%B0%20%D0%BF%D0%BB%D0%B0%D0%B3%D0%B8%D0%BD%D0%B0-0f766e.svg)](https://www.informpp.ru/%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F-%D1%81%D1%82%D1%80%D0%B0%D0%BD%D0%B8%D1%86%D0%B0/qgis-topoliner)
 
 Плагин QGIS для приведения полигональных покрытий в порядок: проверка топологии,
 автоматическая очистка, сшивка границ и контроль сборки по атрибуту.

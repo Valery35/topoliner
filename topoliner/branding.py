@@ -12,6 +12,7 @@ import os
 
 PLUGIN_NAME = "Topoliner"
 COMPANY_URL = "https://www.informpp.ru/главная-страница/предприятиям"
+PRODUCT_URL = "https://www.informpp.ru/главная-страница/qgis-topoliner"
 
 _version = None
 
@@ -64,12 +65,23 @@ def banner():
 
 
 def help_footer():
-    """Хвост справки: название с версией и обращение к предприятиям."""
+    """Хвост справки: название с версией, страница продукта и обращение."""
+    from .i18n import is_russian
+
     version = plugin_version()
     title = "%s v%s" % (PLUGIN_NAME, version) if version else PLUGIN_NAME
+    if is_russian():
+        return (
+            "<br><br>%s<br><br>"
+            "Страница плагина: %s<br><br>"
+            "%s развивается на задачах реальных предприятий. Если вашему "
+            "производству не хватает функции, напишите нам: %s"
+            % (title, PRODUCT_URL, PLUGIN_NAME, COMPANY_URL)
+        )
     return (
         "<br><br>%s<br><br>"
-        "%s развивается на задачах реальных предприятий. Если вашему "
-        "производству не хватает функции, напишите нам: %s"
-        % (title, PLUGIN_NAME, COMPANY_URL)
+        "Plugin page: %s<br><br>"
+        "%s grows on the tasks of real enterprises. If your operation "
+        "is missing a feature, write to us: %s"
+        % (title, PRODUCT_URL, PLUGIN_NAME, COMPANY_URL)
     )
