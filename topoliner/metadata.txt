@@ -1,0 +1,30 @@
+[general]
+name=Topoliner
+qgisMinimumVersion=3.16
+description=Topology check and cleanup for polygon coverages: snapping, missing nodes, assembly check and topology-preserving simplification
+version=0.2.0
+author=Valery Khronusov
+email=xbbster@gmail.com
+about=Brings polygon coverages into order. Finds topology violations and separates
+      certain debris from cases that may carry meaning: the first group is fixed
+      silently, the second is only reported and never changed automatically.
+      Snaps neighbouring borders to an exact match without moving any vertex
+      further than the tolerance, inserts missing nodes without changing shape
+      or area at all, checks whether groups of objects assemble into one body,
+      and simplifies while keeping shared borders shared.
+      Replaces the manual routine of snapping a layer to itself followed by
+      a dissolve without attributes. All tools live in the Processing panel
+      and work in models and in batch mode. Interface in English and Russian.
+tracker=https://github.com/Valery35/topoliner/issues
+repository=https://github.com/Valery35/topoliner
+homepage=https://github.com/Valery35/topoliner
+tags=topology,cleaning,snap,vertex,node,gaps,overlaps,slivers,simplify,generalization,polygon,coverage,validation
+category=Vector
+icon=icons/icon.png
+experimental=False
+deprecated=False
+hasProcessingProvider=yes
+changelog=0.2.0 First public release. Six Processing tools: topology check,
+      one-pass cleanup, snapping of nodes and vertices, assembly check by
+      attribute, insertion of missing nodes and topology-preserving
+      simplification. Bilingual interface, 160 headless tests.
