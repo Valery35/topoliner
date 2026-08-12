@@ -30,6 +30,7 @@ __all__ = [
     "simplify_topology",
     "build_arcs",
     "douglas_peucker",
+    "chaikin",
 ]
 
 EPS = 1e-9
@@ -94,11 +95,48 @@ def douglas_peucker(points, tolerance):
     return [points[i] for i in range(n) if keep[i]]
 
 
+def chaikin(points, iterations, closed=False):
+    """
+    Сглаживание срезанием углов по схеме Чайкина.
+
+    За один проход каждое ребро заменяется двумя точками на четверти и трёх
+    четвертях его длины. Линия остаётся внутри выпуклой оболочки исходной,
+    поэтому выбросов не возникает и новых самопересечений тоже: этим схема
+    отличается от сплайнов, которые за поворотом уходят наружу.
+
+    Концы разомкнутой линии неподвижны. Это важно для дуг: их концы являются
+    узлами ветвления, общими у соседей, и двигаться не должны.
+
+    Число вершин растёт примерно вдвое за проход, поэтому сглаживание разумно
+    применять после прореживания, а не вместо него.
+    """
+    if iterations <= 0 or len(points) < 3:
+        return list(points)
+
+    result = list(points)
+    for _ in range(iterations):
+        if len(result) < 3:
+            break
+        out = []
+        if not closed:
+            out.append(result[0])
+        count = len(result) if closed else len(result) - 1
+        for i in range(count):
+            x1, y1 = result[i][0], result[i][1]
+            x2, y2 = result[(i + 1) % len(result)][0], result[(i + 1) % len(result)][1]
+            out.append((x1 + 0.25 * (x2 - x1), y1 + 0.25 * (y2 - y1)))
+            out.append((x1 + 0.75 * (x2 - x1), y1 + 0.75 * (y2 - y1)))
+        if not closed:
+            out.append(result[-1])
+        result = out
+    return result
+
+
 # ────────────────────────────────────────────────────────────────────────────
 # Разбор на дуги
 # ────────────────────────────────────────────────────────────────────────────
 
-def build_arcs(rings, grid=1e-7):
+def build_arcs(rings, grid=1e-7, closed=None):
     """
     Раскладывает кольца на дуги.
 
@@ -106,13 +144,24 @@ def build_arcs(rings, grid=1e-7):
         arcs       список дуг, дуга это список вершин
         ring_paths для каждого кольца список (индекс дуги, развёрнута ли она)
 
-    Кольца передаются без повтора первой вершины в конце.
+    rings   кольца без повтора первой вершины в конце
+    closed  для каждого элемента: замкнут ли он. Ноль означает разомкнутую
+            линию, у которой есть начало и конец, а не цикл. Концы такой
+            линии являются узлами и остаются неподвижными, как и точки
+            ветвления. По умолчанию всё считается замкнутым.
     """
+    if closed is None:
+        closed = [True] * len(rings)
     # ── Рёбра и их владельцы ─────────────────────────────────────────────
     edge_owners = {}
+    endpoints = set()
     for ri, ring in enumerate(rings):
         n = len(ring)
-        for i in range(n):
+        last = n if closed[ri] else n - 1
+        if not closed[ri] and n >= 1:
+            endpoints.add(_key(ring[0][0], ring[0][1], grid))
+            endpoints.add(_key(ring[-1][0], ring[-1][1], grid))
+        for i in range(last):
             a = _key(ring[i][0], ring[i][1], grid)
             b = _key(ring[(i + 1) % n][0], ring[(i + 1) % n][1], grid)
             if a == b:
@@ -127,8 +176,12 @@ def build_arcs(rings, grid=1e-7):
         around.setdefault(b, []).append((a, frozenset(owners)))
 
     def is_junction(v):
-        """Вершина является узлом, если в ней сходятся не два ребра
-        либо у сходящихся рёбер разные владельцы."""
+        """
+        Вершина является узлом, если в ней сходятся не два ребра, либо
+        у сходящихся рёбер разные владельцы, либо это конец разомкнутой линии.
+        """
+        if v in endpoints:
+            return True
         items = around.get(v, ())
         if len(items) != 2:
             return True
@@ -172,6 +225,25 @@ def build_arcs(rings, grid=1e-7):
         n = len(ring)
         keys = [_key(p[0], p[1], grid) for p in ring]
 
+        if not closed[ri]:
+            # Разомкнутая линия: идём от начала к концу, разрезая на узлах.
+            path = []
+            i = 0
+            while i < n - 1:
+                pts = [ring[i]]
+                kseq = [keys[i]]
+                j = i + 1
+                while True:
+                    pts.append(ring[j])
+                    kseq.append(keys[j])
+                    if j == n - 1 or is_junction(keys[j]):
+                        break
+                    j += 1
+                path.append(register(kseq, pts))
+                i = j
+            ring_paths.append(path)
+            continue
+
         starts = [i for i in range(n) if is_junction(keys[i])]
         path = []
 
@@ -214,7 +286,8 @@ def _arc_key(keys):
 # Основная функция
 # ────────────────────────────────────────────────────────────────────────────
 
-def simplify_topology(rings, tolerance, grid=1e-7, min_points=None):
+def simplify_topology(rings, tolerance, grid=1e-7, min_points=None, smooth=0,
+                      closed=None):
     """
     Упрощает кольца, сохраняя общие границы.
 
@@ -222,6 +295,11 @@ def simplify_topology(rings, tolerance, grid=1e-7, min_points=None):
     tolerance   допуск прореживания в единицах координат
     grid        шаг округления при опознании общих вершин
     min_points  не прореживать дугу короче этого числа вершин
+    closed      для каждого элемента: кольцо это или разомкнутая линия.
+                По умолчанию всё считается кольцами
+    smooth      число проходов сглаживания по схеме Чайкина. Выполняется
+                после прореживания и тоже по дугам, поэтому общая граница
+                остаётся общей. Ноль отключает
 
     Возвращает словарь:
         rings   список колец той же длины, элемент None если кольцо выродилось
@@ -230,7 +308,9 @@ def simplify_topology(rings, tolerance, grid=1e-7, min_points=None):
     if tolerance is None or tolerance < 0:
         raise ValueError("Допуск не может быть отрицательным.")
 
-    arcs, ring_paths = build_arcs(rings, grid=grid)
+    if closed is None:
+        closed = [True] * len(rings)
+    arcs, ring_paths = build_arcs(rings, grid=grid, closed=closed)
 
     stats = {
         "rings_in": len(rings),
@@ -239,6 +319,7 @@ def simplify_topology(rings, tolerance, grid=1e-7, min_points=None):
         "vertices_in": sum(len(r) for r in rings),
         "vertices_out": 0,
         "rings_degenerate": 0,
+        "smoothed": 0,
     }
 
     # Дуга общая, если встречается в путях более чем одного кольца.
@@ -256,24 +337,49 @@ def simplify_topology(rings, tolerance, grid=1e-7, min_points=None):
             continue
         simple.append(douglas_peucker(arc, tolerance))
 
+    # ── Сглаживание, тоже по одному разу на дугу ─────────────────────────
+    if smooth > 0:
+        smoothed = []
+        for arc in simple:
+            # Замкнутая дуга это целое кольцо без узлов ветвления: у неё нет
+            # неподвижных концов, поэтому сглаживание идёт по кругу.
+            arc_is_cycle = (len(arc) > 2
+                            and abs(arc[0][0] - arc[-1][0]) <= EPS
+                            and abs(arc[0][1] - arc[-1][1]) <= EPS)
+            if arc_is_cycle:
+                body = chaikin(arc[:-1], smooth, closed=True)
+                smoothed.append(body + [body[0]])
+            else:
+                smoothed.append(chaikin(arc, smooth, closed=False))
+        simple = smoothed
+        stats["smoothed"] = len(simple)
+
     # ── Сборка колец ─────────────────────────────────────────────────────
     out = []
     for ri, path in enumerate(ring_paths):
         pts = []
-        for idx, rev in path:
+        for k, (idx, rev) in enumerate(path):
             seq = simple[idx]
             if rev:
                 seq = list(reversed(seq))
-            pts.extend(seq[:-1] if pts or True else seq)
+            # Последняя вершина дуги совпадает с первой вершиной следующей,
+            # поэтому отбрасывается. У разомкнутой линии последнюю дугу
+            # берём целиком: её конец никуда не переходит.
+            if not closed[ri] and k == len(path) - 1:
+                pts.extend(seq)
+            else:
+                pts.extend(seq[:-1])
         # Убираем подряд идущие совпадения.
         cleaned = []
         for p in pts:
             if not cleaned or abs(p[0] - cleaned[-1][0]) > EPS or abs(p[1] - cleaned[-1][1]) > EPS:
                 cleaned.append(p)
-        while len(cleaned) > 1 and abs(cleaned[0][0] - cleaned[-1][0]) <= EPS \
-                and abs(cleaned[0][1] - cleaned[-1][1]) <= EPS:
-            cleaned.pop()
-        if len(cleaned) < 3:
+        if closed[ri]:
+            while len(cleaned) > 1 and abs(cleaned[0][0] - cleaned[-1][0]) <= EPS \
+                    and abs(cleaned[0][1] - cleaned[-1][1]) <= EPS:
+                cleaned.pop()
+        minimum = 3 if closed[ri] else 2
+        if len(cleaned) < minimum:
             stats["rings_degenerate"] += 1
             out.append(None)
             continue

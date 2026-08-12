@@ -36,6 +36,27 @@ def plugin_version():
     return _version
 
 
+def manual_path():
+    """Путь к руководству на языке интерфейса, либо пустая строка."""
+    from .i18n import is_russian
+    name = "Topoliner.pdf" if is_russian() else "Topoliner_en.pdf"
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "doc", name)
+    return path if os.path.exists(path) else ""
+
+
+def help_url():
+    """
+    Адрес для кнопки справки в диалоге инструмента.
+
+    Кнопка открывает руководство в PDF из комплекта плагина, поэтому
+    работает и без сети. Если файла нет, возвращается страница продукта.
+    """
+    path = manual_path()
+    if path:
+        return "file:///" + path.replace("\\", "/")
+    return COMPANY_URL
+
+
 def banner():
     """Строка для журнала Processing: по ней видно версию на скриншоте."""
     version = plugin_version()

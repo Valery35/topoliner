@@ -4,7 +4,7 @@
 
 ## Classification of topology violations
 
-An "do everything" button is only possible with an honest split: only what is
+An "do everything" button is only possible with a strict split: only what is
 certainly technical debris gets fixed silently. Anything that may carry meaning
 is reported and never touched under any settings.
 
@@ -26,7 +26,7 @@ an **area threshold**.
 | Wide overlap | Two objects disputing real area | Operator: a meaningful conflict, not debris |
 | Large gap | An unmapped area | Operator: there may genuinely be no data there |
 | Duplicate object | Fully coincident geometries | Operator: the attributes may differ |
-| Nested object | One polygon entirely inside another | Operator: an enclave can be legitimate |
+| Nested object | One polygon entirely inside another | Operator: an enclave can be part of the design |
 | Sliver polygon | Effective width below the tolerance with noticeable area | Operator: it can also be a real narrow body |
 | Tiny object | The whole object is below the threshold | Operator by default: deleting it destroys its attributes |
 | Ring self-touch | A ring touches itself at a point | Operator: the resolution is ambiguous |
@@ -61,7 +61,7 @@ and how much has to be looked at by hand.
 
 ---
 
-## 1.02 Topology cleanup (all at once)
+## 1.03 Polygon topology cleanup
 
 The order of steps is fixed:
 
@@ -87,7 +87,7 @@ and 6 come last, as they work on an already reconciled coverage.
 
 ---
 
-## 1.03 Topology snap (nodes and vertices)
+## 1.05 Node and vertex snapping
 
 Replaces the manual routine of snapping a layer to itself with vertex
 insertion, followed by a dissolve without attributes as a check.
@@ -119,7 +119,7 @@ discrepancies.
 
 ---
 
-## 1.04 Assembly check by attribute
+## 1.07 Assembly check by attribute
 
 The union of objects sharing an attribute value must give exactly one part
 without interior rings. The tool checks this across all groups at once and
@@ -134,13 +134,13 @@ group, which is exactly the tolerance that was missing.
 
 Parts are grouped into bodies by connectivity: two parts belong to one body
 if the distance between them is not greater than the **maximum gap** parameter.
-Only a split within a body counts as a break; separate bodies are legitimate.
+Only a split within a body counts as a break, separate bodies are not a violation.
 Zero means the group must be whole, which is the mode for zones, blocks
 and panels.
 
 ---
 
-## 1.05 Insert missing nodes
+## 1.06 Insertion of missing nodes
 
 Only insertion. No existing vertex is moved or deleted, so the total area stays
 exactly the same rather than approximately the same. A node is placed at the
@@ -177,8 +177,8 @@ topoliner/
   topo_checks.py        checks and the cleanup pipeline
   topo_simplify.py      arcs and Douglas-Peucker thinning
   geom_backend.py       geometry adapter: QGIS in production, Shapely in tests
-  topo_algorithm.py     Processing wrappers for 1.03 and 1.05
-  audit_algorithms.py   Processing wrappers for 1.01, 1.02 and 1.04
+  topo_algorithm.py     Processing wrappers for 1.05 and 1.06
+  audit_algorithms.py   Processing wrappers for 1.01, 1.03 and 1.07
   simplify_algorithm.py Processing wrapper for 2.01
   i18n.py               interface translation
   help_texts.py         tool help in two languages

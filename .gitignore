@@ -1,6 +1,5 @@
 __pycache__/
 *.py[cod]
-*.egg-info/
 .pytest_cache/
 .venv/
 venv/
@@ -10,3 +9,9 @@ build/
 .vscode/
 *.swp
 .DS_Store
+
+# Записка к разовой поставке, в репозитории ей не место
+README-DELTA.txt
+
+# Промежуточные файлы сборки руководства
+doc/_header.tex

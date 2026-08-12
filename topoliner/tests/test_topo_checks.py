@@ -1001,3 +1001,114 @@ class TestCavity(Base):
                                tolerance=2.0, area_threshold=10.0,
                                cavity_area=1000.0)
         self.assertEqual(len(self.kinds(f, tc.GAP)), 1)
+
+
+class TestAssemblyForLines(Base):
+    """Контроль сборки для линий: вопрос в связности цепи."""
+
+    def line(self, *pts):
+        return self.b.linestring(list(pts))
+
+    def test_adjacent_segments_form_one_chain(self):
+        items = [(1, self.line((0, 0), (50, 0)), "ЮП"),
+                 (2, self.line((50, 0), (100, 0)), "ЮП")]
+        f, per = tc.check_assembly(self.b, items, is_line=True)
+        self.assertEqual(per["ЮП"]["bodies"], 1,
+                         "Смежные участки должны склеиться в одну цепь")
+        self.assertEqual(f, [])
+
+    def test_detached_segment_is_a_split(self):
+        items = [(1, self.line((0, 0), (50, 0)), "ЮП"),
+                 (2, self.line((50, 0), (100, 0)), "ЮП"),
+                 (3, self.line((500, 0), (550, 0)), "ЮП")]
+        f, per = tc.check_assembly(self.b, items, is_line=True)
+        self.assertEqual(per["ЮП"]["bodies"], 2)
+        self.assertEqual(len(self.kinds(f, tc.GROUP_SPLIT)), 1)
+
+    def test_gap_threshold_accepts_separate_chains(self):
+        """Порог разрыва меньше расстояния: цепи считаются разными телами.
+
+        Смысл порога обратный тому, что подсказывает название: он говорит,
+        насколько далеко части ещё считаются одним телом. Расстояние больше
+        порога означает разные тела, а не разрыв внутри одного.
+        """
+        items = [(1, self.line((0, 0), (50, 0)), "ЮП"),
+                 (2, self.line((500, 0), (550, 0)), "ЮП")]
+        f, per = tc.check_assembly(self.b, items, is_line=True, max_gap=10.0)
+        self.assertEqual(self.kinds(f, tc.GROUP_SPLIT), [])
+        self.assertEqual(per["ЮП"]["separate"], 1)
+        self.assertEqual(per["ЮП"]["bodies"], 2)
+
+    def test_gap_threshold_larger_than_distance_reports_a_split(self):
+        """Порог больше расстояния: части считаются одним телом с разрывом."""
+        items = [(1, self.line((0, 0), (50, 0)), "ЮП"),
+                 (2, self.line((500, 0), (550, 0)), "ЮП")]
+        f, per = tc.check_assembly(self.b, items, is_line=True, max_gap=1000.0)
+        self.assertEqual(per["ЮП"]["bodies"], 1)
+        self.assertEqual(len(self.kinds(f, tc.GROUP_SPLIT)), 1)
+
+    def test_measure_is_length_for_lines(self):
+        items = [(1, self.line((0, 0), (50, 0)), "ЮП"),
+                 (2, self.line((50, 0), (100, 0)), "ЮП")]
+        _f, per = tc.check_assembly(self.b, items, is_line=True)
+        self.assertAlmostEqual(per["ЮП"]["area"], 100.0, places=6)
+
+    def test_lines_have_no_interior_rings(self):
+        """Замкнутая цепь линий полостью не считается."""
+        ring = [self.line((0, 0), (10, 0)), self.line((10, 0), (10, 10)),
+                self.line((10, 10), (0, 10)), self.line((0, 10), (0, 0))]
+        items = [(i + 1, g, "K") for i, g in enumerate(ring)]
+        _f, per = tc.check_assembly(self.b, items, is_line=True)
+        self.assertEqual(per["K"]["holes"], 0)
+
+    def test_groups_are_independent(self):
+        items = [(1, self.line((0, 0), (50, 0)), "A"),
+                 (2, self.line((500, 0), (550, 0)), "B")]
+        f, per = tc.check_assembly(self.b, items, is_line=True)
+        self.assertEqual(f, [])
+        self.assertEqual(per["A"]["bodies"], 1)
+        self.assertEqual(per["B"]["bodies"], 1)
+
+
+class TestFindingsHaveNotes(Base):
+    """У каждой находки должно быть пояснение.
+
+    Пустое поле note заставляет человека гадать, что именно не так,
+    и чем находка отличается от соседней того же типа.
+    """
+
+    def messy_scene(self):
+        return [
+            (1, self.poly(rect(0, 0, 10, 10), rect(4, 4, 4.5, 4.5))),
+            (2, self.poly(rect(9.5, 0, 20, 10))),
+            (3, self.poly(rect(0, 0, 10, 10))),
+            (4, self.poly(rect(2, 2, 3, 3))),
+            (5, self.poly(rect(0, 200, 200, 200.4))),
+        ]
+
+    def test_every_finding_has_a_note(self):
+        f, _s = tc.check_items(self.b, self.messy_scene(),
+                               tolerance=2.0, area_threshold=10.0)
+        self.assertTrue(f, "Сцена должна давать находки")
+        empty = sorted({x["type"] for x in f if not x["note"]})
+        self.assertEqual(empty, [], "Находки без пояснения: %r" % empty)
+
+    def test_notes_differ_between_wide_and_narrow_overlap(self):
+        narrow = [(1, self.poly(rect(0, 0, 64, 10))),
+                  (2, self.poly(rect(0, 9, 64, 30)))]
+        wide = [(1, self.poly(rect(0, 0, 20, 10))),
+                (2, self.poly(rect(0, 2, 20, 30)))]
+        f1, _s1 = tc.check_items(self.b, narrow, tolerance=2.0, area_threshold=1.0)
+        f2, _s2 = tc.check_items(self.b, wide, tolerance=2.0, area_threshold=1.0)
+        note1 = self.kinds(f1, tc.OVERLAP)[0]["note"]
+        note2 = self.kinds(f2, tc.OVERLAP)[0]["note"]
+        self.assertNotEqual(note1, note2)
+        self.assertTrue(note1 and note2)
+
+    def test_assembly_findings_have_notes(self):
+        items = [(1, self.poly(rect(0, 0, 10, 10)), "B"),
+                 (2, self.poly(rect(500, 0, 510, 10)), "B")]
+        f, _per = tc.check_assembly(self.b, items, area_threshold=1.0)
+        self.assertTrue(f)
+        for item in f:
+            self.assertTrue(item["note"], "Находка сборки без пояснения: %r" % item)

@@ -126,8 +126,8 @@ class TestHelpTexts(unittest.TestCase):
         i18n.set_language("en")
         en = self.h.help_for("topologyaudit")
         self.assertNotEqual(ru, en)
-        self.assertIn("Проверка топологии", ru)
-        self.assertIn("Topology check", en)
+        self.assertIn("Проверка топологии полигонов", ru)
+        self.assertIn("Polygon topology check", en)
 
     def test_english_help_has_no_cyrillic(self):
         import re
@@ -275,3 +275,102 @@ class TestCodeHygiene(unittest.TestCase):
                                      % (os.path.basename(path), node.lineno, name))
                     seen[name] = node.lineno
         self.assertEqual(found, [], "Дубликаты импортов: %r" % found)
+
+
+class TestWording(unittest.TestCase):
+    """Стоп-слова в текстах, которые видит пользователь.
+
+    Инструмент описывает, а не оценивает: «законная полость» это суждение,
+    а «полость крупнее порога» это описание. Тест держит границу.
+    """
+
+    STOP_WORDS = ("законн", "честн", "врёт", "legitimat")
+
+    def user_visible_text(self):
+        """Строки интерфейса и справки. Комментарии в коде не проверяются."""
+        import ast
+        import help_texts
+        chunks = []
+        for table in (help_texts.RU, help_texts.EN):
+            chunks.extend(table.values())
+        chunks.extend(i18n.EN.keys())
+        chunks.extend(i18n.EN.values())
+        for name in os.listdir(PLUGIN):
+            if not name.endswith(".py") or name in ("i18n.py", "help_texts.py"):
+                continue
+            with open(os.path.join(PLUGIN, name), encoding="utf-8") as fh:
+                tree = ast.parse(fh.read())
+            for node in ast.walk(tree):
+                # setHelp: подсказка к параметру, тоже видна пользователю
+                if (isinstance(node, ast.Call)
+                        and isinstance(node.func, ast.Attribute)
+                        and node.func.attr == "setHelp"
+                        and node.args
+                        and isinstance(node.args[0], ast.Constant)):
+                    chunks.append(node.args[0].value)
+        return chunks
+
+    def test_no_stop_words_in_user_text(self):
+        found = []
+        for text in self.user_visible_text():
+            if not isinstance(text, str):
+                continue
+            low = text.lower()
+            for word in self.STOP_WORDS:
+                if word in low:
+                    found.append("%s: %s" % (word, text[:60]))
+        self.assertEqual(found, [], "Стоп-слова: %r" % found)
+
+    def test_no_em_dash(self):
+        """Длинное тире не используется, вместо него дефис с пробелами."""
+        found = [t[:60] for t in self.user_visible_text()
+                 if isinstance(t, str) and "—" in t]
+        self.assertEqual(found, [], "Длинное тире: %r" % found)
+
+
+class TestFindingNotes(unittest.TestCase):
+    """Пояснения к находкам тоже должны переводиться.
+
+    Они попадают в поле note слоя находок, то есть в файл, который человек
+    открывает и читает. На английской локали там не должно быть кириллицы.
+    """
+
+    def tearDown(self):
+        i18n.set_language("ru")
+
+    def sample_findings(self):
+        from geom_backend import ShapelyBackend
+        from line_checks import check_lines
+        import topo_checks as tc
+
+        backend = ShapelyBackend()
+
+        def rect(x0, y0, x1, y1):
+            return [(x0, y0), (x1, y0), (x1, y1), (x0, y1), (x0, y0)]
+
+        polygons = [
+            (1, backend.polygon([rect(0, 0, 10, 10), rect(4, 4, 4.5, 4.5)])),
+            (2, backend.polygon([rect(9.5, 0, 20, 10)])),
+            (3, backend.polygon([rect(0, 200, 200, 200.4)])),
+        ]
+        lines = [(1, [(0, 0), (100, 0)]), (2, [(50, 20), (50, 0.5)]),
+                 (3, [(30, -20), (30, 1.5)]), (4, [(70, 20), (70, 10)])]
+        found, _s = tc.check_items(backend, polygons, tolerance=2.0,
+                                   area_threshold=10.0)
+        line_found, _s2 = check_lines(lines, tolerance=2.0)
+        return found + line_found
+
+    def test_notes_are_translated(self):
+        import re
+        i18n.set_language("en")
+        cyrillic = [f["note"] for f in self.sample_findings()
+                    if f["note"] and re.search(r"[А-Яа-яЁё]", f["note"])]
+        self.assertEqual(cyrillic, [], "Кириллица в примечаниях: %r" % cyrillic)
+
+    def test_notes_differ_between_languages(self):
+        i18n.set_language("ru")
+        ru = {f["note"] for f in self.sample_findings() if f["note"]}
+        i18n.set_language("en")
+        en = {f["note"] for f in self.sample_findings() if f["note"]}
+        self.assertTrue(ru)
+        self.assertNotEqual(ru, en)

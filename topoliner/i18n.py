@@ -68,11 +68,11 @@ EN = {
     # Группы и названия инструментов
     "1. Топология": "1. Topology",
     "2. Генерализация": "2. Generalisation",
-    "1.01 Проверка топологии": "1.01 Topology check",
-    "1.02 Топологическая очистка (всё сразу)": "1.02 Topology cleanup (all at once)",
-    "1.03 Топологическая сшивка (узлы и вершины)": "1.03 Topology snap (nodes and vertices)",
-    "1.04 Контроль сборки по атрибуту": "1.04 Assembly check by attribute",
-    "1.05 Вставить недостающие узлы": "1.05 Insert missing nodes",
+    "1.01 Проверка топологии полигонов": "1.01 Polygon topology check",
+    "1.03 Очистка топологии полигонов": "1.03 Polygon topology cleanup",
+    "1.05 Сшивка узлов и вершин": "1.05 Node and vertex snapping",
+    "1.07 Контроль сборки по атрибуту": "1.07 Assembly check by attribute",
+    "1.06 Вставка недостающих узлов": "1.06 Insertion of missing nodes",
     "2.01 Топологическое упрощение": "2.01 Topology-preserving simplify",
     "Topoliner - топология и обработка геометрии":
         "Topoliner - topology and geometry processing",
@@ -88,8 +88,8 @@ EN = {
     "Поле или поля группировки (необязательно)":
         "Grouping field or fields (optional)",
     "Поле или поля группировки": "Grouping field or fields",
-    "Площадь законной полости (0 - не учитывать)":
-        "Legitimate cavity area (0 - ignore)",
+    "Полость крупнее этой площади щелью не считается (0 - не учитывать)":
+        "Cavity larger than this area is not counted as a gap (0 - ignore)",
     "Эталонный слой (необязательно)": "Reference layer (optional)",
     "Опорный слой (необязательно)": "Donor layer (optional)",
     "Сохранять отметки Z": "Keep Z values",
@@ -276,8 +276,8 @@ EN = {
         "  identifiers: %s%s",
     "Вырожденных колец удалено: %d (допуск больше размера объекта)":
         "Degenerate rings removed: %d (the tolerance exceeds the object size)",
-    "Групп из нескольких законно отдельных тел: %d (разрыв больше заданного порога, нарушением не считается)":
-        "Groups made of several legitimately separate bodies: %d (the gap exceeds the given threshold and is not a violation)",
+    "Групп из нескольких отдельных тел: %d (разрыв больше заданного порога, нарушением не считается)":
+        "Groups made of several separate bodies: %d (the gap exceeds the given threshold and is not a violation)",
     "Групп с дефектами сборки: %d. Смотрите поле note: там расстояние, которого не хватило допуску. Если разрывы измеряются сотнями метров, значит группы не обязаны быть цельными и нужно задать максимальный разрыв.":
         "Groups with assembly defects: %d. See the note field: it holds the distance the tolerance was missing. If the gaps are hundreds of metres, the groups need not be whole and a maximum gap should be set.",
     "Длина ребра: медиана %.4f, пятый процентиль %.4f (рёбер %d)":
@@ -324,4 +324,123 @@ EN = {
         "Ring width: minimum %.4f, median %.4f",
     "GEOS считает геометрию некорректной, подробностей нет":
         "GEOS considers the geometry invalid, no details available",
+    "Сглаживание, число проходов (0 - без сглаживания)":
+        "Smoothing, number of passes (0 - no smoothing)",
+    "Сглаживание: проходов %d": "Smoothing: %d passes",
+    "Длина до/после: %.3f / %.3f (%+.6f %%)":
+        "Length before/after: %.3f / %.3f (%+.6f %%)",
+
+    # Линейные инструменты
+    "1.02 Проверка топологии линий": "1.02 Line topology check",
+    "1.04 Очистка топологии линий": "1.04 Line topology cleanup",
+    "── Топология линий ──": "-- Line topology --",
+    "Проверяемый слой (линии)": "Layer to check (lines)",
+    "Входной слой (линии)": "Input layer (lines)",
+    "Порог длины линии (0 - не учитывать)":
+        "Line length threshold (0 - ignore)",
+    "Искать висячие концы, недоводы и перелёты":
+        "Find dangles, undershoots and overshoots",
+    "Искать пересечения без узла": "Find crossings without a node",
+    "Искать псевдоузлы": "Find pseudo nodes",
+    "Обрезать перелёты за узел": "Trim overshoots past a node",
+    "Дотягивать недоводы до соседней линии":
+        "Close undershoots onto the neighbouring line",
+    "Вставлять недостающие узлы": "Insert missing nodes",
+    "Удалять линии короче порога длины":
+        "Delete lines shorter than the length threshold",
+    "Линий: %d, допуск %g": "Lines: %d, tolerance %g",
+    "── Топология линий ──": "-- Line topology --",
+    "Перелётов обрезано:          %d": "Overshoots trimmed:          %d",
+    "Недоводов закрыто:           %d (макс. смещение %.4f)":
+        "Undershoots closed:          %d (max shift %.4f)",
+    "Линий нулевой длины удалено: %d": "Zero-length lines removed:   %d",
+    "Коротких линий удалено:      %d": "Short lines removed:         %d",
+    "Объектов потеряно: %d": "Objects lost: %d",
+    "висячий конец": "dangle",
+    "недовод до соседней линии": "undershoot to the neighbouring line",
+    "перелёт за узел": "overshoot past a node",
+    "псевдоузел": "pseudo node",
+    "пересечение без узла": "crossing without a node",
+    "линия нулевой длины": "zero-length line",
+    "линия короче порога": "line shorter than the threshold",
+    "Слой (полигоны или линии)": "Layer (polygons or lines)",
+    "длина": "length",
+
+    # Пояснения к находкам
+    "все вершины в одной точке": "all vertices at the same point",
+    "в линии меньше двух вершин": "fewer than two vertices in the line",
+    "вершины совпадают, атрибуты могут различаться":
+        "the vertices coincide, the attributes may differ",
+    "геометрии совпадают, атрибуты могут различаться":
+        "the geometries coincide, the attributes may differ",
+    "линии пересекаются, узла в точке нет":
+        "the lines cross, there is no node at the point",
+    "конец ни с чем не соединён, соседей ближе допуска нет":
+        "the end is connected to nothing, no neighbour within the tolerance",
+    "один объект целиком внутри другого":
+        "one object entirely inside another",
+    "кольцо проходит через точку дважды":
+        "the ring passes through the point twice",
+    "границы совпадают геометрически, узла нет":
+        "the borders coincide geometrically, there is no node",
+    "перекрытие шире допуска, спор за площадь":
+        "the overlap is wider than the tolerance, a dispute over area",
+    "полоса шириной меньше допуска": "a strip narrower than the tolerance",
+    "две линии можно объединить в одну":
+        "the two lines can be merged into one",
+
+    # Пояснения с измеренными величинами
+    "вершин подряд в одной точке: %d":
+        "vertices in a row at the same point: %d",
+    "вычитание съедало слишком много площади":
+        "the subtraction was taking too much area",
+    "длина %.4f при пороге %.4f": "length %.4f against the threshold %.4f",
+    "дыра в объединении покрытия площадью %.4f":
+        "a hole in the union of the coverage, area %.4f",
+    "дыра площадью %.4f при пороге %.4f":
+        "a hole of area %.4f against the threshold %.4f",
+    "линия короче порога, удаление не выполнялось":
+        "the line is shorter than the threshold, no deletion was performed",
+    "не доходит до соседней линии на %.4f":
+        "falls short of the neighbouring line by %.4f",
+    "объект исчез при исправлении": "the object disappeared during repair",
+    "объект мельче порога, удаление не выполнялось":
+        "the object is smaller than the threshold, no deletion was performed",
+    "перекрытие шире допуска, это спор за площадь":
+        "the overlap is wider than the tolerance, a dispute over area",
+    "площадь %.4f при пороге %.4f": "area %.4f against the threshold %.4f",
+    "полость внутри группы площадью %.4f":
+        "a cavity inside the group, area %.4f",
+    "пустая геометрия": "empty geometry",
+    "разворотов границы назад: %d": "border turns back on itself: %d",
+    "разворотов линии назад: %d": "line turns back on itself: %d",
+    "разрыв до ближайшей части %.4f": "gap to the nearest part %.4f",
+    "совпадение или вложение решается человеком":
+        "coincidence or nesting is decided by the operator",
+    "сосед не найден": "no neighbour found",
+    "сшивка испортила объект, исправление не помогло, возвращена исходная геометрия":
+        "snapping broke the object, the repair did not help, the original geometry was restored",
+    "хвост за узлом длиной %.4f": "a tail past a node, length %.4f",
+    "часть площадью %.4f из %d": "a part of area %.4f out of %d",
+    "щель крупнее порога, не заполнялась":
+        "the gap is larger than the threshold, it was not filled",
+    "эффективная ширина меньше допуска":
+        "the effective width is below the tolerance",
+    "вершина в %.4f от ребра соседа": "vertex %.4f away from a neighbour edge",
+
+    # Извлечение границ
+    "2.02 Границы полигонов линиями": "2.02 Polygon borders as lines",
+    "Поле, значения которого записать по обе стороны":
+        "Field whose values to record on both sides",
+    "Отклонение при поиске общих вершин":
+        "Deviation when matching shared vertices",
+    "Границы": "Borders",
+    "граница между объектами": "border between objects",
+    "внешний край покрытия": "outer edge of the coverage",
+    "край полости": "edge of a cavity",
+    "Объектов: %d": "Objects: %d",
+    "Границ между объектами: %d": "Borders between objects: %d",
+    "Внешний край покрытия:  %d": "Outer edge of the coverage: %d",
+    "Краёв полостей:         %d": "Cavity edges:              %d",
+    "Всего линий:            %d": "Lines in total:            %d",
 }

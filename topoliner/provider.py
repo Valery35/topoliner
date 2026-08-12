@@ -10,19 +10,25 @@ from .audit_algorithms import (
     TopologyAuditAlgorithm,
     TopologyFixAlgorithm,
 )
-from .simplify_algorithm import TopologySimplifyAlgorithm
+from .line_algorithms import LineAuditAlgorithm, LineFixAlgorithm
+from .simplify_algorithm import BoundariesAlgorithm, TopologySimplifyAlgorithm
 from .topo_algorithm import InsertNodesAlgorithm, TopologyCleanAlgorithm
 
 
 class TopolinerProvider(QgsProcessingProvider):
 
     def loadAlgorithms(self):
+        # Порядок соответствует нумерации: пары проверка и очистка стоят
+        # рядом, полигоны перед линиями.
         self.addAlgorithm(TopologyAuditAlgorithm())       # 1.01
-        self.addAlgorithm(TopologyFixAlgorithm())         # 1.02
-        self.addAlgorithm(TopologyCleanAlgorithm())       # 1.03
-        self.addAlgorithm(AssemblyCheckAlgorithm())       # 1.04
-        self.addAlgorithm(InsertNodesAlgorithm())         # 1.05
+        self.addAlgorithm(LineAuditAlgorithm())           # 1.02
+        self.addAlgorithm(TopologyFixAlgorithm())         # 1.03
+        self.addAlgorithm(LineFixAlgorithm())             # 1.04
+        self.addAlgorithm(TopologyCleanAlgorithm())       # 1.05
+        self.addAlgorithm(InsertNodesAlgorithm())         # 1.06
+        self.addAlgorithm(AssemblyCheckAlgorithm())       # 1.07
         self.addAlgorithm(TopologySimplifyAlgorithm())    # 2.01
+        self.addAlgorithm(BoundariesAlgorithm())          # 2.02
 
     def id(self):
         return "topoliner"

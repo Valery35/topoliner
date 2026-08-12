@@ -33,7 +33,7 @@ from qgis.PyQt.QtCore import QVariant
 from . import topo_checks as tc
 from .help_texts import help_for
 from .i18n import tr
-from .branding import banner, help_footer
+from .branding import banner, help_footer, help_url
 from .geom_backend import QgisBackend
 from .topo_algorithm import assemble, explode
 from .topo_core import _PointGrid
@@ -147,7 +147,7 @@ class TopologyAuditAlgorithm(QgsProcessingAlgorithm):
         return "topologyaudit"
 
     def displayName(self):
-        return tr("1.01 Проверка топологии")
+        return tr("1.01 Проверка топологии полигонов")
 
     def group(self):
         return tr("1. Топология")
@@ -157,6 +157,9 @@ class TopologyAuditAlgorithm(QgsProcessingAlgorithm):
 
     def createInstance(self):
         return TopologyAuditAlgorithm()
+
+    def helpUrl(self):
+        return help_url()
 
     def shortHelpString(self):
         return help_for("topologyaudit") + help_footer()
@@ -193,7 +196,7 @@ class TopologyAuditAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(p)
 
         p = QgsProcessingParameterNumber(
-            self.CAVITY, tr("Площадь законной полости (0 - не учитывать)"),
+            self.CAVITY, tr("Полость крупнее этой площади щелью не считается (0 - не учитывать)"),
             type=QgsProcessingParameterNumber.Double, defaultValue=0.0, minValue=0.0)
         p.setHelp(
             "Полость крупнее этой площади считается частью замысла и находкой\n"
@@ -220,7 +223,7 @@ class TopologyAuditAlgorithm(QgsProcessingAlgorithm):
         area = self.parameterAsDouble(parameters, self.AREA, context)
 
         # Инструменты топологии обязаны принимать некорректную геометрию:
-        # именно её они и ищут. Иначе один плохой объект валит весь прогон.
+        # именно её они и ищут. Иначе один такой объект валит весь прогон.
         context.setInvalidGeometryCheck(QgsFeatureRequest.GeometryNoCheck)
         items, _orig = read_items(source, feedback)
         if items is None:
@@ -298,7 +301,7 @@ class TopologyFixAlgorithm(QgsProcessingAlgorithm):
         return "topologyfix"
 
     def displayName(self):
-        return tr("1.02 Топологическая очистка (всё сразу)")
+        return tr("1.03 Очистка топологии полигонов")
 
     def group(self):
         return tr("1. Топология")
@@ -308,6 +311,9 @@ class TopologyFixAlgorithm(QgsProcessingAlgorithm):
 
     def createInstance(self):
         return TopologyFixAlgorithm()
+
+    def helpUrl(self):
+        return help_url()
 
     def shortHelpString(self):
         return help_for("topologyfix") + help_footer()
@@ -366,7 +372,7 @@ class TopologyFixAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(p)
 
         p = QgsProcessingParameterNumber(
-            self.CAVITY, tr("Площадь законной полости (0 - не учитывать)"),
+            self.CAVITY, tr("Полость крупнее этой площади щелью не считается (0 - не учитывать)"),
             type=QgsProcessingParameterNumber.Double, defaultValue=0.0, minValue=0.0)
         p.setHelp(
             "Полость крупнее этой площади считается частью замысла и находкой\n"
@@ -418,7 +424,7 @@ class TopologyFixAlgorithm(QgsProcessingAlgorithm):
         }
 
         # Инструменты топологии обязаны принимать некорректную геометрию:
-        # именно её они и ищут. Иначе один плохой объект валит весь прогон.
+        # именно её они и ищут. Иначе один такой объект валит весь прогон.
         context.setInvalidGeometryCheck(QgsFeatureRequest.GeometryNoCheck)
         items, originals = read_items(source, feedback)
         if items is None:
@@ -598,7 +604,7 @@ class AssemblyCheckAlgorithm(QgsProcessingAlgorithm):
         return "assemblycheck"
 
     def displayName(self):
-        return tr("1.04 Контроль сборки по атрибуту")
+        return tr("1.07 Контроль сборки по атрибуту")
 
     def group(self):
         return tr("1. Топология")
@@ -609,12 +615,16 @@ class AssemblyCheckAlgorithm(QgsProcessingAlgorithm):
     def createInstance(self):
         return AssemblyCheckAlgorithm()
 
+    def helpUrl(self):
+        return help_url()
+
     def shortHelpString(self):
         return help_for("assemblycheck") + help_footer()
 
     def initAlgorithm(self, config=None):
         self.addParameter(QgsProcessingParameterFeatureSource(
-            self.INPUT, tr("Слой (полигоны)"), [QgsProcessing.TypeVectorPolygon]))
+            self.INPUT, tr("Слой (полигоны или линии)"),
+            [QgsProcessing.TypeVectorPolygon, QgsProcessing.TypeVectorLine]))
 
         self.addParameter(QgsProcessingParameterField(
             self.FIELDS, tr("Поле или поля группировки"), parentLayerParameterName=self.INPUT,
@@ -631,7 +641,7 @@ class AssemblyCheckAlgorithm(QgsProcessingAlgorithm):
             type=QgsProcessingParameterNumber.Double, defaultValue=0.0, minValue=0.0)
         p.setHelp(
             "Части, отстоящие друг от друга дальше этого расстояния, считаются\n"
-            "законно отдельными телами и находкой не являются.\n"
+            "отдельными телами и находкой не являются.\n"
             "Ноль означает, что группа обязана собираться в одно целое.\n"
             "Ноль подходит для зон, блоков и панелей. Для полигонов изолиний\n"
             "и подобных данных задавайте величину порядка нескольких допусков."
@@ -642,7 +652,7 @@ class AssemblyCheckAlgorithm(QgsProcessingAlgorithm):
             self.IGNORE_HOLES, tr("Внутренние кольца допустимы"), defaultValue=False)
         p.setHelp(
             "Отключает поиск полостей внутри тел. Нужно там, где полость\n"
-            "законна по смыслу, например у полигонов изолиний."
+            "входит в замысел, например у полигонов изолиний."
         )
         self.addParameter(p)
 
@@ -656,10 +666,12 @@ class AssemblyCheckAlgorithm(QgsProcessingAlgorithm):
         names = self.parameterAsFields(parameters, self.FIELDS, context)
         if not names:
             raise QgsProcessingException("Укажите хотя бы одно поле группировки.")
+        is_line = (QgsWkbTypes.geometryType(source.wkbType())
+                   == QgsWkbTypes.LineGeometry)
         area = self.parameterAsDouble(parameters, self.AREA, context)
 
         # Инструменты топологии обязаны принимать некорректную геометрию:
-        # именно её они и ищут. Иначе один плохой объект валит весь прогон.
+        # именно её они и ищут. Иначе один такой объект валит весь прогон.
         context.setInvalidGeometryCheck(QgsFeatureRequest.GeometryNoCheck)
         items = []
         total = source.featureCount() or 1
@@ -684,7 +696,7 @@ class AssemblyCheckAlgorithm(QgsProcessingAlgorithm):
         feedback.pushInfo(banner())
         backend = QgisBackend()
         findings, per_group = tc.check_assembly(
-            backend, items, area_threshold=area,
+            backend, items, area_threshold=area, is_line=is_line,
             max_gap=self.parameterAsDouble(parameters, self.MAX_GAP, context),
             ignore_holes=self.parameterAsBoolean(parameters, self.IGNORE_HOLES, context),
             progress=lambda f: feedback.setProgress(10.0 + 80.0 * f))
@@ -705,12 +717,14 @@ class AssemblyCheckAlgorithm(QgsProcessingAlgorithm):
                           % (len(per_group), len(per_group) - len(bad)))
         if separate:
             feedback.pushInfo(
-                tr("Групп из нескольких законно отдельных тел: %d "
+                tr("Групп из нескольких отдельных тел: %d "
                 "(разрыв больше заданного порога, нарушением не считается)") % separate)
         if bad:
             feedback.pushInfo("")
             feedback.pushInfo("%-24s %6s %7s %7s %14s"
-                              % ("группа", "тел", "разрыв", "колец", "площадь"))
+                              % (tr("группа"), tr("тел"), tr("разрыв"),
+                                 tr("колец"),
+                                 tr("длина") if is_line else tr("площадь")))
             for k, v in sorted(bad, key=lambda kv: -(kv[1]["splits"] + kv[1]["holes"]))[:40]:
                 feedback.pushInfo("%-24s %6d %7d %7d %14.2f"
                                   % (str(k)[:24], v["bodies"], v["splits"],

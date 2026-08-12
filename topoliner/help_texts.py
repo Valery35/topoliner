@@ -33,7 +33,7 @@ def help_for(name):
 RU = {
 
 "topologyaudit": (
-    "<b>1.01 Проверка топологии полигонального слоя</b><br><br>"
+    "<b>1.01 Проверка топологии полигонов</b><br><br>"
     "Слой не изменяется. Результат это слой точек с найденными нарушениями "
     "и сводка в панели Processing.<br><br>"
     "<b>Что проверяется</b><br><ul>"
@@ -55,12 +55,12 @@ RU = {
     "любом допуске. <b>Вершина рядом с ребром</b> означает лишь близость, "
     "и число таких находок целиком задаётся допуском. Если в сводке медиана "
     "близка к допуску, а не к нулю, вы смотрите на соседние объекты, а не "
-    "на дефекты. Первое лечится инструментом <b>1.05</b>, который не трогает "
+    "на дефекты. Первое лечится инструментом <b>1.06</b>, который не трогает "
     "ни форму, ни площадь.<br><br>"
     "<b>Поле группировки</b> нужно, когда слой не является единым покрытием, "
     "например когда зоны нескольких пластов лежат в одном слое. Объекты разных "
     "групп накладываются друг на друга по замыслу.<br><br>"
-    "<b>Площадь законной полости</b> отделяет целик, озеро или "
+    "<b>Порог площади полости</b> отделяет целик, озеро или "
     "незакартированный участок от дефекта покрытия: мелкая дыра это ошибка, "
     "очень крупная почти всегда часть замысла.<br><br>"
     "<b>Ограничение</b>. Щели определяются как дыры в объединении покрытия, "
@@ -69,7 +69,7 @@ RU = {
 ),
 
 "topologyfix": (
-    "<b>1.02 Очистка топологии в один проход</b><br><br>"
+    "<b>1.03 Очистка топологии полигонов</b><br><br>"
     "Исправляет всё, что заведомо является техническим мусором, и не трогает "
     "то, что может нести смысл. Второе попадает в слой оставшихся проблем.<br><br>"
     "<b>Порядок шагов</b> (он существенен)<br><ol>"
@@ -98,7 +98,7 @@ RU = {
 ),
 
 "topologyclean": (
-    "<b>1.03 Топологическая сшивка слоя</b><br><br>"
+    "<b>1.05 Сшивка узлов и вершин</b><br><br>"
     "Приводит границы соседних объектов к точному совпадению, не сдвигая "
     "геометрию дальше заданного допуска. Заменяет ручную процедуру снапа слоя "
     "к самому себе со вставкой вершин.<br><br>"
@@ -125,7 +125,7 @@ RU = {
 ),
 
 "assemblycheck": (
-    "<b>1.04 Контроль сборки по атрибуту</b><br><br>"
+    "<b>1.07 Контроль сборки по атрибуту</b><br><br>"
     "Проверяет, собирается ли каждая группа объектов в одно целое тело. "
     "Объединение объектов с одинаковым значением атрибута должно давать ровно "
     "одну часть без внутренних колец.<br><br>"
@@ -146,14 +146,18 @@ RU = {
     "<b>Когда группа не обязана быть цельной</b>. Одно значение атрибута часто "
     "описывает несколько разнесённых тел: полигоны изолиний одного уровня, "
     "участки одного типа, острова. Для таких данных задайте <b>максимальный "
-    "разрыв</b>: части, отстоящие дальше него, считаются законно отдельными "
+    "разрыв</b>: части, отстоящие дальше него, считаются отдельными "
     "телами. Признак того, что порог нужен, виден сразу: если в поле note "
     "стоят сотни метров, это не дефекты сборки.<br><br>"
+    "<b>Для линейных слоёв</b> вопрос тот же: собирается ли группа в одну "
+    "связную цепь. Смежные участки склеиваются, поэтому число исходных "
+    "отрезков роли не играет. Внутренних колец у линий не бывает, мерой "
+    "служит длина.<br><br>"
     "Если выбрано несколько полей, ключом становится их сочетание."
 ),
 
 "insertnodes": (
-    "<b>1.05 Вставка недостающих узлов</b><br><br>"
+    "<b>1.06 Вставка недостающих узлов</b><br><br>"
     "Достраивает узлы там, где вершина одного объекта лежит на ребре другого, "
     "но узла там нет. Ничего больше инструмент не делает: существующие вершины "
     "не двигаются и не удаляются.<br><br>"
@@ -181,10 +185,90 @@ RU = {
     "на ребре соседа без узла</b>."
 ),
 
+"lineaudit": (
+    "<b>1.02 Проверка топологии линий</b><br><br>"
+    "Слой не изменяется. Результат это слой точек с находками и сводка "
+    "в панели Processing.<br><br>"
+    "<b>У линий свой набор нарушений</b>. Щели, перекрытия, вложения "
+    "и волосяные полигоны к ним не применимы, зато появляются недоводы, "
+    "перелёты, висячие концы и псевдоузлы.<br><br>"
+    "<b>Три случая на конце линии стоит различать</b><br><ul>"
+    "<li><b>Недовод</b>: конец не доходит до соседней линии, расстояние "
+    "меньше допуска. Это след оцифровки, чинится.</li>"
+    "<li><b>Перелёт</b>: линия пересекла соседнюю и продолжилась дальше "
+    "коротким хвостом. Тоже след оцифровки, обрезается.</li>"
+    "<li><b>Висячий конец</b>: конец ни с чем не соединён и соседей рядом "
+    "нет. У гидросети или сети выработок это устье или тупик, поэтому "
+    "решение остаётся человеку.</li></ul>"
+    "Порядок проверки существенен: у хвоста, торчащего за узлом, конец тоже "
+    "отстоит от соседней линии, поэтому перелёт ищется раньше недовода.<br><br>"
+    "<b>Псевдоузел</b> это стык двух линий концами, где больше ничего нет: "
+    "такие линии можно объединить в одну. По умолчанию проверка выключена, "
+    "потому что во многих слоях разбиение на участки сделано намеренно."
+),
+
+"linefix": (
+    "<b>1.04 Очистка топологии линий</b><br><br>"
+    "Исправляет то, что заведомо является следом оцифровки, и не трогает "
+    "то, что может нести смысл.<br><br>"
+    "<b>Что делается</b><br><ul>"
+    "<li>снятие повторяющихся вершин и игл.</li>"
+    "<li>обрезка перелётов: хвост за узлом короче допуска отрезается "
+    "до самой точки пересечения.</li>"
+    "<li>дотягивание недоводов: конец переносится на проекцию, "
+    "на соседнюю линию.</li>"
+    "<li>вставка недостающих узлов в точках примыкания.</li>"
+    "<li>удаление линий нулевой длины.</li></ul>"
+    "<b>Что не делается</b>: висячие концы не трогаются, линии короче порога "
+    "не удаляются без явного разрешения, псевдоузлы не объединяются.<br><br>"
+    "<b>Гарантия</b>. Конец линии не смещается дальше допуска. Повторный "
+    "запуск по результату ничего не меняет.<br><br>"
+    "Перед запуском стоит выполнить <b>1.02</b> и посмотреть, сколько находок "
+    "попадает в разряд решаемых человеком."
+),
+
+
+"boundaries": (
+    "<b>2.02 Границы полигонов линиями</b><br><br>"
+    "Выдаёт границы покрытия отдельными линиями, от узла до узла.<br><br>"
+    "<b>Чем отличается от перевода полигонов в линии</b>. Обычный перевод "
+    "выдаёт общую границу дважды, по разу от каждого соседа: две совпадающие "
+    "линии одна поверх другой. Здесь она выходит один раз и несёт признак "
+    "того, с чем граничит.<br><br>"
+    "<b>Три вида границ</b><br><ul>"
+    "<li><b>Граница между объектами</b>. Заполнены оба идентификатора "
+    "соседей.</li>"
+    "<li><b>Внешний край покрытия</b>. Второй сосед пуст.</li>"
+    "<li><b>Край полости</b>. Дырка внутри объекта, в которой ничего нет. "
+    "Если в полости лежит другой объект, это уже граница между объектами.</li>"
+    "</ul>"
+    "<b>Зачем это нужно</b>. Границу между двумя пластами оформляют иначе, "
+    "чем внешний край или край выработки. С двумя совпадающими линиями так "
+    "не сделать: стиль ляжет на обе, и толщина удвоится.<br><br>"
+    "<b>Поле для значений по обе стороны</b> необязательно. Если задано, "
+    "в атрибутах линии окажется значение этого поля у каждого из соседей. "
+    "Для геологических границ это пласт слева и пласт справа.<br><br>"
+    "<b>Где рвётся линия</b>. Там, где сходятся три и более объекта, "
+    "и там, где меняется пара соседей. Поэтому граница между двумя телами "
+    "выходит одним куском на всю длину.<br><br>"
+    "<b>Отклонение при поиске общих вершин</b>. Если у соседей разная "
+    "вершинность, общая граница не опознаётся и участок выходит двумя "
+    "линиями. Перед разбором такие узлы достраиваются, вершины при этом "
+    "не двигаются. Проверить слой заранее можно инструментом <b>1.01</b>, "
+    "тип нарушения <b>вершина лежит на ребре соседа без узла</b>.<br><br>"
+    "Сглаживания и упрощения здесь нет: для этого есть <b>2.01</b>, "
+    "и он работает с линиями."
+),
+
+
 "topologysimplify": (
     "<b>2.01 Упрощение с сохранением общих границ</b><br><br>"
     "Прореживает вершины так, что граница, общая для двух соседей, остаётся "
-    "общей.<br><br>"
+    "общей. Работает с полигонами и с линиями.<br><br>"
+    "<b>Для линий</b> смысл тот же: общий участок двух линий прореживается "
+    "один раз, а концы линий и точки ветвления остаются на месте. Это нужно "
+    "изолиниям, гидросети, горным выработкам: обычное упрощение разрывает "
+    "их в узлах.<br><br>"
     "<b>Зачем это нужно</b>. Обычное упрощение обрабатывает каждый полигон "
     "отдельно, поэтому одна и та же граница прореживается дважды и по-разному: "
     "там, где была одна линия, появляются щели и перехлёсты. На слое зон "
@@ -202,6 +286,11 @@ RU = {
     "остаются на месте.</li></ul>"
     "<b>Допуск</b> задаёт предельное отклонение упрощённой линии от исходной, "
     "как в методе Дугласа-Пекера.<br><br>"
+    "<b>Сглаживание</b> срезает углы по схеме Чайкина после прореживания. "
+    "Линия остаётся внутри исходной, поэтому выбросов и новых самопересечений "
+    "не возникает. Сглаживание идёт по тем же дугам, поэтому общая граница "
+    "соседей остаётся общей. Каждый проход примерно удваивает число вершин, "
+    "обычно хватает одного или двух.<br><br>"
     "<b>Точность опознания общих вершин</b> это не допуск упрощения. Она нужна, "
     "когда соседи записаны с разной точностью координат.<br><br>"
     "Площадь при упрощении меняется, это его смысл. Топология при этом "
@@ -219,7 +308,7 @@ RU = {
 EN = {
 
 "topologyaudit": (
-    "<b>1.01 Topology check for a polygon layer</b><br><br>"
+    "<b>1.01 Polygon topology check</b><br><br>"
     "The layer is not modified. The result is a point layer with the violations "
     "found, plus a summary in the Processing panel.<br><br>"
     "<b>What is checked</b><br><ul>"
@@ -243,12 +332,12 @@ EN = {
     "means mere proximity, and the number of such findings is set entirely "
     "by the tolerance. If the median in the summary is close to the tolerance "
     "rather than to zero, you are looking at neighbouring objects, not at "
-    "defects. The first case is fixed by tool <b>1.05</b>, which changes "
+    "defects. The first case is fixed by tool <b>1.06</b>, which changes "
     "neither shape nor area.<br><br>"
     "<b>The grouping field</b> is needed when the layer is not a single "
     "coverage, for example when zones of several seams share one layer. "
     "Objects of different groups overlap each other by design.<br><br>"
-    "<b>The legitimate cavity area</b> separates a pillar, a lake or an "
+    "<b>The cavity area threshold</b> separates a pillar, a lake or an "
     "unmapped area from a coverage defect: a small hole is an error, a very "
     "large one is almost always part of the design.<br><br>"
     "<b>Limitation</b>. Gaps are found as holes in the union of the coverage, "
@@ -257,7 +346,7 @@ EN = {
 ),
 
 "topologyfix": (
-    "<b>1.02 Topology cleanup in a single pass</b><br><br>"
+    "<b>1.03 Polygon topology cleanup</b><br><br>"
     "Fixes everything that is certainly technical debris and leaves alone "
     "anything that may carry meaning. The latter goes into the layer "
     "of remaining problems.<br><br>"
@@ -288,7 +377,7 @@ EN = {
 ),
 
 "topologyclean": (
-    "<b>1.03 Topology snapping of a layer</b><br><br>"
+    "<b>1.05 Node and vertex snapping</b><br><br>"
     "Brings the borders of neighbouring objects to an exact match without "
     "moving geometry further than the given tolerance. Replaces the manual "
     "procedure of snapping a layer to itself with vertex insertion.<br><br>"
@@ -316,7 +405,7 @@ EN = {
 ),
 
 "assemblycheck": (
-    "<b>1.04 Assembly check by attribute</b><br><br>"
+    "<b>1.07 Assembly check by attribute</b><br><br>"
     "Checks whether each group of objects assembles into one whole body. "
     "The union of objects sharing an attribute value must produce exactly "
     "one part without interior rings.<br><br>"
@@ -337,14 +426,18 @@ EN = {
     "<b>When a group need not be whole</b>. One attribute value often describes "
     "several separated bodies: contour polygons of one level, areas of one "
     "type, islands. For such data set the <b>maximum gap</b>: parts further "
-    "apart than that are treated as legitimately separate bodies. The sign that "
+    "apart than that are treated as separate bodies. The sign that "
     "the threshold is needed shows at once: if the note field holds hundreds "
     "of metres, these are not assembly defects.<br><br>"
+    "<b>For line layers</b> the question is the same: does the group assemble "
+    "into one connected chain. Adjacent segments are merged, so the number "
+    "of original pieces does not matter. Lines have no interior rings, "
+    "and length serves as the measure.<br><br>"
     "If several fields are selected, their combination becomes the key."
 ),
 
 "insertnodes": (
-    "<b>1.05 Insertion of missing nodes</b><br><br>"
+    "<b>1.06 Insertion of missing nodes</b><br><br>"
     "Adds nodes where a vertex of one object lies on the edge of another but "
     "no node is present. The tool does nothing else: existing vertices are "
     "neither moved nor deleted.<br><br>"
@@ -375,10 +468,97 @@ EN = {
     "on a neighbour edge without a node</b>."
 ),
 
+"lineaudit": (
+    "<b>1.02 Line topology check</b><br><br>"
+    "The layer is not modified. The result is a point layer with the findings "
+    "and a summary in the Processing panel.<br><br>"
+    "<b>Lines have their own set of violations</b>. Gaps, overlaps, nested "
+    "objects and slivers do not apply to them, while undershoots, overshoots, "
+    "dangles and pseudo nodes appear.<br><br>"
+    "<b>Three cases at a line end are worth telling apart</b><br><ul>"
+    "<li><b>Undershoot</b>: the end does not reach a neighbouring line, "
+    "the distance being below the tolerance. A digitising trace, it is "
+    "fixed.</li>"
+    "<li><b>Overshoot</b>: the line crossed a neighbour and continued with "
+    "a short tail. Also a digitising trace, it is trimmed.</li>"
+    "<li><b>Dangle</b>: the end is connected to nothing and no neighbour is "
+    "near. In a stream network or a set of mine workings this is an outlet "
+    "or a dead end, so the decision is left to the operator.</li></ul>"
+    "The order of checks matters: the end of a tail sticking out past a node "
+    "is also away from the neighbouring line, so overshoots are looked for "
+    "before undershoots.<br><br>"
+    "<b>A pseudo node</b> is a joint of two lines end to end with nothing "
+    "else there: such lines can be merged into one. The check is off by "
+    "default, because in many layers the splitting into segments is "
+    "deliberate."
+),
+
+"linefix": (
+    "<b>1.04 Line topology cleanup</b><br><br>"
+    "Fixes what is certainly a digitising trace and leaves alone anything "
+    "that may carry meaning.<br><br>"
+    "<b>What is done</b><br><ul>"
+    "<li>removal of repeated vertices and spikes.</li>"
+    "<li>trimming of overshoots: a tail past a node shorter than the "
+    "tolerance is cut back to the intersection point itself.</li>"
+    "<li>closing of undershoots: the end is moved onto its projection "
+    "on the neighbouring line.</li>"
+    "<li>insertion of missing nodes at the joints.</li>"
+    "<li>removal of zero-length lines.</li></ul>"
+    "<b>What is not done</b>: dangles are not touched, lines shorter than "
+    "the threshold are not deleted without explicit permission, pseudo nodes "
+    "are not merged.<br><br>"
+    "<b>Guarantee</b>. A line end does not move further than the tolerance. "
+    "A repeat run over the result changes nothing.<br><br>"
+    "Before running it, it is worth running <b>1.02</b> and seeing how many "
+    "findings fall into the category left to the operator."
+),
+
+"boundaries": (
+    "<b>2.02 Polygon borders as lines</b><br><br>"
+    "Outputs the borders of a coverage as separate lines, from node "
+    "to node.<br><br>"
+    "<b>How it differs from converting polygons to lines</b>. The usual "
+    "conversion outputs a shared border twice, once from each neighbour: "
+    "two coincident lines stacked on each other. Here it comes out once "
+    "and carries a mark of what it borders on.<br><br>"
+    "<b>Three kinds of border</b><br><ul>"
+    "<li><b>A border between objects</b>. Both neighbour identifiers are "
+    "filled in.</li>"
+    "<li><b>The outer edge of the coverage</b>. The second neighbour "
+    "is empty.</li>"
+    "<li><b>The edge of a cavity</b>. A hole inside an object with nothing "
+    "in it. If another object lies in the cavity, it is a border between "
+    "objects instead.</li></ul>"
+    "<b>Why this is needed</b>. A border between two seams is drawn "
+    "differently from the outer edge or the edge of a working. With two "
+    "coincident lines that cannot be done: the style lands on both and the "
+    "width doubles.<br><br>"
+    "<b>The field for values on both sides</b> is optional. If set, the "
+    "value of that field for each neighbour ends up in the line attributes. "
+    "For geological borders these are the seam on the left and the seam "
+    "on the right.<br><br>"
+    "<b>Where a line breaks</b>. Where three or more objects meet, and where "
+    "the pair of neighbours changes. A border between two bodies therefore "
+    "comes out as a single piece over its whole length.<br><br>"
+    "<b>The deviation for matching shared vertices</b>. If neighbours have "
+    "different vertices, a shared border is not recognised and the stretch "
+    "comes out as two lines. Such nodes are added before the analysis, and "
+    "the vertices do not move. The layer can be checked in advance with "
+    "tool <b>1.01</b>, violation type <b>vertex lies on a neighbour edge "
+    "without a node</b>.<br><br>"
+    "There is no smoothing or simplification here: tool <b>2.01</b> does "
+    "that, and it works with lines."
+),
+
 "topologysimplify": (
     "<b>2.01 Simplification preserving shared borders</b><br><br>"
     "Thins out vertices so that a border shared by two neighbours stays "
-    "shared.<br><br>"
+    "shared. Works with polygons and with lines.<br><br>"
+    "<b>For lines</b> the idea is the same: a segment shared by two lines is "
+    "thinned once, while line endpoints and branch nodes stay in place. "
+    "This matters for contours, stream networks and mine workings, which "
+    "ordinary simplification tears apart at the junctions.<br><br>"
     "<b>Why this is needed</b>. Ordinary simplification processes each polygon "
     "separately, so the same border is thinned twice and differently: where "
     "there was one line, gaps and overlaps appear. On a zone layer of 341 "
@@ -396,6 +576,11 @@ EN = {
     "in place.</li></ul>"
     "<b>The tolerance</b> sets the maximum deviation of the simplified line "
     "from the original, as in the Douglas-Peucker method.<br><br>"
+    "<b>Smoothing</b> cuts corners by Chaikin's scheme after thinning. "
+    "The line stays inside the original one, so no overshoots and no new "
+    "self-intersections appear. Smoothing runs over the same arcs, so a border "
+    "shared by two neighbours stays shared. Each pass roughly doubles the "
+    "vertex count; one or two are usually enough.<br><br>"
     "<b>The precision for matching shared vertices</b> is not a simplification "
     "tolerance. It is needed when neighbours are stored with different "
     "coordinate precision.<br><br>"

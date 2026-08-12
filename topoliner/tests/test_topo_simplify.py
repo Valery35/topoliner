@@ -207,3 +207,158 @@ class TestGrid(Base):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+class TestSmoothing(Base):
+    """Сглаживание идёт по дугам, поэтому общая граница остаётся общей."""
+
+    def geoms(self, res):
+        return [self.poly(r) for r in res["rings"]]
+
+    def simplify(self, smooth, tolerance=0.2):
+        left, right = self.pair()
+        return simplify_topology([left, right], tolerance=tolerance, smooth=smooth)
+
+    def test_no_gap_or_overlap_appears(self):
+        for passes in (1, 2, 3):
+            res = self.simplify(passes)
+            geoms = self.geoms(res)
+            merged = self.b.union_all(geoms)
+            parts = self.b.parts(merged)
+            self.assertEqual(len(parts), 1,
+                             "Разрыв при сглаживании в %d прохода" % passes)
+            self.assertEqual(len(self.b.rings(parts[0])), 1,
+                             "Щель при сглаживании в %d прохода" % passes)
+            inter = self.b.polygonal_only(
+                self.b.intersection(geoms[0], geoms[1]))
+            self.assertLess(self.b.area(inter), 1e-9,
+                            "Перекрытие при сглаживании в %d прохода" % passes)
+
+    def test_result_stays_valid(self):
+        for passes in (1, 2, 3):
+            for geom in self.geoms(self.simplify(passes)):
+                self.assertTrue(self.b.is_valid(geom))
+
+    def test_vertices_grow_with_passes(self):
+        counts = [self.simplify(p)["stats"]["vertices_out"] for p in (0, 1, 2)]
+        self.assertLess(counts[0], counts[1])
+        self.assertLess(counts[1], counts[2])
+
+    def test_zero_passes_change_nothing(self):
+        plain = simplify_topology(list(self.pair()), tolerance=0.2)
+        smoothed = simplify_topology(list(self.pair()), tolerance=0.2, smooth=0)
+        for a, c in zip(plain["rings"], smoothed["rings"]):
+            self.assertEqual(a, c)
+
+    def test_junction_points_do_not_move(self):
+        """Узлы ветвления это концы дуг, они обязаны остаться на месте."""
+        a = [(0, 0), (10, 0), (10.3, 2.5), (10, 5), (0, 5)]
+        b = [(10, 0), (20, 0), (20, 5), (10, 5), (10.3, 2.5)]
+        c = [(0, 5), (10, 5), (20, 5), (20, 10), (0, 10)]
+        res = simplify_topology([a, b, c], tolerance=0.5, smooth=2)
+        for ring in res["rings"]:
+            pts = {(round(p[0], 9), round(p[1], 9)) for p in ring}
+            self.assertIn((10.0, 5.0), pts)
+
+    def test_smoothing_stays_within_hull(self):
+        """Схема Чайкина не выходит за исходную линию, выбросов быть не может."""
+        from topo_simplify import chaikin
+        pts = [(0, 0), (5, 10), (10, 0)]
+        out = chaikin(pts, 3)
+        self.assertLessEqual(max(p[1] for p in out), 10.0 + 1e-9)
+        self.assertGreaterEqual(min(p[1] for p in out), 0.0 - 1e-9)
+
+    def test_open_line_endpoints_are_fixed(self):
+        from topo_simplify import chaikin
+        pts = [(0, 0), (5, 5), (10, 0)]
+        out = chaikin(pts, 2)
+        self.assertEqual(out[0], pts[0])
+        self.assertEqual(out[-1], pts[-1])
+
+    def test_closed_ring_is_smoothed_round(self):
+        """Кольцо без узлов ветвления сглаживается по кругу, без излома на стыке."""
+        square = [(0, 0), (10, 0), (10, 10), (0, 10)]
+        res = simplify_topology([square], tolerance=0.0, smooth=2)
+        ring = res["rings"][0]
+        self.assertNotIn((0.0, 0.0), [(round(p[0], 9), round(p[1], 9)) for p in ring])
+        self.assertTrue(self.b.is_valid(self.poly(ring)))
+
+
+class TestLines(Base):
+    """Разомкнутые линии: концы и точки ветвления неподвижны."""
+
+    def network(self):
+        """Магистраль и приток, соединённые в узле."""
+        main = [(0, 0), (5, 0.3), (10, -0.2), (15, 0.1), (20, 0)]
+        branch = [(10, -0.2), (12, 5), (14, 10)]
+        return [main, branch]
+
+    def simplify(self, rings, tolerance=0.5, smooth=0):
+        return simplify_topology(rings, tolerance=tolerance, smooth=smooth,
+                                 closed=[False] * len(rings))
+
+    def test_junction_splits_the_line_into_arcs(self):
+        arcs, paths = build_arcs(self.network(), closed=[False, False])
+        self.assertEqual(len(paths[0]), 2, "Магистраль режется в узле надвое")
+        self.assertEqual(len(paths[1]), 1)
+
+    def test_junction_point_stays(self):
+        res = self.simplify(self.network())
+        for ring in res["rings"]:
+            pts = [(round(p[0], 9), round(p[1], 9)) for p in ring]
+            self.assertIn((10.0, -0.2), pts, "Узел ветвления сдвинулся")
+
+    def test_line_endpoints_stay(self):
+        rings = self.network()
+        res = self.simplify(rings)
+        for src, out in zip(rings, res["rings"]):
+            self.assertEqual((round(out[0][0], 9), round(out[0][1], 9)),
+                             (round(src[0][0], 9), round(src[0][1], 9)))
+            self.assertEqual((round(out[-1][0], 9), round(out[-1][1], 9)),
+                             (round(src[-1][0], 9), round(src[-1][1], 9)))
+
+    def test_line_is_not_closed_into_a_ring(self):
+        res = self.simplify(self.network())
+        for ring in res["rings"]:
+            self.assertNotEqual((ring[0][0], ring[0][1]),
+                                (ring[-1][0], ring[-1][1]))
+
+    def test_two_point_line_survives(self):
+        """Линия из двух вершин не должна отбраковаться как вырожденная."""
+        res = self.simplify([[(0, 0), (10, 0)]])
+        self.assertIsNotNone(res["rings"][0])
+        self.assertEqual(len(res["rings"][0]), 2)
+
+    def test_shared_segment_stays_shared(self):
+        """Общий участок двух линий прореживается один раз."""
+        shared = [(0, 0), (2, 0.4), (4, -0.3), (6, 0.2), (8, 0)]
+        first = shared + [(10, 3)]
+        second = shared + [(10, -3)]
+        res = self.simplify([first, second], tolerance=0.5)
+        a = [(round(p[0], 9), round(p[1], 9)) for p in res["rings"][0] if p[0] <= 8]
+        b = [(round(p[0], 9), round(p[1], 9)) for p in res["rings"][1] if p[0] <= 8]
+        self.assertEqual(a, b, "Общий участок разошёлся")
+
+    def test_smoothing_keeps_endpoints_and_junction(self):
+        res = self.simplify(self.network(), smooth=2)
+        for ring in res["rings"]:
+            pts = [(round(p[0], 9), round(p[1], 9)) for p in ring]
+            self.assertIn((10.0, -0.2), pts)
+        self.assertEqual((round(res["rings"][1][-1][0], 9),
+                          round(res["rings"][1][-1][1], 9)), (14.0, 10.0))
+
+    def test_vertices_are_reduced_on_lines(self):
+        rings = self.network()
+        res = self.simplify(rings, tolerance=1.0)
+        self.assertLess(res["stats"]["vertices_out"],
+                        res["stats"]["vertices_in"])
+
+    def test_rings_and_lines_can_be_mixed(self):
+        """В одном вызове могут идти и кольца, и линии."""
+        ring = [(0, 0), (10, 0), (10, 10), (0, 10)]
+        line = [(20, 0), (25, 0.4), (30, 0)]
+        res = simplify_topology([ring, line], tolerance=0.5,
+                                closed=[True, False])
+        self.assertGreaterEqual(len(res["rings"][0]), 3)
+        self.assertEqual((res["rings"][1][0][0], res["rings"][1][0][1]), (20, 0))
+        self.assertEqual((res["rings"][1][-1][0], res["rings"][1][-1][1]), (30, 0))

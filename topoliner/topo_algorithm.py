@@ -35,7 +35,7 @@ from qgis.PyQt.QtCore import QVariant
 
 from .help_texts import help_for
 from .i18n import tr
-from .branding import banner, help_footer
+from .branding import banner, help_footer, help_url
 from .topo_core import (
     MODE_BOTH,
     MODE_INSERT,
@@ -188,7 +188,7 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
         return "topologyclean"
 
     def displayName(self):
-        return tr("1.03 Топологическая сшивка (узлы и вершины)")
+        return tr("1.05 Сшивка узлов и вершин")
 
     def group(self):
         return tr("1. Топология")
@@ -198,6 +198,9 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
 
     def createInstance(self):
         return TopologyCleanAlgorithm()
+
+    def helpUrl(self):
+        return help_url()
 
     def shortHelpString(self):
         return help_for("topologyclean") + help_footer()
@@ -267,7 +270,7 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
         )
         p_prio.setHelp(
             "Определяет, чьи вершины остаются на месте при слиянии.\n"
-            "Обычно правильнее оставить на месте крупный объект,\n"
+            "Обычно на месте оставляют крупный объект,\n"
             "а мелкий подтянуть к нему."
         )
         self.addParameter(p_prio)
@@ -382,7 +385,7 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
 
         # ── Чтение и разбор ───────────────────────────────────────────────
         # Инструменты топологии обязаны принимать некорректную геометрию:
-        # именно её они и ищут. Иначе один плохой объект валит весь прогон.
+        # именно её они и ищут. Иначе один такой объект валит весь прогон.
         context.setInvalidGeometryCheck(QgsFeatureRequest.GeometryNoCheck)
         feedback.pushInfo(banner())
         feedback.pushInfo(tr("Чтение слоя..."))
@@ -707,7 +710,7 @@ class InsertNodesAlgorithm(QgsProcessingAlgorithm):
         return "insertnodes"
 
     def displayName(self):
-        return tr("1.05 Вставить недостающие узлы")
+        return tr("1.06 Вставка недостающих узлов")
 
     def group(self):
         return tr("1. Топология")
@@ -717,6 +720,9 @@ class InsertNodesAlgorithm(QgsProcessingAlgorithm):
 
     def createInstance(self):
         return InsertNodesAlgorithm()
+
+    def helpUrl(self):
+        return help_url()
 
     def shortHelpString(self):
         return help_for("insertnodes") + help_footer()
@@ -777,7 +783,7 @@ class InsertNodesAlgorithm(QgsProcessingAlgorithm):
         with_z = QgsWkbTypes.hasZ(wkb)
 
         # Инструменты топологии обязаны принимать некорректную геометрию:
-        # именно её они и ищут. Иначе один плохой объект валит весь прогон.
+        # именно её они и ищут. Иначе один такой объект валит весь прогон.
         context.setInvalidGeometryCheck(QgsFeatureRequest.GeometryNoCheck)
         feedback.pushInfo(banner())
         feedback.pushInfo(tr("Чтение слоя..."))

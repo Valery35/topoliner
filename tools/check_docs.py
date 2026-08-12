@@ -16,8 +16,8 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 PAIRS = [("README.md", "README.en.md"),
-         ("MANUAL.md", "MANUAL.en.md"),
-         ("DETAILS.md", "DETAILS.en.md")]
+         ("doc/MANUAL.md", "doc/MANUAL.en.md"),
+         ("doc/DETAILS.md", "doc/DETAILS.en.md")]
 
 # Подпись ссылки на русскую версию в английском файле кириллицей допустима.
 ALLOWED_CYRILLIC = ("Русская версия",)
@@ -31,15 +31,20 @@ def main():
             if not os.path.exists(os.path.join(ROOT, name)):
                 problems.append("нет файла %s" % name)
 
-    for name in os.listdir(ROOT):
-        if not name.endswith(".md"):
-            continue
+    documents = [n for n in os.listdir(ROOT) if n.endswith(".md")]
+    doc_dir = os.path.join(ROOT, "doc")
+    if os.path.isdir(doc_dir):
+        documents += [os.path.join("doc", n) for n in os.listdir(doc_dir)
+                      if n.endswith(".md")]
+
+    for name in documents:
         path = os.path.join(ROOT, name)
         with open(path, encoding="utf-8") as fh:
             text = fh.read()
 
+        base = os.path.dirname(os.path.join(ROOT, name))
         for link in re.findall(r"\[[^\]]*\]\(([^)#:]+\.md)\)", text):
-            if not os.path.exists(os.path.join(ROOT, link)):
+            if not os.path.exists(os.path.join(base, link)):
                 problems.append("%s ссылается на несуществующий %s" % (name, link))
 
         if name.endswith(".en.md"):
@@ -59,9 +64,9 @@ def main():
             ru_text = fh.read()
         with open(en_path, encoding="utf-8") as fh:
             en_text = fh.read()
-        if en not in ru_text:
+        if os.path.basename(en) not in ru_text:
             problems.append("%s не ссылается на %s" % (ru, en))
-        if ru not in en_text:
+        if os.path.basename(ru) not in en_text:
             problems.append("%s не ссылается на %s" % (en, ru))
 
     if problems:

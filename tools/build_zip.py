@@ -38,6 +38,20 @@ def check_license():
         raise SystemExit("LICENSE в корне и в папке плагина различаются")
 
 
+def check_manual():
+    """
+    Руководство обязано лежать внутри папки плагина: кнопка справки
+    открывает его у того, кто поставил плагин из ZIP, а не из репозитория.
+    """
+    doc = os.path.join(ROOT, PLUGIN, "doc")
+    missing = [name for name in ("Topoliner.pdf", "Topoliner_en.pdf")
+               if not os.path.exists(os.path.join(doc, name))]
+    if missing:
+        raise SystemExit(
+            "Нет руководства: %s. Запустите tools/make_figures.py "
+            "и tools/build_manual.py" % ", ".join(missing))
+
+
 def read_version():
     path = os.path.join(ROOT, PLUGIN, "metadata.txt")
     with open(path, encoding="utf-8") as fh:
@@ -74,6 +88,7 @@ def build(target, with_tests):
 
 def main():
     check_license()
+    check_manual()
     version = read_version()
     if os.path.isdir(DIST):
         shutil.rmtree(DIST)

@@ -21,6 +21,11 @@ topo_checks
 import math
 
 try:  # внутри плагина QGIS
+    from .i18n import tr
+except ImportError:  # headless-тесты
+    from i18n import tr
+
+try:  # внутри плагина QGIS
     from .topo_core import (
         MODE_BOTH,
         MODE_INSERT,
@@ -105,7 +110,7 @@ def overlap_is_debris(backend, inter, area_threshold, tolerance):
     """
     Мусорное ли перекрытие.
 
-    Площадь плохой критерий: полоса шириной с допуск и длиной в десятки метров
+    Площадь здесь не работает: полоса шириной с допуск и длиной в десятки метров
     наберёт сотню квадратных единиц, оставаясь при этом следствием смещения
     вершин, а не спором двух объектов за площадь. Решает эффективная ширина,
     удвоенная площадь на периметр. Узкая полоса это мусор при любой длине,
@@ -244,7 +249,7 @@ def check_items(backend, items, tolerance, area_threshold,
     """
     items: список (fid, geom). Геометрия не изменяется.
 
-    cavity_area  площадь, начиная с которой полость считается законной
+    cavity_area  площадь, начиная с которой полость не считается щелью
                  и находкой не является: целик, озеро, незакартированный
                  участок. Ноль отключает проверку. Смысл в том, что мелкая
                  дыра в покрытии это дефект, а очень крупная почти всегда
@@ -263,7 +268,7 @@ def check_items(backend, items, tolerance, area_threshold,
     total = max(1, len(items))
     for i, (fid, g) in enumerate(items):
         if backend.is_empty(g):
-            findings.append(finding(LOST, SEVERITY_REVIEW, fid, note="пустая геометрия"))
+            findings.append(finding(LOST, SEVERITY_REVIEW, fid, note=tr("пустая геометрия")))
             continue
 
         valid = backend.is_valid(g)
@@ -276,7 +281,8 @@ def check_items(backend, items, tolerance, area_threshold,
         if area < area_threshold:
             findings.append(finding(
                 TINY_FEATURE, SEVERITY_REVIEW, fid, value=area,
-                xy=_safe_point(backend, g)))
+                xy=_safe_point(backend, g),
+                note=tr("площадь %.4f при пороге %.4f") % (area, area_threshold)))
 
         # Вершинные проверки идут независимо от корректности геометрии:
         # именно у некорректных объектов артефактов больше всего.
@@ -287,29 +293,35 @@ def check_items(backend, items, tolerance, area_threshold,
                 a = abs(ring_area(ext))
                 if len(parts) > 1 and a < area_threshold:
                     findings.append(finding(
-                        TINY_PART, SEVERITY_AUTO, fid, value=a, xy=ext[0]))
+                        TINY_PART, SEVERITY_AUTO, fid, value=a, xy=ext[0],
+                        note=tr("часть площадью %.4f из %d") % (a, len(parts))))
                 w = ring_width(ext)
                 if a >= area_threshold and w < tolerance:
                     findings.append(finding(
                         SLIVER, SEVERITY_REVIEW, fid, value=w, xy=ext[0],
-                        note="эффективная ширина меньше допуска"))
+                        note=tr("эффективная ширина меньше допуска")))
                 for inner in rings[1:]:
                     ai = abs(ring_area(inner))
                     if ai < area_threshold:
                         findings.append(finding(
-                            TINY_HOLE, SEVERITY_AUTO, fid, value=ai, xy=inner[0]))
+                            TINY_HOLE, SEVERITY_AUTO, fid, value=ai, xy=inner[0],
+                            note=tr("дыра площадью %.4f при пороге %.4f")
+                                 % (ai, area_threshold)))
                 for ring in rings:
                     _, dups = drop_repeated_vertices(ring, True, tolerance=1e-9)
                     if dups:
                         findings.append(finding(
-                            DUP_VERTEX, SEVERITY_AUTO, fid, value=dups, xy=ring[0]))
+                            DUP_VERTEX, SEVERITY_AUTO, fid, value=dups, xy=ring[0],
+                            note=tr("вершин подряд в одной точке: %d") % dups))
                     _, spikes = remove_spikes(ring, True, spike_angle)
                     if spikes:
                         findings.append(finding(
-                            SPIKE, SEVERITY_AUTO, fid, value=spikes, xy=ring[0]))
+                            SPIKE, SEVERITY_AUTO, fid, value=spikes, xy=ring[0],
+                            note=tr("разворотов границы назад: %d") % spikes))
                     for pt in self_touch_points(ring, True):
                         findings.append(finding(
-                            SELF_TOUCH, SEVERITY_REVIEW, fid, value=1, xy=pt))
+                            SELF_TOUCH, SEVERITY_REVIEW, fid, value=1, xy=pt,
+                            note=tr("кольцо проходит через точку дважды")))
         if i % 200 == 0:
             tick(0.35 * i / total)
     tick(0.35)
@@ -344,7 +356,8 @@ def check_items(backend, items, tolerance, area_threshold,
                 if backend.equals(g, h):
                     findings.append(finding(
                         DUPLICATE, SEVERITY_REVIEW, fids[i], fids[j],
-                        value=backend.area(g), xy=_safe_point(backend, g)))
+                        value=backend.area(g), xy=_safe_point(backend, g),
+                        note=tr("геометрии совпадают, атрибуты могут различаться")))
                     continue
                 inter = backend.intersection(g, h)
                 a = backend.area(inter)
@@ -353,13 +366,15 @@ def check_items(backend, items, tolerance, area_threshold,
                 if backend.contains(g, h) or backend.contains(h, g):
                     findings.append(finding(
                         NESTED, SEVERITY_REVIEW, fids[i], fids[j], value=a,
-                        xy=_safe_point(backend, inter)))
+                        xy=_safe_point(backend, inter),
+                        note=tr("один объект целиком внутри другого")))
                     continue
                 debris = overlap_is_debris(backend, inter, area_threshold, tolerance)
                 findings.append(finding(
                     OVERLAP, SEVERITY_AUTO if debris else SEVERITY_REVIEW,
                     fids[i], fids[j], value=a, xy=_safe_point(backend, inter),
-                    note="полоса шириной меньше допуска" if debris else ""))
+                                        note=(tr("полоса шириной меньше допуска") if debris
+                          else tr("перекрытие шире допуска, спор за площадь"))))
             if i % 200 == 0:
                 tick(0.35 + 0.3 * i / total)
     tick(0.65)
@@ -376,7 +391,8 @@ def check_items(backend, items, tolerance, area_threshold,
                     continue
                 sev = SEVERITY_AUTO if a < area_threshold else SEVERITY_REVIEW
                 findings.append(finding(
-                    GAP, sev, value=a, xy=_safe_point(backend, hole)))
+                    GAP, sev, value=a, xy=_safe_point(backend, hole),
+                    note=tr("дыра в объединении покрытия площадью %.4f") % a))
     tick(0.85)
 
     # ── Несогласованные узлы ─────────────────────────────────────────────
@@ -398,11 +414,15 @@ def check_items(backend, items, tolerance, area_threshold,
             on_edge_eps = max(1e-9, tolerance * 1e-6)
             for x, y, kind, dist, ring_idx in probe["events"]:
                 if kind == "insert":
+                    on_edge = dist <= on_edge_eps
                     findings.append(finding(
-                        ON_EDGE if dist <= on_edge_eps else UNSNAPPED,
+                        ON_EDGE if on_edge else UNSNAPPED,
                         SEVERITY_AUTO,
                         owner[ring_idx] if ring_idx < len(owner) else None,
-                        value=dist, xy=(x, y)))
+                        value=dist, xy=(x, y),
+                        note=(tr("границы совпадают геометрически, узла нет")
+                              if on_edge
+                              else tr("вершина в %.4f от ребра соседа") % dist)))
     tick(1.0)
 
     summary = summarize(findings)
@@ -460,7 +480,7 @@ DEFAULT_OPTIONS = {
     "fill_gaps": True,          # мелкие щели покрытия
     "drop_tiny_features": False,  # удаление микрообъектов целиком
     "protect_narrow": True,     # не изменять объекты уже допуска
-    "cavity_area": 0.0,         # площадь законной полости, ноль отключает
+    "cavity_area": 0.0,         # порог площади полости, ноль отключает
     "overlap_winner": "larger",   # larger или first
     "max_area_loss": 0.25,      # доля площади, потеря которой отменяет правку
 }
@@ -605,8 +625,8 @@ def fix_items(backend, items, tolerance, area_threshold, options=None, progress=
                 left.append(finding(
                     INVALID, SEVERITY_REVIEW, fids[i], value=loss,
                     xy=_safe_point(backend, g),
-                    note="сшивка испортила объект, исправление не помогло, "
-                         "возвращена исходная геометрия"))
+                    note=tr("сшивка испортила объект, исправление не помогло, "
+                         "возвращена исходная геометрия")))
             else:
                 g = fixed
                 stats["made_valid"] += 1
@@ -625,7 +645,7 @@ def fix_items(backend, items, tolerance, area_threshold, options=None, progress=
                 left.append(finding(
                     TINY_FEATURE, SEVERITY_REVIEW, fids[i], value=backend.area(g),
                     xy=_safe_point(backend, g),
-                    note="объект мельче порога, удаление не выполнялось"))
+                    note=tr("объект мельче порога, удаление не выполнялось")))
     tick(0.6)
 
     # ── Шаг 6. Перекрытия ────────────────────────────────────────────────
@@ -658,14 +678,14 @@ def fix_items(backend, items, tolerance, area_threshold, options=None, progress=
                         DUPLICATE if backend.equals(a, b) else NESTED,
                         SEVERITY_REVIEW, fids[i], fids[j], value=area,
                         xy=_safe_point(backend, inter),
-                        note="совпадение или вложение решается человеком"))
+                        note=tr("совпадение или вложение решается человеком")))
                     continue
                 if not overlap_is_debris(backend, inter, area_threshold, tolerance):
                     stats["overlaps_left"] += 1
                     left.append(finding(
                         OVERLAP, SEVERITY_REVIEW, fids[i], fids[j], value=area,
                         xy=_safe_point(backend, inter),
-                        note="перекрытие шире допуска, это спор за площадь"))
+                        note=tr("перекрытие шире допуска, это спор за площадь")))
                     continue
                 # Мусорное перекрытие: вычитаем у проигравшего.
                 if opt["overlap_winner"] == "first":
@@ -681,7 +701,7 @@ def fix_items(backend, items, tolerance, area_threshold, options=None, progress=
                     left.append(finding(
                         OVERLAP, SEVERITY_REVIEW, fids[i], fids[j], value=area,
                         xy=_safe_point(backend, inter),
-                        note="вычитание съедало слишком много площади"))
+                        note=tr("вычитание съедало слишком много площади")))
                     continue
                 parts_keep = [p for p in backend.parts(cut)
                               if backend.area(p) >= area_threshold]
@@ -712,7 +732,7 @@ def fix_items(backend, items, tolerance, area_threshold, options=None, progress=
                         left.append(finding(
                             GAP, SEVERITY_REVIEW, value=area,
                             xy=_safe_point(backend, hole),
-                            note="щель крупнее порога, не заполнялась"))
+                            note=tr("щель крупнее порога, не заполнялась")))
                         continue
                     # Щель отходит соседу с наибольшей общей границей.
                     hb = backend.boundary(hole)
@@ -733,7 +753,7 @@ def fix_items(backend, items, tolerance, area_threshold, options=None, progress=
                         stats["gaps_left"] += 1
                         left.append(finding(
                             GAP, SEVERITY_REVIEW, value=area,
-                            xy=_safe_point(backend, hole), note="сосед не найден"))
+                            xy=_safe_point(backend, hole), note=tr("сосед не найден")))
                         continue
                     merged_geom = backend.polygonal_only(
                         backend.union_all([out[best], hole]))
@@ -771,7 +791,7 @@ def fix_items(backend, items, tolerance, area_threshold, options=None, progress=
                 left.append(finding(
                     LOST, SEVERITY_REVIEW, fids[i],
                     xy=_safe_point(backend, geoms[i]),
-                    note="объект исчез при исправлении"))
+                    note=tr("объект исчез при исправлении")))
             new_items.append((fids[i], None))
         else:
             stats["area_after"] += backend.area(g)
@@ -833,7 +853,7 @@ def _group_parts(backend, parts, max_gap):
 
 
 def check_assembly(backend, items, area_threshold=0.0, max_gap=0.0,
-                   ignore_holes=False, progress=None):
+                   ignore_holes=False, is_line=False, progress=None):
     """
     Проверяет, собирается ли каждая группа объектов в одно целое тело.
 
@@ -848,12 +868,15 @@ def check_assembly(backend, items, area_threshold=0.0, max_gap=0.0,
     но при сборке группы он разрезает её на части либо становится кольцом.
 
     max_gap      части, отстоящие от группы дальше этого расстояния, считаются
-                 законно отдельными телами и находкой не являются. Ноль означает,
+                 отдельными телами и находкой не являются. Ноль означает,
                  что группа обязана быть цельной. Значение нужно для данных,
                  где одно значение атрибута описывает несколько разнесённых
                  тел: полигоны изолиний, участки одного типа, острова.
     ignore_holes внутренние кольца не считаются нарушением. Нужно там, где
-                 полость внутри тела законна по смыслу.
+                 полость внутри тела входит в замысел.
+    is_line      линейный слой. Вопрос тот же, собирается ли группа в одно
+                 связное тело, но внутренних колец у линий не бывает,
+                 и мерой служит длина, а не площадь
 
     Возвращает (findings, summary_by_group).
     """
@@ -869,33 +892,41 @@ def check_assembly(backend, items, area_threshold=0.0, max_gap=0.0,
 
     for n, (key, members) in enumerate(sorted(groups.items(), key=lambda kv: str(kv[0]))):
         merged = backend.union_all([g for _fid, g in members])
-        parts = backend.parts(merged)
-        parts.sort(key=lambda p: -backend.area(p))
+        if is_line:
+            # Объединение оставляет участки раздельными, поэтому смежные
+            # склеиваются в непрерывные цепи: вопрос в связности, а не
+            # в числе исходных отрезков.
+            parts = backend.line_parts(backend.merge_lines(merged))
+            parts.sort(key=lambda p: -backend.length(p))
+        else:
+            parts = backend.parts(merged)
+            parts.sort(key=lambda p: -backend.area(p))
 
         holes = 0
         splits = 0
 
         # Части разбиваются на тела: две части принадлежат одному телу,
         # если расстояние между ними не больше max_gap. Разрывом считается
-        # только разделение внутри тела, разные тела законны.
+        # только разделение внутри тела, разные тела нарушением не являются.
         bodies = _group_parts(backend, parts, max_gap)
         separate = len(bodies) - 1 if len(bodies) > 1 else 0
 
+        measure = backend.length if is_line else backend.area
         for body in bodies:
             if len(body) < 2:
                 continue
-            ordered = sorted(body, key=lambda p: -backend.area(p))
+            ordered = sorted(body, key=lambda p: -measure(p))
             for extra in ordered[1:]:
                 gap = min(
                     (backend.distance(extra, other) for other in body if other is not extra),
                     default=0.0)
                 splits += 1
                 findings.append(finding(
-                    GROUP_SPLIT, SEVERITY_REVIEW, value=backend.area(extra),
+                    GROUP_SPLIT, SEVERITY_REVIEW, value=measure(extra),
                     xy=_safe_point(backend, extra), key=key,
-                    note="разрыв до ближайшей части %.4f" % gap))
+                    note=tr("разрыв до ближайшей части %.4f") % gap))
 
-        if not ignore_holes:
+        if not ignore_holes and not is_line:
             for part in parts:
                 rings = backend.rings(part)
                 for inner in rings[1:]:
@@ -904,7 +935,8 @@ def check_assembly(backend, items, area_threshold=0.0, max_gap=0.0,
                     sev = SEVERITY_AUTO if a < area_threshold else SEVERITY_REVIEW
                     holes += 1
                     findings.append(finding(
-                        GROUP_HOLE, sev, value=a, xy=_safe_point(backend, hole), key=key))
+                        GROUP_HOLE, sev, value=a, xy=_safe_point(backend, hole),
+                        key=key, note=tr("полость внутри группы площадью %.4f") % a))
 
         per_group[key] = {
             "features": len(members),
@@ -916,7 +948,7 @@ def check_assembly(backend, items, area_threshold=0.0, max_gap=0.0,
             "splits": splits,
             "separate": separate,
             "holes": holes,
-            "area": backend.area(merged),
+            "area": backend.length(merged) if is_line else backend.area(merged),
         }
         if progress and n % 20 == 0:
             progress(n / total)

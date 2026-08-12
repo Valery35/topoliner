@@ -39,6 +39,14 @@ class _BackendBase:
         """Список одиночных полигонов."""
         raise NotImplementedError
 
+    def line_parts(self, g):
+        """Список одиночных линий."""
+        raise NotImplementedError
+
+    def merge_lines(self, g):
+        """Склеивает смежные линии в непрерывные цепи."""
+        raise NotImplementedError
+
     def rings(self, g):
         """Для одиночного полигона: [внешнее кольцо, дыры...] в виде списков (x, y)."""
         raise NotImplementedError
@@ -153,6 +161,27 @@ class ShapelyBackend(_BackendBase):
             return out
         return []
 
+    def merge_lines(self, g):
+        if g is None or g.is_empty:
+            return g
+        try:
+            return self._ops.linemerge(g)
+        except (ValueError, AttributeError):
+            # linemerge принимает только линейные геометрии.
+            return g
+
+    def line_parts(self, g):
+        if g is None or g.is_empty:
+            return []
+        if g.geom_type == "LineString":
+            return [g]
+        if g.geom_type in ("MultiLineString", "GeometryCollection"):
+            out = []
+            for sub in g.geoms:
+                out.extend(self.line_parts(sub))
+            return out
+        return []
+
     def rings(self, g):
         if g is None or g.is_empty or g.geom_type != "Polygon":
             return []
@@ -183,16 +212,44 @@ class ShapelyBackend(_BackendBase):
         return self._validation.make_valid(g)
 
     def intersection(self, a, b):
-        return a.intersection(b)
+        try:
+            return a.intersection(b)
+        except Exception:  # noqa: BLE001
+            # GEOS отказывается пересекать некорректную геометрию.
+            # Инструменты обязаны такую принимать, поэтому пробуем
+            # исправленную копию, а при неудаче считаем пересечение пустым.
+            return self._retry(a, b, lambda x, y: x.intersection(y))
 
     def difference(self, a, b):
-        return a.difference(b)
+        try:
+            return a.difference(b)
+        except Exception:  # noqa: BLE001
+            return self._retry(a, b, lambda x, y: x.difference(y))
+
+    def _retry(self, a, b, operation):
+        try:
+            fixed_a = self._validation.make_valid(a)
+            fixed_b = self._validation.make_valid(b)
+            return operation(fixed_a, fixed_b)
+        except Exception:  # noqa: BLE001
+            return self._Polygon()
 
     def union_all(self, geoms):
         geoms = [g for g in geoms if g is not None and not g.is_empty]
         if not geoms:
             return self._Polygon()
-        return self._ops.unary_union(geoms)
+        try:
+            return self._ops.unary_union(geoms)
+        except Exception:  # noqa: BLE001
+            fixed = []
+            for g in geoms:
+                try:
+                    fixed.append(self._validation.make_valid(g))
+                except Exception:  # noqa: BLE001
+                    continue
+            if not fixed:
+                return self._Polygon()
+            return self._ops.unary_union(fixed)
 
     def boundary(self, g):
         return g.boundary
@@ -300,6 +357,31 @@ class QgisBackend(_BackendBase):
                 == self._WkbTypes.PolygonGeometry
             ):
                 out.append(g)
+        return out
+
+    def merge_lines(self, g):
+        if g is None or g.isEmpty():
+            return g
+        merged = g.mergeLines()
+        return merged if merged is not None and not merged.isEmpty() else g
+
+    def line_parts(self, g):
+        if g is None or g.isEmpty():
+            return []
+        inner = g.constGet()
+        if inner is None:
+            return []
+        out = []
+        if self._WkbTypes.isMultiType(inner.wkbType()):
+            for i in range(inner.numGeometries()):
+                sub = inner.geometryN(i)
+                if (sub is not None
+                        and self._WkbTypes.geometryType(sub.wkbType())
+                        == self._WkbTypes.LineGeometry):
+                    out.append(self._G(sub.clone()))
+        elif (self._WkbTypes.geometryType(inner.wkbType())
+              == self._WkbTypes.LineGeometry):
+            out.append(g)
         return out
 
     def rings(self, g):

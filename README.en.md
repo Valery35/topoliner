@@ -1,6 +1,9 @@
 # Topoliner
 
-[Русская версия](README.md)
+[Русская версия](README.md) · **English**
+
+[![Install in QGIS](https://img.shields.io/badge/Install%20in%20QGIS-blue.svg)](https://plugins.qgis.org/plugins/topoliner/)
+[![Plugin page](https://img.shields.io/badge/Plugin%20page-0f766e.svg)](https://www.informpp.ru/)
 
 A QGIS plugin for bringing polygon coverages into order: topology check,
 automatic cleanup, border snapping, insertion of missing nodes, assembly check
@@ -23,12 +26,15 @@ and with guarantees.
 
 | Tool | What it does | Modifies the layer |
 |---|---|---|
-| 1.01 Topology check | Finds violations, produces a point layer and a summary | No |
-| 1.02 Topology cleanup (all at once) | Fixes what is technical debris | Yes, into a new layer |
-| 1.03 Topology snap (nodes and vertices) | Brings borders to an exact match | Yes, into a new layer |
-| 1.04 Assembly check by attribute | Checks whether groups assemble into one body | No |
-| 1.05 Insert missing nodes | Adds nodes without changing shape or area | Yes, into a new layer |
+| 1.01 Polygon topology check | Finds violations, produces a point layer and a summary | No |
+| 1.02 Line topology check | Undershoots, overshoots, dangles | No |
+| 1.03 Polygon topology cleanup | Fixes what is technical debris | Yes, into a new layer |
+| 1.04 Line topology cleanup | Fixes what is a digitising trace | Yes, into a new layer |
+| 1.05 Node and vertex snapping | Brings borders to an exact match | Yes, into a new layer |
+| 1.06 Insertion of missing nodes | Adds nodes without changing shape or area | Yes, into a new layer |
+| 1.07 Assembly check by attribute | Checks whether groups assemble into one body | No |
 | 2.01 Topology-preserving simplify | Thins vertices without tearing shared borders | Yes, into a new layer |
+| 2.02 Polygon borders as lines | Outputs borders as separate lines, each one once | No |
 
 ## The main principle
 
@@ -55,8 +61,11 @@ Restarting QGIS is not required.
 
 ## Documentation
 
-Short manual: [MANUAL.en.md](MANUAL.en.md).
-Design notes and the classification of violations: [DETAILS.en.md](DETAILS.en.md).
+The manual in PDF ships with the plugin: `topoliner/doc/Topoliner_en.pdf`.
+The **Help** button in a tool dialog opens it in the interface language.
+
+Sources: [doc/MANUAL.en.md](doc/MANUAL.en.md), design notes and the
+classification of violations - [doc/DETAILS.en.md](doc/DETAILS.en.md).
 
 ## Development
 
