@@ -23,6 +23,21 @@ SKIP_DIRS = {"__pycache__", ".pytest_cache"}
 SKIP_EXT = {".pyc", ".pyo"}
 
 
+def check_license():
+    """LICENSE обязан лежать внутри папки плагина: каталог проверяет архив,
+    а не репозиторий. Файл в корне остаётся для GitHub, и оба должны совпадать."""
+    root_file = os.path.join(ROOT, "LICENSE")
+    plugin_file = os.path.join(ROOT, PLUGIN, "LICENSE")
+    if not os.path.exists(plugin_file):
+        raise SystemExit("Нет файла %s/LICENSE, каталог отклонит архив" % PLUGIN)
+    with open(root_file, encoding="utf-8") as fh:
+        a = fh.read()
+    with open(plugin_file, encoding="utf-8") as fh:
+        b = fh.read()
+    if a != b:
+        raise SystemExit("LICENSE в корне и в папке плагина различаются")
+
+
 def read_version():
     path = os.path.join(ROOT, PLUGIN, "metadata.txt")
     with open(path, encoding="utf-8") as fh:
@@ -58,6 +73,7 @@ def build(target, with_tests):
 
 
 def main():
+    check_license()
     version = read_version()
     if os.path.isdir(DIST):
         shutil.rmtree(DIST)

@@ -56,9 +56,12 @@ def main():
     if general.get("experimental", "").lower() not in ("false", ""):
         warnings.append("плагин помечен как experimental")
 
-    for name in ("__init__.py", "metadata.txt", "icons/icon.png"):
+    for name in ("__init__.py", "metadata.txt", "icons/icon.png", "LICENSE"):
         if not os.path.exists(os.path.join(ROOT, PLUGIN, name)):
             errors.append("нет файла %s/%s" % (PLUGIN, name))
+    if not os.path.exists(os.path.join(ROOT, PLUGIN, "LICENSE")):
+        errors.append("нет файла %s/LICENSE, каталог требует его внутри архива"
+                      % PLUGIN)
     if not os.path.exists(os.path.join(ROOT, "LICENSE")):
         errors.append("нет файла LICENSE")
     else:

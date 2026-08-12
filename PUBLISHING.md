@@ -1,4 +1,4 @@
-# Публикация Topoliner 0.2.0
+# Публикация Topoliner 0.2.1
 
 Проверка готовности:
 
@@ -19,7 +19,8 @@ python tools/check_docs.py
 ## Что уже готово
 
 - [x] метаданные заполнены полностью, description и about на английском,
-- [x] лицензия GPL версии 3, файл LICENSE в корне,
+- [x] лицензия GPL версии 3: файл LICENSE и в корне репозитория,
+      и внутри папки плагина, каталог проверяет именно второй,
 - [x] в архиве одна папка верхнего уровня, совпадающая с именем плагина,
 - [x] иконка 128 на 128,
 - [x] интерфейс двуязычный, язык берётся из локали QGIS,
@@ -47,7 +48,7 @@ GitHub Desktop: **Add - Add existing repository**, указать `c:\Dev\topoli
 ```
 git init
 git add .
-git commit -m "Topoliner 0.2.0"
+git commit -m "Topoliner 0.2.1"
 git branch -M main
 git remote add origin https://github.com/Valery35/topoliner.git
 git push -u origin main
@@ -58,7 +59,7 @@ git push -u origin main
 
 ## Шаг 2. Релиз на GitHub
 
-Собрать архивы и создать релиз с тегом `v0.2.0`:
+Собрать архивы и создать релиз с тегом `v0.2.1`:
 
 ```
 python tools/build_zip.py
