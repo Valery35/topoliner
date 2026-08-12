@@ -410,14 +410,17 @@ def check_items(backend, items, tolerance, area_threshold,
 
 
 def _safe_point(backend, g):
-    try:
-        return backend.centroid_xy(g)
-    except Exception:
-        try:
-            b = backend.bounds(g)
-            return (0.5 * (b[0] + b[2]), 0.5 * (b[1] + b[3]))
-        except Exception:
-            return None
+    """
+    Точка для отображения находки. Для вырожденной геометрии центроид
+    не вычисляется, поэтому есть запасной путь через центр охвата.
+    """
+    if backend.is_empty(g):
+        return None
+    point = backend.centroid_xy(g)
+    if point is not None:
+        return point
+    bounds = backend.bounds(g)
+    return (0.5 * (bounds[0] + bounds[2]), 0.5 * (bounds[1] + bounds[3]))
 
 
 def summarize(findings):

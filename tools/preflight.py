@@ -83,6 +83,19 @@ def main():
                 if not module.startswith("_"):
                     errors.append("%s: обязательный импорт %s" % (name, module))
 
+    # Каталог прогоняет код анализатором и возвращает загрузку с замечаниями.
+    # Если pyflakes установлен, ловим их здесь.
+    try:
+        import subprocess
+        out = subprocess.run(
+            [sys.executable, "-m", "pyflakes", os.path.join(ROOT, PLUGIN)],
+            capture_output=True, text=True)
+        for line in out.stdout.splitlines():
+            if line.strip():
+                warnings.append("pyflakes: " + line.strip())
+    except Exception as exc:  # noqa: BLE001
+        warnings.append("pyflakes не запустился: %s" % exc)
+
     print("Проверка готовности Topoliner %s" % general.get("version", "?"))
     if errors:
         print("\nОшибки:")

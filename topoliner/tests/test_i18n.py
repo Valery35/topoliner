@@ -200,7 +200,6 @@ class TestNothingUntranslated(unittest.TestCase):
 
     def test_every_tr_string_is_in_the_catalogue(self):
         import ast
-        import re
         missing = set()
         for path in self.source_files():
             with open(path, encoding="utf-8") as fh:
@@ -212,3 +211,67 @@ class TestNothingUntranslated(unittest.TestCase):
                         if isinstance(value, str) and value not in i18n.EN:
                             missing.add(value)
         self.assertEqual(sorted(missing), [], "Нет перевода: %r" % sorted(missing))
+
+
+class TestCodeHygiene(unittest.TestCase):
+    """Требования линтера каталога QGIS.
+
+    Каталог прогоняет код своим анализатором и возвращает загрузку
+    с замечаниями. Дешевле поймать их тестом, чем письмом модератора.
+    """
+
+    def source_files(self):
+        for name in os.listdir(PLUGIN):
+            if name.endswith(".py"):
+                yield os.path.join(PLUGIN, name)
+
+    def test_no_silent_exception_handlers(self):
+        """except с одним pass глушит и те ошибки, о которых надо знать."""
+        import ast
+        found = []
+        for path in self.source_files():
+            with open(path, encoding="utf-8") as fh:
+                tree = ast.parse(fh.read())
+            for node in ast.walk(tree):
+                if not isinstance(node, ast.Try):
+                    continue
+                for handler in node.handlers:
+                    body_is_pass = (len(handler.body) == 1
+                                    and isinstance(handler.body[0], ast.Pass))
+                    if body_is_pass and handler.type is None:
+                        found.append("%s:%d" % (os.path.basename(path),
+                                                handler.lineno))
+        self.assertEqual(found, [], "Голый except с pass: %r" % found)
+
+    def test_no_bare_except(self):
+        import ast
+        found = []
+        for path in self.source_files():
+            with open(path, encoding="utf-8") as fh:
+                tree = ast.parse(fh.read())
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Try):
+                    for handler in node.handlers:
+                        if handler.type is None:
+                            found.append("%s:%d" % (os.path.basename(path),
+                                                    handler.lineno))
+        self.assertEqual(found, [], "Голый except: %r" % found)
+
+    def test_no_duplicate_imports(self):
+        """Повторный импорт того же имени, замечание F811."""
+        import ast
+        found = []
+        for path in self.source_files():
+            with open(path, encoding="utf-8") as fh:
+                tree = ast.parse(fh.read())
+            seen = {}
+            for node in tree.body:
+                names = []
+                if isinstance(node, (ast.Import, ast.ImportFrom)):
+                    names = [a.asname or a.name for a in node.names]
+                for name in names:
+                    if name in seen:
+                        found.append("%s:%d повтор %s"
+                                     % (os.path.basename(path), node.lineno, name))
+                    seen[name] = node.lineno
+        self.assertEqual(found, [], "Дубликаты импортов: %r" % found)

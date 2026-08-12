@@ -1,35 +1,35 @@
-Дельта Topoliner 0.2.1
+Delta Topoliner 0.2.2
 
-Распаковать содержимое этого архива в корень репозитория, поверх, с заменой:
+Распаковать в корень репозитория поверх, с заменой:
 
     C:\Users\Val\Documents\GitHub\topoliner
 
-Папка .git не затрагивается: в архиве её нет и файлов из неё тоже.
+Папка .git не затрагивается.
 
-Что меняется (6 файлов):
+Что изменилось по сравнению с 0.2.1 (замечания линтера каталога):
 
-    topoliner\LICENSE          новый файл, ради него выпуск и делается:
-                               каталог QGIS проверяет содержимое архива,
-                               а не репозитория, и требует лицензию внутри
-                               папки плагина
-    topoliner\metadata.txt     версия 0.2.1
-    tools\build_zip.py         сборка не соберёт архив без LICENSE внутри
-                               плагина и сверит его с корневым
-    tools\preflight.py         та же проверка до сборки
-    tools\check_docs.py        проверка согласованности документации
-    CHANGELOG.md               запись о 0.2.1
-    PUBLISHING.md              обновлённый порядок публикации
+    убраны обработчики except Exception: pass
+    убран повторный импорт MODE_INSERT и два неиспользуемых импорта
+    добавлены тесты, которые ловят такие вещи до подачи в каталог
 
-После распаковки в GitHub Desktop:
+Файлы:
 
-    1. Убедиться, что показано 6 изменённых файлов и ветка main
-    2. Summary: Topoliner 0.2.1
-    3. Commit to main, затем Push origin
-    4. На GitHub создать релиз с тегом v0.2.1 и приложить
-       topoliner.zip и topoliner_upload.zip
-    5. На plugins.qgis.org загрузить topoliner_upload.zip
+    topoliner\LICENSE            если ещё не добавлен из дельты 0.2.1
+    topoliner\metadata.txt       версия 0.2.2
+    topoliner\branding.py
+    topoliner\geom_backend.py
+    topoliner\i18n.py
+    topoliner\topo_algorithm.py
+    topoliner\topo_checks.py
+    topoliner\audit_algorithms.py
+    topoliner\simplify_algorithm.py
+    topoliner\tests\test_i18n.py
+    tools\*.py
+    CHANGELOG.md
+    PUBLISHING.md
 
-Проверить у себя перед коммитом (необязательно, нужен Python):
+Дальше:
 
-    python tools\preflight.py
-    python tools\check_docs.py
+    1. GitHub Desktop, Summary: Topoliner 0.2.2, Commit to main, Push origin
+    2. Релиз с тегом v0.2.2, приложить topoliner.zip и topoliner_upload.zip
+    3. На plugins.qgis.org загрузить topoliner_upload.zip

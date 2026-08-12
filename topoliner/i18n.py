@@ -20,21 +20,24 @@ _language = None
 
 def _detect():
     """Двухбуквенный код языка интерфейса QGIS."""
+    value = ""
     try:
         from qgis.core import QgsSettings
-        value = QgsSettings().value("locale/userLocale", "")
-        if not value:
-            override = QgsSettings().value("locale/overrideFlag", False)
-            if not override:
-                import locale
-                value = locale.getdefaultlocale()[0] or ""
-        return (value or "en")[:2].lower()
-    except Exception:
+    except ImportError:
+        # QGIS недоступен: значит идут headless-тесты.
+        pass
+    else:
+        value = QgsSettings().value("locale/userLocale", "") or ""
+
+    if not value:
+        import locale
         try:
-            import locale
-            return (locale.getdefaultlocale()[0] or "en")[:2].lower()
-        except Exception:
-            return "en"
+            value = locale.getdefaultlocale()[0] or ""
+        except ValueError:
+            # Некорректная переменная окружения с локалью.
+            value = ""
+
+    return (value or "en")[:2].lower()
 
 
 def set_language(code):
@@ -319,4 +322,6 @@ EN = {
         "To understand the cause, run again with the edge intersection nodes option turned off. If the rollbacks disappear, the intersections are to blame; if they remain, the vertices on edges are.",
     "Ширина колец: минимум %.4f, медиана %.4f":
         "Ring width: minimum %.4f, median %.4f",
+    "GEOS считает геометрию некорректной, подробностей нет":
+        "GEOS considers the geometry invalid, no details available",
 }

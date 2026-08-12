@@ -338,10 +338,13 @@ class QgisBackend(_BackendBase):
         return bool(g.isGeosValid())
 
     def invalid_reason(self, g):
-        try:
-            return g.lastError() or g.validateGeometry()[0].what()
-        except Exception:
-            return "недопустимая геометрия"
+        message = g.lastError()
+        if message:
+            return message
+        errors = g.validateGeometry()
+        # Валидатор QGIS пользуется другими правилами, чем GEOS, и на
+        # некоторых геометриях не находит ничего. Это обычный случай.
+        return errors[0].what() if errors else "недопустимая геометрия"
 
     def make_valid(self, g):
         return g.makeValid()
@@ -396,5 +399,6 @@ def get_backend(name=None):
         return QgisBackend()
     try:
         return QgisBackend()
-    except Exception:
+    except ImportError:
+        # QGIS недоступен: значит идут headless-тесты.
         return ShapelyBackend()

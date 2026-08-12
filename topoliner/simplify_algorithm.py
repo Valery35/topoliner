@@ -9,7 +9,6 @@ from qgis.core import (
     QgsFeature,
     QgsFeatureRequest,
     QgsFeatureSink,
-    QgsGeometry,
     QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingException,

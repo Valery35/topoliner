@@ -39,13 +39,12 @@ from .branding import banner, help_footer
 from .topo_core import (
     MODE_BOTH,
     MODE_INSERT,
-    ring_width,
-    segment_length_stats,
-    MODE_INSERT,
     MODE_MERGE,
     Z_FROM_VERTEX,
     Z_INTERPOLATE,
     clean_topology,
+    ring_width,
+    segment_length_stats,
 )
 
 MODES = [MODE_BOTH, MODE_INSERT, MODE_MERGE]
@@ -664,27 +663,29 @@ def _invalid_reason(geom):
     правилами и на этих же данных возвращает пустой список, отчего причина
     выглядит неопределённой.
     """
-    try:
-        message = geom.lastError()
-        if message:
-            return message
-    except Exception:
-        pass
+    # lastError заполняется не всегда и в разных версиях QGIS ведёт себя
+    # по-разному, поэтому его отсутствие это обычный случай, а не сбой.
+    message = geom.lastError()
+    if message:
+        return message
+
+    # Перечисление GeometryValidationEngine появилось не во всех версиях,
+    # поэтому есть запасной путь по числовому коду движка GEOS.
     try:
         from qgis.core import Qgis
-        errors = geom.validateGeometry(Qgis.GeometryValidationEngine.Geos)
-    except Exception:
-        try:
-            errors = geom.validateGeometry(1)
-        except Exception:
-            errors = []
-    if errors:
-        try:
-            where = errors[0].where()
-            return "%s в точке %.4f %.4f" % (errors[0].what(), where.x(), where.y())
-        except Exception:
-            return errors[0].what()
-    return "GEOS считает геометрию некорректной, подробностей нет"
+        engine = Qgis.GeometryValidationEngine.Geos
+    except (ImportError, AttributeError):
+        engine = 1
+    errors = geom.validateGeometry(engine)
+
+    if not errors:
+        return tr("GEOS считает геометрию некорректной, подробностей нет")
+
+    first = errors[0]
+    if first.hasWhere():
+        where = first.where()
+        return "%s: %.4f %.4f" % (first.what(), where.x(), where.y())
+    return first.what()
 
 
 

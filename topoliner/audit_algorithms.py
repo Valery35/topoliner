@@ -10,7 +10,6 @@
 """
 
 from qgis.core import (
-    QgsExpression,
     QgsFeature,
     QgsFeatureRequest,
     QgsFeatureSink,

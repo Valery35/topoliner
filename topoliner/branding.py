@@ -29,8 +29,10 @@ def plugin_version():
                 if line.startswith("version="):
                     _version = line.split("=", 1)[1].strip()
                     break
-    except Exception:
-        pass
+    except (OSError, UnicodeDecodeError):
+        # Версия нужна только для подписи, поэтому её отсутствие не повод
+        # ронять инструмент: подпись просто выводится без номера.
+        _version = ""
     return _version
 
 
