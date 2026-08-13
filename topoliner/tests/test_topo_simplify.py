@@ -362,3 +362,92 @@ class TestLines(Base):
         self.assertGreaterEqual(len(res["rings"][0]), 3)
         self.assertEqual((res["rings"][1][0][0], res["rings"][1][0][1]), (20, 0))
         self.assertEqual((res["rings"][1][-1][0], res["rings"][1][-1][1]), (30, 0))
+
+
+class TestVisvalingam(Base):
+    """Второй метод прореживания: по площади треугольника."""
+
+    def curve(self, n=60):
+        import math
+        return [(i * 0.5, math.sin(i * 0.25) * 3) for i in range(n)]
+
+    def test_endpoints_are_kept(self):
+        from topo_simplify import visvalingam
+        pts = self.curve()
+        out = visvalingam(pts, 1.0)
+        self.assertEqual(out[0], pts[0])
+        self.assertEqual(out[-1], pts[-1])
+
+    def test_vertices_are_reduced(self):
+        from topo_simplify import visvalingam
+        pts = self.curve()
+        self.assertLess(len(visvalingam(pts, 1.0)), len(pts))
+
+    def test_stronger_tolerance_removes_more(self):
+        from topo_simplify import visvalingam
+        pts = self.curve()
+        few = len(visvalingam(pts, 4.0))
+        many = len(visvalingam(pts, 0.5))
+        self.assertLess(few, many)
+
+    def test_zero_tolerance_changes_nothing(self):
+        from topo_simplify import visvalingam
+        pts = self.curve()
+        self.assertEqual(visvalingam(pts, 0.0), pts)
+
+    def test_short_line_survives(self):
+        from topo_simplify import visvalingam
+        pts = [(0, 0), (5, 0)]
+        self.assertEqual(visvalingam(pts, 100.0), pts)
+
+    def test_shared_border_stays_identical(self):
+        """Главное свойство сохраняется при обоих методах."""
+        from topo_simplify import METHOD_VISVALINGAM
+        left, right = self.pair()
+        res = simplify_topology([left, right], tolerance=0.5,
+                                method=METHOD_VISVALINGAM)
+        l_out, r_out = res["rings"]
+        self.assertEqual(self.shared_points(l_out), self.shared_points(r_out))
+
+    def test_no_gap_or_overlap_appears(self):
+        from topo_simplify import METHOD_VISVALINGAM
+        left, right = self.pair()
+        res = simplify_topology([left, right], tolerance=0.5,
+                                method=METHOD_VISVALINGAM)
+        geoms = [self.poly(r) for r in res["rings"]]
+        merged = self.b.union_all(geoms)
+        parts = self.b.parts(merged)
+        self.assertEqual(len(parts), 1)
+        self.assertEqual(len(self.b.rings(parts[0])), 1)
+        inter = self.b.polygonal_only(self.b.intersection(geoms[0], geoms[1]))
+        self.assertLess(self.b.area(inter), 1e-9)
+
+    def test_junction_points_do_not_move(self):
+        from topo_simplify import METHOD_VISVALINGAM
+        a = [(0, 0), (10, 0), (10.3, 2.5), (10, 5), (0, 5)]
+        b = [(10, 0), (20, 0), (20, 5), (10, 5), (10.3, 2.5)]
+        c = [(0, 5), (10, 5), (20, 5), (20, 10), (0, 10)]
+        res = simplify_topology([a, b, c], tolerance=1.0,
+                                method=METHOD_VISVALINGAM)
+        for ring in res["rings"]:
+            pts = {(round(p[0], 9), round(p[1], 9)) for p in ring}
+            self.assertIn((10.0, 5.0), pts)
+
+    def test_methods_give_different_results(self):
+        """Иначе выбор метода был бы бессмысленным."""
+        from topo_simplify import METHOD_DOUGLAS, METHOD_VISVALINGAM
+        rings = [self.curve() + [(30.0, -20.0)]]
+        closed = [True]
+        a = simplify_topology(rings, tolerance=1.0, closed=closed,
+                              method=METHOD_DOUGLAS)
+        b = simplify_topology(rings, tolerance=1.0, closed=closed,
+                              method=METHOD_VISVALINGAM)
+        self.assertNotEqual(a["rings"][0], b["rings"][0])
+
+    def test_smoothing_works_with_both_methods(self):
+        from topo_simplify import METHOD_VISVALINGAM
+        left, right = self.pair()
+        res = simplify_topology([left, right], tolerance=0.5, smooth=2,
+                                method=METHOD_VISVALINGAM)
+        for ring in res["rings"]:
+            self.assertTrue(self.b.is_valid(self.poly(ring)))

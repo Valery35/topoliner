@@ -30,8 +30,14 @@ __all__ = [
     "simplify_topology",
     "build_arcs",
     "douglas_peucker",
+    "visvalingam",
     "chaikin",
+    "METHOD_DOUGLAS",
+    "METHOD_VISVALINGAM",
 ]
+
+METHOD_DOUGLAS = 0
+METHOD_VISVALINGAM = 1
 
 EPS = 1e-9
 
@@ -93,6 +99,53 @@ def douglas_peucker(points, tolerance):
             stack.append((best_i, last))
 
     return [points[i] for i in range(n) if keep[i]]
+
+
+def visvalingam(points, tolerance, min_points=2):
+    """
+    Прореживание по Висвалингаму: вершины убираются по площади треугольника,
+    образованного вершиной и двумя её соседями.
+
+    Отличие от Дугласа-Пекера в мере значимости. Тот меряет отклонение
+    от хорды и потому держит углы, но на плавной кривой оставляет заметные
+    грани. Этот меряет вклад вершины в площадь и на плавных линиях даёт
+    более естественный результат. Зато острый угол из коротких рёбер может
+    срезать, поэтому для границ с прямыми углами лучше подходит Дуглас.
+
+    Первая и последняя точки неподвижны.
+
+    tolerance здесь площадь. Пересчёт из длины делается снаружи, чтобы
+    у человека в диалоге оставалось одно поле в единицах длины.
+    """
+    n = len(points)
+    if n <= min_points or tolerance <= 0:
+        return list(points)
+
+    def area(a, b, c):
+        """Удвоенная площадь треугольника."""
+        return abs((b[0] - a[0]) * (c[1] - a[1])
+                   - (c[0] - a[0]) * (b[1] - a[1]))
+
+    alive = list(range(n))
+    # Пересчитываем площади заново после каждого удаления: список короткий,
+    # а куча с ленивым удалением усложнила бы код без выигрыша на наших
+    # размерах дуг.
+    while len(alive) > min_points:
+        worst = None
+        worst_area = None
+        for position in range(1, len(alive) - 1):
+            a = points[alive[position - 1]]
+            b = points[alive[position]]
+            c = points[alive[position + 1]]
+            value = area(a, b, c)
+            if worst_area is None or value < worst_area:
+                worst_area = value
+                worst = position
+        if worst is None or worst_area > 2.0 * tolerance:
+            break
+        alive.pop(worst)
+
+    return [points[i] for i in alive]
 
 
 def chaikin(points, iterations, closed=False):
@@ -287,7 +340,7 @@ def _arc_key(keys):
 # ────────────────────────────────────────────────────────────────────────────
 
 def simplify_topology(rings, tolerance, grid=1e-7, min_points=None, smooth=0,
-                      closed=None):
+                      closed=None, method=METHOD_DOUGLAS):
     """
     Упрощает кольца, сохраняя общие границы.
 
@@ -297,6 +350,11 @@ def simplify_topology(rings, tolerance, grid=1e-7, min_points=None, smooth=0,
     min_points  не прореживать дугу короче этого числа вершин
     closed      для каждого элемента: кольцо это или разомкнутая линия.
                 По умолчанию всё считается кольцами
+    method      метод прореживания: METHOD_DOUGLAS меряет отклонение
+                от хорды, METHOD_VISVALINGAM площадь треугольника. Допуск
+                в обоих случаях задаётся в единицах длины, для Висвалингама
+                он пересчитывается в площадь как сторона характерного
+                треугольника
     smooth      число проходов сглаживания по схеме Чайкина. Выполняется
                 после прореживания и тоже по дугам, поэтому общая граница
                 остаётся общей. Ноль отключает
@@ -331,11 +389,24 @@ def simplify_topology(rings, tolerance, grid=1e-7, min_points=None, smooth=0,
 
     # ── Прореживание каждой дуги ровно один раз ──────────────────────────
     simple = []
+    # Допуск в диалоге всегда в единицах длины: одно поле проще и в модели,
+    # и в пакетном режиме. Для Висвалингама он пересчитывается в площадь
+    # как площадь равностороннего треугольника со стороной, равной допуску.
+    #
+    # Точного соответствия между методами нет и быть не может: один меряет
+    # расстояние, другой площадь, и подходящий множитель меняется вместе
+    # с допуском. Замер на реальных дугах: при равном числе в поле
+    # Висвалингам оставляет заметно больше вершин, поэтому для сравнимого
+    # результата его допуск берут крупнее. Об этом сказано в справке.
+    area_tolerance = tolerance * tolerance * math.sqrt(3.0) / 4.0
     for arc in arcs:
         if min_points is not None and len(arc) <= min_points:
             simple.append(list(arc))
             continue
-        simple.append(douglas_peucker(arc, tolerance))
+        if method == METHOD_VISVALINGAM:
+            simple.append(visvalingam(arc, area_tolerance))
+        else:
+            simple.append(douglas_peucker(arc, tolerance))
 
     # ── Сглаживание, тоже по одному разу на дугу ─────────────────────────
     if smooth > 0:

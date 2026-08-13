@@ -444,4 +444,9 @@ EN = {
     "Внешний край покрытия:  %d": "Outer edge of the coverage: %d",
     "Краёв полостей:         %d": "Cavity edges:              %d",
     "Всего линий:            %d": "Lines in total:            %d",
+    "Метод прореживания": "Thinning method",
+    "Дуглас-Пекер (по отклонению)": "Douglas-Peucker (by deviation)",
+    "Висвалингам (по площади)": "Visvalingam (by area)",
+    "Метод: Дуглас-Пекер": "Method: Douglas-Peucker",
+    "Метод: Висвалингам": "Method: Visvalingam",
 }

@@ -307,6 +307,12 @@ Measured on a zone layer with a tolerance of 5: the topological version
 produces no violations at all, the independent one produces 46 overlaps,
 25 gaps and 189 mismatched nodes.
 
+**Two thinning methods.** Douglas-Peucker measures the deviation of a vertex
+from the chord: it holds corners, but leaves visible facets on a smooth curve.
+Visvalingam measures the area of the triangle formed by three neighbouring
+vertices: on smooth lines the result is softer, though a sharp corner made
+of short edges may be cut off.
+
 **Smoothing** cuts corners after thinning, over the same arcs, so a shared
 border stays shared. Chaikin's scheme does not leave the original line, so no
 overshoots and no new self-intersections appear. Each pass roughly doubles the
@@ -498,7 +504,8 @@ The mark **optional** means the parameter may be left empty.
 | Parameter | Default | What it sets |
 |---|---|---|
 | Input layer (polygons or lines) | - | |
-| Simplification tolerance | 1 | The maximum deviation of the simplified line from the original |
+| Thinning method | Douglas-Peucker | The other option: Visvalingam, by triangle area |
+| Simplification tolerance | 1 | The maximum deviation of the simplified line from the original. For Visvalingam it is converted into an area |
 | Do not simplify arcs shorter than, vertices | 0 | Protection for short border stretches. Zero switches it off |
 | Smoothing, number of passes | 0 | Corner cutting after thinning. Each pass roughly doubles the vertex count |
 | Precision for matching shared vertices | 0.000001 | Not a simplification tolerance. Needed when neighbours are stored with different coordinate precision |

@@ -19,6 +19,7 @@ from qgis.core import (
     QgsProcessingException,
     QgsProcessingParameterBoolean,
     QgsProcessingParameterField,
+    QgsProcessingParameterEnum,
     QgsProcessingParameterFeatureSink,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterNumber,
@@ -39,6 +40,7 @@ class TopologySimplifyAlgorithm(QgsProcessingAlgorithm):
 
     INPUT = "INPUT"
     TOLERANCE = "TOLERANCE"
+    METHOD = "METHOD"
     GRID = "GRID"
     MIN_POINTS = "MIN_POINTS"
     SMOOTH = "SMOOTH"
@@ -78,6 +80,22 @@ class TopologySimplifyAlgorithm(QgsProcessingAlgorithm):
         p.setHelp(
             "Предельное отклонение упрощённой линии от исходной.\n"
             "Ноль означает, что ничего не прореживается."
+        )
+        self.addParameter(p)
+
+        p = QgsProcessingParameterEnum(
+            self.METHOD, tr("Метод прореживания"),
+            options=[tr("Дуглас-Пекер (по отклонению)"),
+                     tr("Висвалингам (по площади)")],
+            defaultValue=0)
+        p.setHelp(
+            "Дуглас-Пекер меряет отклонение вершины от хорды: держит углы\n"
+            "и характерные изломы, но на плавной кривой оставляет грани.\n"
+            "Висвалингам меряет площадь треугольника из трёх соседних\n"
+            "вершин: на плавных линиях результат мягче, зато острый угол\n"
+            "из коротких рёбер может срезаться.\n"
+            "Для границ блоков и выработок подходит первый, для изолиний\n"
+            "и гидросети второй."
         )
         self.addParameter(p)
 
@@ -139,6 +157,7 @@ class TopologySimplifyAlgorithm(QgsProcessingAlgorithm):
         grid = self.parameterAsDouble(parameters, self.GRID, context)
         min_points = self.parameterAsInt(parameters, self.MIN_POINTS, context) or None
         smooth = self.parameterAsInt(parameters, self.SMOOTH, context)
+        method = self.parameterAsEnum(parameters, self.METHOD, context)
         names = self.parameterAsFields(parameters, self.FIELDS, context)
         keep_z = self.parameterAsBoolean(parameters, self.KEEP_Z, context)
 
@@ -200,7 +219,8 @@ class TopologySimplifyAlgorithm(QgsProcessingAlgorithm):
                 return {}
             res = simplify_topology(bucket["rings"], tolerance=tolerance,
                                     grid=grid, min_points=min_points,
-                                    smooth=smooth, closed=bucket["closed"])
+                                    smooth=smooth, closed=bucket["closed"],
+                                    method=method)
             results[key] = res["rings"]
             st = res["stats"]
             arcs_total += st["arcs"]
@@ -251,6 +271,8 @@ class TopologySimplifyAlgorithm(QgsProcessingAlgorithm):
         # ── Отчёт ─────────────────────────────────────────────────────────
         feedback.pushInfo("")
         feedback.pushInfo(tr("── Результат ──"))
+        feedback.pushInfo(
+            tr("Метод: Висвалингам") if method == 1 else tr("Метод: Дуглас-Пекер"))
         if smooth:
             feedback.pushInfo(tr("Сглаживание: проходов %d") % smooth)
         feedback.pushInfo(tr("Дуг: %d, из них общих для соседей: %d")
