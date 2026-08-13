@@ -535,3 +535,47 @@ class TestNearParallelEdges(unittest.TestCase):
         res = clean_topology(shifted, tolerance=1e-6, mode=MODE_INSERT,
                              project_onto_edge=True)
         self.assertEqual(res["stats"]["nodes_crossing"], 0)
+
+
+class TestGridOrigin(unittest.TestCase):
+    """
+    Сетки отсчитываются от угла данных, а не от начала координат.
+
+    При мелкой ячейке и координатах в миллионы метров номера ячеек иначе
+    получаются порядка десяти в двенадцатой, а такие числа Python хеширует
+    заметно медленнее коротких. На кадастровом слое это давало двукратную
+    разницу во времени.
+    """
+
+    def test_result_does_not_depend_on_the_origin(self):
+        near = [[(0, 0), (10, 0), (10, 10), (0, 10)],
+                [(10, 0), (20, 0), (20, 10), (10, 10)],
+                [(0, 10), (20, 10), (20, 20), (0, 20)]]
+        far = [[(x + 6431900.0, y + 7761800.0) for x, y in ring]
+               for ring in near]
+
+        a = clean_topology(near, tolerance=1e-6, mode=MODE_INSERT,
+                           project_onto_edge=True)
+        b = clean_topology(far, tolerance=1e-6, mode=MODE_INSERT,
+                           project_onto_edge=True)
+        self.assertEqual(a["stats"]["nodes_inserted"],
+                         b["stats"]["nodes_inserted"])
+        self.assertEqual([len(r) for r in a["rings"]],
+                         [len(r) for r in b["rings"]])
+
+    def test_vertex_grid_separates_rings(self):
+        """Ключ сетки вершин включает кольцо, чужие вершины не мешают."""
+        from topo_core import _RingVertexGrid
+        grid = _RingVertexGrid(1.0)
+        grid.add(0, 100.0, 100.0)
+        grid.add(1, 100.0, 100.0)
+        self.assertTrue(grid.has_vertex(0, 100.0, 100.0, 0.5))
+        self.assertTrue(grid.has_vertex(1, 100.0, 100.0, 0.5))
+        self.assertFalse(grid.has_vertex(2, 100.0, 100.0, 0.5))
+
+    def test_vertex_grid_works_with_large_coordinates(self):
+        from topo_core import _RingVertexGrid
+        grid = _RingVertexGrid(1e-6, 6431900.0, 7761800.0)
+        grid.add(0, 6431900.5, 7761800.5)
+        self.assertTrue(grid.has_vertex(0, 6431900.5, 7761800.5, 1e-6))
+        self.assertFalse(grid.has_vertex(0, 6431901.5, 7761800.5, 1e-6))

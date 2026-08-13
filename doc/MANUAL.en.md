@@ -541,8 +541,20 @@ SQL Server may reject it. Apply `MakeValid` on the server side when loading.
 outer edge is not a hole and is not found this way. Such gaps are closed by
 vertex snapping when their width is below the tolerance.
 
-**The layer is read into memory in full.** For layers of hundreds of thousands
-of objects, process them in parts.
+**The layer is read into memory in full.** Measured on a cadastral layer:
+11,872 objects, 15,700 rings, 742,000 vertices. Insertion of missing nodes
+takes two to three minutes, a topology check of three thousand objects takes
+about ten seconds. For layers of millions of vertices, process them in parts.
+
+**The magnitude of the coordinates affects precision.** In systems where
+coordinates run into millions of metres, such as Web Mercator, a double
+resolves about a nanometre. The edge between vertices exists as a formula,
+and the sign of the determinant that decides which side a point is on is
+computed from differences of large numbers, where the leading digits cancel.
+That is where overlaps of a few dozen square microns come from: they have
+no width, only length. The tool treats them as debris because it judges
+an overlap by width. In a local system with six-digit coordinates there is
+an order of magnitude less of this noise.
 
 **Lines have their own group 3**: check and cleanup. Lines are also accepted
 by 1.05 snapping, 1.06 node insertion, 2.01 simplification and 1.07 assembly

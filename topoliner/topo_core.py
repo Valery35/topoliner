@@ -323,23 +323,46 @@ class _RingVertexGrid:
     контур уходит и возвращается, и геометрия становится некорректной.
     """
 
-    def __init__(self, cell):
+    def __init__(self, cell, origin_x=0.0, origin_y=0.0):
         self.cell = cell if cell > 0 else 1.0
+        # Начало отсчёта сетки сдвинуто к углу данных. Иначе при ячейке
+        # в микрон и координатах в миллионы метров номера ячеек получаются
+        # порядка десяти в двенадцатой, а такие числа Python хеширует
+        # заметно медленнее коротких.
+        self.origin_x = origin_x
+        self.origin_y = origin_y
         self.cells = {}
 
     def add(self, ring_index, x, y):
-        key = (int(math.floor(x / self.cell)), int(math.floor(y / self.cell)))
-        self.cells.setdefault(key, []).append((ring_index, x, y))
+        cell = self.cell
+        key = (ring_index,
+               int((x - self.origin_x) // cell),
+               int((y - self.origin_y) // cell))
+        bucket = self.cells.get(key)
+        if bucket is None:
+            self.cells[key] = [(x, y)]
+        else:
+            bucket.append((x, y))
 
     def has_vertex(self, ring_index, x, y, radius):
-        cx = int(math.floor(x / self.cell))
-        cy = int(math.floor(y / self.cell))
+        """
+        Есть ли у этого кольца вершина ближе радиуса.
+
+        Ключ включает номер кольца, поэтому чужие вершины не просматриваются
+        вовсе: на плотных данных, где в одной ячейке лежат десятки колец,
+        это решает.
+        """
+        cell = self.cell
+        cx = int((x - self.origin_x) // cell)
+        cy = int((y - self.origin_y) // cell)
         r2 = radius * radius
+        get = self.cells.get
         for i in (cx - 1, cx, cx + 1):
             for j in (cy - 1, cy, cy + 1):
-                for ri, vx, vy in self.cells.get((i, j), ()):
-                    if ri != ring_index:
-                        continue
+                bucket = get((ring_index, i, j))
+                if not bucket:
+                    continue
+                for vx, vy in bucket:
                     dx = vx - x
                     dy = vy - y
                     if dx * dx + dy * dy <= r2:
@@ -347,24 +370,59 @@ class _RingVertexGrid:
         return False
 
 
+def _origin_of(norm):
+    """
+    Левый нижний угол охвата набора колец.
+
+    Служит началом отсчёта сеток. Иначе при мелкой ячейке и координатах
+    в миллионы метров номера ячеек получаются порядка десяти в двенадцатой,
+    а такие числа Python хеширует заметно медленнее коротких.
+
+    На вход идёт нормализованный набор: список пар из вершин и признака
+    замкнутости, где вершины бывают None у пропущенных колец.
+    """
+    min_x = min_y = None
+    for coords, _closed in norm:
+        if not coords:
+            continue
+        for point in coords:
+            x, y = point[0], point[1]
+            if min_x is None or x < min_x:
+                min_x = x
+            if min_y is None or y < min_y:
+                min_y = y
+    return (0.0 if min_x is None else min_x, 0.0 if min_y is None else min_y)
+
+
 class _SegmentGrid:
     """Сетка сегментов. Ячейка равна допуску, запрос смотрит окрестность 3x3."""
 
-    def __init__(self, cell):
+    def __init__(self, cell, origin_x=0.0, origin_y=0.0):
         self.cell = cell if cell > 0 else 1.0
+        self.origin_x = origin_x
+        self.origin_y = origin_y
         self.cells = {}
 
     def add(self, key, x1, y1, x2, y2):
-        for c in _cells_along_segment(x1, y1, x2, y2, self.cell):
-            self.cells.setdefault(c, []).append(key)
+        cells = self.cells
+        for c in _cells_along_segment(x1 - self.origin_x, y1 - self.origin_y,
+                                      x2 - self.origin_x, y2 - self.origin_y,
+                                      self.cell):
+            bucket = cells.get(c)
+            if bucket is None:
+                cells[c] = [key]
+            else:
+                bucket.append(key)
 
     def query(self, x, y):
-        cx = int(math.floor(x / self.cell))
-        cy = int(math.floor(y / self.cell))
+        cell = self.cell
+        cx = int((x - self.origin_x) // cell)
+        cy = int((y - self.origin_y) // cell)
         out = set()
+        get = self.cells.get
         for i in (cx - 1, cx, cx + 1):
             for j in (cy - 1, cy, cy + 1):
-                bucket = self.cells.get((i, j))
+                bucket = get((i, j))
                 if bucket:
                     out.update(bucket)
         return out
@@ -543,7 +601,8 @@ def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=Fals
     """
     frozen = frozen or set()
     cell = max(tolerance, _mean_segment_length(norm), 1e-9)
-    grid = _SegmentGrid(cell)
+    ox, oy = _origin_of(norm)
+    grid = _SegmentGrid(cell, ox, oy)
     segs = {}
     for ri, (coords, closed) in enumerate(norm):
         if coords is None or ri in frozen:
@@ -556,7 +615,7 @@ def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=Fals
             segs[(ri, si)] = (x1, y1, z1, x2, y2, z2)
             grid.add((ri, si), x1, y1, x2, y2)
 
-    own = _RingVertexGrid(max(tolerance, 1e-9))
+    own = _RingVertexGrid(max(tolerance, 1e-9), ox, oy)
     for ri, (coords, _closed) in enumerate(norm):
         if coords is None or ri in frozen:
             continue
@@ -775,7 +834,8 @@ def clean_topology(rings, tolerance, mode=MODE_BOTH, fixed_rings=None,
         # перестанет покрывать радиус поиска. Брать её крупнее допуска можно
         # и нужно: при мелком допуске длинное ребро иначе дробится на сотни
         # ячеек, и построение индекса становится дороже самого поиска.
-        seg_grid = _SegmentGrid(max(tolerance, _mean_segment_length(norm)))
+        ox, oy = _origin_of(norm)
+        seg_grid = _SegmentGrid(max(tolerance, _mean_segment_length(norm)), ox, oy)
         for ri, (coords, closed) in enumerate(norm):
             if coords is None or ri in frozen:
                 continue
@@ -788,7 +848,7 @@ def clean_topology(rings, tolerance, mode=MODE_BOTH, fixed_rings=None,
         tick(0.65)
 
         # Собственные вершины колец: узел не нужен там, где вершина уже есть.
-        own = _RingVertexGrid(max(tolerance, 1e-9))
+        own = _RingVertexGrid(max(tolerance, 1e-9), ox, oy)
         for ri, (coords, _closed) in enumerate(norm):
             if coords is None:
                 continue
@@ -820,13 +880,17 @@ def clean_topology(rings, tolerance, mode=MODE_BOTH, fixed_rings=None,
                     continue
                 if abs(px - x2) <= EPS and abs(py - y2) <= EPS:
                     continue
-                # Точка уже есть среди вершин этого кольца: узла достаточно.
-                if own.has_vertex(ri, px, py, tolerance):
-                    continue
+                # Порядок проверок важен для скорости. Расстояние до ребра
+                # считается по четырём умножениям, а поиск вершины в сетке
+                # смотрит девять ячеек, поэтому дешёвая проверка идёт первой:
+                # она же и отсеивает почти всё.
                 dist, t = _point_segment(px, py, x1, y1, x2, y2)
                 if dist > tolerance:
                     continue
                 if t <= 0.0 or t >= 1.0:
+                    continue
+                # Точка уже есть среди вершин этого кольца: узла достаточно.
+                if own.has_vertex(ri, px, py, tolerance):
                     continue
                 if project_onto_edge:
                     # Точка на прямой ребра: форма не меняется вовсе.
