@@ -542,9 +542,15 @@ outer edge is not a hole and is not found this way. Such gaps are closed by
 vertex snapping when their width is below the tolerance.
 
 **The layer is read into memory in full.** Measured on a cadastral layer:
-11,872 objects, 15,700 rings, 742,000 vertices. Insertion of missing nodes
-takes two to three minutes, a topology check of three thousand objects takes
-about ten seconds. For layers of millions of vertices, process them in parts.
+11,866 objects, 15,700 rings, 726,000 vertices.
+
+| Tool | Time |
+|---|---|
+| 1.01 Topology check, tolerance 2 | 51 s |
+| 1.06 Insertion of missing nodes | 78 s |
+| 2.01 Topology-preserving simplification, tolerance 5 | 6 s |
+
+For layers of millions of vertices, process them in parts.
 
 **The magnitude of the coordinates affects precision.** In systems where
 coordinates run into millions of metres, such as Web Mercator, a double

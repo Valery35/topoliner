@@ -209,6 +209,31 @@ def self_touch_points(coords, closed):
     return [k for k, v in seen.items() if v > 1]
 
 
+def _point_segment_sq(px, py, x1, y1, x2, y2):
+    """
+    Квадрат расстояния от точки до отрезка и параметр проекции t.
+
+    Квадрат, а не расстояние: в горячих циклах результат только сравнивается
+    с допуском, и корень там лишний. Извлекается он потом, у немногих
+    прошедших отбор.
+    """
+    dx = x2 - x1
+    dy = y2 - y1
+    d2 = dx * dx + dy * dy
+    if d2 <= 0.0:
+        ex = px - x1
+        ey = py - y1
+        return ex * ex + ey * ey, 0.0
+    t = ((px - x1) * dx + (py - y1) * dy) / d2
+    if t < 0.0:
+        t = 0.0
+    elif t > 1.0:
+        t = 1.0
+    ex = px - (x1 + t * dx)
+    ey = py - (y1 + t * dy)
+    return ex * ex + ey * ey, t
+
+
 def _point_segment(px, py, x1, y1, x2, y2):
     """Расстояние от точки до отрезка и параметр проекции t в диапазоне [0, 1]."""
     dx = x2 - x1
@@ -227,14 +252,22 @@ def _point_segment(px, py, x1, y1, x2, y2):
 
 
 def _cells_along_segment(x1, y1, x2, y2, cell):
-    """Ячейки регулярной сетки, которые пересекает отрезок (обход Amanatides-Woo)."""
-    cx = int(math.floor(x1 / cell))
-    cy = int(math.floor(y1 / cell))
-    ex = int(math.floor(x2 / cell))
-    ey = int(math.floor(y2 / cell))
-    yield (cx, cy)
+    """
+    Ячейки регулярной сетки, которые пересекает отрезок (обход Amanatides-Woo).
+
+    Возвращает список, а не генератор. Ячейка сетки не мельче средней длины
+    ребра, поэтому подавляющее большинство отрезков укладывается в одну-две
+    ячейки, и плата за работу генератора на каждом шаге оказывается больше
+    самого обхода.
+    """
+    cx = int(x1 // cell)
+    cy = int(y1 // cell)
+    ex = int(x2 // cell)
+    ey = int(y2 // cell)
     if cx == ex and cy == ey:
-        return
+        return [(cx, cy)]
+
+    cells = [(cx, cy)]
 
     dx = x2 - x1
     dy = y2 - y1
@@ -269,7 +302,8 @@ def _cells_along_segment(x1, y1, x2, y2, cell):
         else:
             cy += step_y
             t_max_y += t_delta_y
-        yield (cx, cy)
+        cells.append((cx, cy))
+    return cells
 
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -404,10 +438,24 @@ class _SegmentGrid:
         self.cells = {}
 
     def add(self, key, x1, y1, x2, y2):
+        cell = self.cell
+        ax = x1 - self.origin_x
+        ay = y1 - self.origin_y
+        bx = x2 - self.origin_x
+        by = y2 - self.origin_y
         cells = self.cells
-        for c in _cells_along_segment(x1 - self.origin_x, y1 - self.origin_y,
-                                      x2 - self.origin_x, y2 - self.origin_y,
-                                      self.cell):
+        # Короткое ребро укладывается в одну ячейку: обходим без вызова
+        # разбиения, на этом пути и лежит основная масса рёбер.
+        cx = int(ax // cell)
+        cy = int(ay // cell)
+        if cx == int(bx // cell) and cy == int(by // cell):
+            bucket = cells.get((cx, cy))
+            if bucket is None:
+                cells[(cx, cy)] = [key]
+            else:
+                bucket.append(key)
+            return
+        for c in _cells_along_segment(ax, ay, bx, by, cell):
             bucket = cells.get(c)
             if bucket is None:
                 cells[c] = [key]
@@ -418,14 +466,20 @@ class _SegmentGrid:
         cell = self.cell
         cx = int((x - self.origin_x) // cell)
         cy = int((y - self.origin_y) // cell)
-        out = set()
         get = self.cells.get
+        out = None
         for i in (cx - 1, cx, cx + 1):
             for j in (cy - 1, cy, cy + 1):
                 bucket = get((i, j))
-                if bucket:
+                if not bucket:
+                    continue
+                if out is None:
+                    out = set(bucket)
+                else:
                     out.update(bucket)
-        return out
+        # Пустая окрестность встречается часто, и создавать под неё множество
+        # незачем.
+        return () if out is None else out
 
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -857,6 +911,7 @@ def clean_topology(rings, tolerance, mode=MODE_BOTH, fixed_rings=None,
 
         # Кандидаты на вставку, сгруппированные по сегменту.
         inserts = {}
+        tol2 = tolerance * tolerance
         total = max(1, len(pts))
         for k, (vx, vy) in enumerate(pts.keys()):
             pz = pts[(vx, vy)]
@@ -872,26 +927,29 @@ def clean_topology(rings, tolerance, mode=MODE_BOTH, fixed_rings=None,
                 # вершина. Порог именно допуск, а не машинный эпсилон: иначе
                 # вставка порождает рёбра длиной в доли нанометра, которые
                 # ничего не выражают и мешают проверке корректности.
-                if math.hypot(px - x1, py - y1) <= tolerance:
+                # Сравнение идёт по квадратам: корень в отборе не нужен,
+                # а вызовов здесь миллионы.
+                ex = px - x1
+                ey = py - y1
+                if ex * ex + ey * ey <= tol2:
                     continue
-                if math.hypot(px - x2, py - y2) <= tolerance:
-                    continue
-                if abs(px - x1) <= EPS and abs(py - y1) <= EPS:
-                    continue
-                if abs(px - x2) <= EPS and abs(py - y2) <= EPS:
+                ex = px - x2
+                ey = py - y2
+                if ex * ex + ey * ey <= tol2:
                     continue
                 # Порядок проверок важен для скорости. Расстояние до ребра
                 # считается по четырём умножениям, а поиск вершины в сетке
                 # смотрит девять ячеек, поэтому дешёвая проверка идёт первой:
                 # она же и отсеивает почти всё.
-                dist, t = _point_segment(px, py, x1, y1, x2, y2)
-                if dist > tolerance:
+                dist2, t = _point_segment_sq(px, py, x1, y1, x2, y2)
+                if dist2 > tol2:
                     continue
                 if t <= 0.0 or t >= 1.0:
                     continue
                 # Точка уже есть среди вершин этого кольца: узла достаточно.
                 if own.has_vertex(ri, px, py, tolerance):
                     continue
+                dist = math.sqrt(dist2)
                 if project_onto_edge:
                     # Точка на прямой ребра: форма не меняется вовсе.
                     px = x1 + t * (x2 - x1)

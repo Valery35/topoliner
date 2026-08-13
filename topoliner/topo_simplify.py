@@ -205,22 +205,35 @@ def build_arcs(rings, grid=1e-7, closed=None):
     """
     if closed is None:
         closed = [True] * len(rings)
+    # ── Ключи вершин, по одному разу на вершину ──────────────────────────
+    # Раньше ключ считался заново в каждом цикле, а это два деления
+    # и два округления на вызов при полутора миллионах вызовов.
+    ring_keys = []
+    for ring in rings:
+        ring_keys.append([(round(p[0] / grid), round(p[1] / grid))
+                          for p in ring])
+
     # ── Рёбра и их владельцы ─────────────────────────────────────────────
     edge_owners = {}
     endpoints = set()
     for ri, ring in enumerate(rings):
+        keys = ring_keys[ri]
         n = len(ring)
         last = n if closed[ri] else n - 1
         if not closed[ri] and n >= 1:
-            endpoints.add(_key(ring[0][0], ring[0][1], grid))
-            endpoints.add(_key(ring[-1][0], ring[-1][1], grid))
+            endpoints.add(keys[0])
+            endpoints.add(keys[-1])
         for i in range(last):
-            a = _key(ring[i][0], ring[i][1], grid)
-            b = _key(ring[(i + 1) % n][0], ring[(i + 1) % n][1], grid)
+            a = keys[i]
+            b = keys[(i + 1) % n]
             if a == b:
                 continue
             ek = (a, b) if a <= b else (b, a)
-            edge_owners.setdefault(ek, set()).add(ri)
+            bucket = edge_owners.get(ek)
+            if bucket is None:
+                edge_owners[ek] = {ri}
+            else:
+                bucket.add(ri)
 
     # ── Степень вершины и наборы владельцев вокруг неё ────────────────────
     around = {}
@@ -276,7 +289,7 @@ def build_arcs(rings, grid=1e-7, closed=None):
 
     for ri, ring in enumerate(rings):
         n = len(ring)
-        keys = [_key(p[0], p[1], grid) for p in ring]
+        keys = ring_keys[ri]
 
         if not closed[ri]:
             # Разомкнутая линия: идём от начала к концу, разрезая на узлах.
