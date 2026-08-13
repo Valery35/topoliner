@@ -401,3 +401,38 @@ class TestFindingNotes(unittest.TestCase):
         en = {f["note"] for f in self.sample_findings() if f["note"]}
         self.assertTrue(ru)
         self.assertNotEqual(ru, en)
+
+
+class TestQgisPitfalls(unittest.TestCase):
+    """
+    Обходы особенностей QGIS, о которых легко забыть.
+
+    Предупреждение Python, выданное из фонового потока Processing, роняет
+    QGIS целиком: обработчик предупреждений собирает стек вызовов и падает
+    с нарушением доступа. Замечено на QGIS 3.44.10 LTR. Падает при этом
+    не наш код, а реакция QGIS на него, поэтому единственное лекарство -
+    не порождать предупреждений.
+    """
+
+    def source_files(self):
+        for name in os.listdir(PLUGIN):
+            if name.endswith(".py") and name != "qgis_helpers.py":
+                yield os.path.join(PLUGIN, name)
+
+    def test_parameter_as_fields_goes_through_the_helper(self):
+        found = []
+        for path in self.source_files():
+            with open(path, encoding="utf-8") as fh:
+                for number, line in enumerate(fh, 1):
+                    if "parameterAsFields" in line:
+                        found.append("%s:%d" % (os.path.basename(path), number))
+        self.assertEqual(found, [],
+                         "Прямой вызов parameterAsFields: %r" % found)
+
+    def test_helper_exists_and_handles_plain_values(self):
+        from qgis_helpers import _raw_fields
+        self.assertEqual(_raw_fields({"F": None}, "F"), [])
+        self.assertEqual(_raw_fields({"F": ""}, "F"), [])
+        self.assertEqual(_raw_fields({"F": "pl"}, "F"), ["pl"])
+        self.assertEqual(_raw_fields({"F": ["a", "b"]}, "F"), ["a", "b"])
+        self.assertEqual(_raw_fields({}, "F"), [])

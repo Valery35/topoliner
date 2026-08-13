@@ -27,6 +27,7 @@ from qgis.core import (
 )
 
 from .help_texts import help_for
+from .qgis_helpers import fields_from
 from .i18n import tr
 from qgis.PyQt.QtCore import QVariant
 
@@ -158,7 +159,7 @@ class TopologySimplifyAlgorithm(QgsProcessingAlgorithm):
         min_points = self.parameterAsInt(parameters, self.MIN_POINTS, context) or None
         smooth = self.parameterAsInt(parameters, self.SMOOTH, context)
         method = self.parameterAsEnum(parameters, self.METHOD, context)
-        names = self.parameterAsFields(parameters, self.FIELDS, context)
+        names = fields_from(self, parameters, self.FIELDS, context)
         keep_z = self.parameterAsBoolean(parameters, self.KEEP_Z, context)
 
         wkb = source.wkbType()
@@ -383,7 +384,7 @@ class BoundariesAlgorithm(QgsProcessingAlgorithm):
         if source is None:
             raise QgsProcessingException("Не удалось прочитать входной слой.")
 
-        field_names = self.parameterAsFields(parameters, self.FIELD, context)
+        field_names = fields_from(self, parameters, self.FIELD, context)
         field = field_names[0] if field_names else None
         node_eps = self.parameterAsDouble(parameters, self.NODE_EPS, context)
         grid = self.parameterAsDouble(parameters, self.GRID, context)

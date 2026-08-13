@@ -449,4 +449,26 @@ EN = {
     "Висвалингам (по площади)": "Visvalingam (by area)",
     "Метод: Дуглас-Пекер": "Method: Douglas-Peucker",
     "Метод: Висвалингам": "Method: Visvalingam",
+
+    # Отчёт вставки узлов
+    "Предельное число проходов":
+        "Maximum number of passes",
+    "Узлов вставлено всего: %d":
+        "Nodes inserted in total: %d",
+    "  на рёбрах соседей:   %d":
+        "  on neighbour edges:    %d",
+    "  в пересечениях рёбер: %d":
+        "  at edge intersections: %d",
+    "Проходов: %d":
+        "Passes: %d",
+    "Предел числа проходов достигнут, узлы могут быть ещё нужны. На согласованном покрытии хватает двух-трёх проходов. Запустите инструмент повторно по результату либо поднимите предел.":
+        "The pass limit has been reached and more nodes may still be needed. Two or three passes are enough for a consistent coverage. Run the tool again over the result or raise the limit.",
+    "Больше половины узлов пришлось на пересечения рёбер. Это признак того, что объекты слоя накладываются друг на друга, то есть слой не является единым покрытием. Посмотрите перекрытия инструментом 1.01. Если наложение входит в замысел, снимите галочку об узлах в пересечениях: тогда инструмент достроит только недостающие общие вершины.":
+        "More than half of the nodes fell on edge intersections. This means the objects of the layer overlap each other, that is the layer is not a single coverage. Look at the overlaps with tool 1.01. If the overlap is by design, clear the edge intersection option: the tool will then only add the missing shared vertices.",
+    "Вершин добавлено больше половины от исходного числа. Проверьте, то ли это, чего вы ждали.":
+        "More than half as many vertices were added as there were to begin with. Check that this is what you expected.",
+
+    # Отчёт вставки узлов,
+    "Пересечений пропущено как неустойчивые: %d":
+        "Crossings skipped as unstable: %d",
 }

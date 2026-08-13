@@ -54,6 +54,11 @@ Z_FROM_VERTEX = "vertex"
 # Порог точного совпадения координат. Меньше любого разумного допуска.
 EPS = 1e-9
 
+# Синус угла, ниже которого отрезки считаются параллельными. Один микрорадиан
+# это шесть стотысячных градуса: настоящее пересечение под таким углом
+# не встречается, а вычисляется оно неустойчиво.
+PARALLEL_SIN = 1e-6
+
 
 # ────────────────────────────────────────────────────────────────────────────
 # Вспомогательная геометрия
@@ -421,11 +426,23 @@ def _segment_crossing(x1, y1, x2, y2, x3, y3, x4, y4, near_vertex=EPS):
     Возвращает (x, y, t, u) или None. Коллинеарные и параллельные отрезки
     пропускаются: у них нет единственной точки пересечения, а перекрытие
     вдоль общей линии решается вставкой узлов по вершинам.
+
+    Параллельность проверяется по синусу угла, а не по величине
+    определителя. Определитель растёт вместе с длиной отрезков, поэтому
+    абсолютный порог при координатах в миллионы метров не отсекает ничего:
+    на кадастровом слое, где граница соседей нарисована дважды почти
+    одинаково, так проходили пересечения с углом в стотысячную долю
+    градуса. Точка их пересечения вычисляется неустойчиво, и вставленные
+    там узлы возвращались на каждом проходе чуть в стороне.
     """
     ax, ay = x2 - x1, y2 - y1
     bx, by = x4 - x3, y4 - y3
     den = ax * by - ay * bx
-    if abs(den) < 1e-15:
+    length_a = math.hypot(ax, ay)
+    length_b = math.hypot(bx, by)
+    if length_a <= 0.0 or length_b <= 0.0:
+        return None
+    if abs(den) <= PARALLEL_SIN * length_a * length_b:
         return None
     dx, dy = x3 - x1, y3 - y1
     t = (dx * by - dy * bx) / den
@@ -547,6 +564,7 @@ def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=Fals
             own.add(ri, vx, vy)
 
     inserts = {}
+    unstable = 0
     checked = set()
     for bucket in grid.cells.values():
         if len(bucket) < 2:
@@ -582,12 +600,23 @@ def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=Fals
                 else:
                     ax, ay = px, py
                     bx_, by_ = px, py
+                # Если рёбра почти параллельны, точка пересечения вычисляется
+                # неустойчиво: проекции на одно и на другое ребро расходятся
+                # намного дальше допуска. Вставка узлов в таком месте ничего
+                # не решает и повторяется на каждом проходе, каждый раз чуть
+                # в стороне, поэтому такие пересечения пропускаются.
+                # На кадастровом слое из Панорамы, где границы соседей
+                # нарисованы дважды почти одинаково, это каждое шестое
+                # пересечение, с расхождением до трёх сантиметров.
+                if math.hypot(ax - bx_, ay - by_) > tolerance:
+                    unstable += 1
+                    continue
                 if not own.has_vertex(ka[0], ax, ay, tolerance):
                     inserts.setdefault(ka, []).append((t, ax, ay, za, 0.0))
                 if not own.has_vertex(kb[0], bx_, by_, tolerance):
                     inserts.setdefault(kb, []).append((u, bx_, by_, zb, 0.0))
 
-    return _apply_inserts(norm, inserts, events, "cross")
+    return _apply_inserts(norm, inserts, events, "cross"), unstable
 
 
 def clean_topology(rings, tolerance, mode=MODE_BOTH, fixed_rings=None,
@@ -650,6 +679,7 @@ def clean_topology(rings, tolerance, mode=MODE_BOTH, fixed_rings=None,
         "nodes_crossing": 0,
         "rings_degenerate": 0,
         "rings_frozen": len(frozen),
+        "crossings_unstable": 0,
         "rings_changed": 0,
         "vertices_out": 0,
     }
@@ -719,8 +749,10 @@ def clean_topology(rings, tolerance, mode=MODE_BOTH, fixed_rings=None,
 
     # ── Шаг 2а. Узлы в точках пересечения рёбер ──────────────────────────
     if do_insert and node_crossings:
-        stats["nodes_crossing"] = _node_crossings(
+        crossing_nodes, unstable = _node_crossings(
             norm, tolerance, events, frozen, project_onto_edge)
+        stats["nodes_crossing"] = crossing_nodes
+        stats["crossings_unstable"] = unstable
         stats["nodes_inserted"] += stats["nodes_crossing"]
     tick(0.55)
 

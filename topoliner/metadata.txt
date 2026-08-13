@@ -3,7 +3,7 @@ name=Topoliner
 qgisMinimumVersion=3.16
 qgisMaximumVersion=4.99
 description=Topology check and cleanup for polygon and line layers: snapping, missing nodes, dangles and overshoots, assembly check, topology-preserving simplification
-version=0.8.0
+version=0.9.1
 author=ООО «Информ++»
 email=xbbster@gmail.com
 about=Brings polygon coverages into order. Finds topology violations and separates
@@ -26,7 +26,15 @@ icon=icons/icon.png
 experimental=False
 deprecated=False
 hasProcessingProvider=yes
-changelog=0.8.0 A second thinning method in the simplify tool: Visvalingam,
+changelog=0.9.1 Fixed: QGIS could crash when reading the grouping field
+      parameter, because of how it shows Python warnings from a worker thread.
+      0.9.0 Fixed: near-parallel edges were treated as crossings, which
+      made node insertion never converge on cadastral data.
+      0.8.2 Node insertion: nodes are reported by kind, the pass limit is
+      adjustable, and a warning tells when the layer is not a coverage.
+      0.8.1 Manual reorganised: no section numbering, the parameter table
+      of each tool now sits in that tool's own section.
+      0.8.0 A second thinning method in the simplify tool: Visvalingam,
       by triangle area, next to Douglas-Peucker.
       0.7.1 Code hygiene: exception handlers narrowed to specific errors,
       as requested by the repository linter.

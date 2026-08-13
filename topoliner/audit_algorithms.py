@@ -32,6 +32,7 @@ from qgis.PyQt.QtCore import QVariant
 
 from . import topo_checks as tc
 from .help_texts import help_for
+from .qgis_helpers import fields_from
 from .i18n import tr
 from .branding import banner, help_footer, help_url
 from .geom_backend import QgisBackend
@@ -236,7 +237,7 @@ class TopologyAuditAlgorithm(QgsProcessingAlgorithm):
                           % (len(items), tolerance, area))
 
         backend = QgisBackend()
-        names = self.parameterAsFields(parameters, self.FIELDS, context)
+        names = fields_from(self, parameters, self.FIELDS, context)
         keys = read_group_keys(source, names, feedback)
         common = dict(
             tolerance=tolerance, area_threshold=area,
@@ -452,7 +453,7 @@ class TopologyFixAlgorithm(QgsProcessingAlgorithm):
         feedback.pushInfo(tr("Объектов: %d, допуск %g, порог площади %g")
                           % (len(items), tolerance, area))
 
-        names = self.parameterAsFields(parameters, self.FIELDS, context)
+        names = fields_from(self, parameters, self.FIELDS, context)
         keys = read_group_keys(source, names, feedback)
         if keys:
             feedback.pushInfo(tr("Группировка по %s: групп %d")
@@ -663,7 +664,7 @@ class AssemblyCheckAlgorithm(QgsProcessingAlgorithm):
         source = self.parameterAsSource(parameters, self.INPUT, context)
         if source is None:
             raise QgsProcessingException("Не удалось прочитать входной слой.")
-        names = self.parameterAsFields(parameters, self.FIELDS, context)
+        names = fields_from(self, parameters, self.FIELDS, context)
         if not names:
             raise QgsProcessingException("Укажите хотя бы одно поле группировки.")
         is_line = (QgsWkbTypes.geometryType(source.wkbType())

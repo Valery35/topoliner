@@ -703,6 +703,7 @@ class InsertNodesAlgorithm(QgsProcessingAlgorithm):
     REFERENCE = "REFERENCE"
     EPS = "EPS"
     CROSSINGS = "CROSSINGS"
+    MAX_PASSES = "MAX_PASSES"
     OUTPUT = "OUTPUT"
     REPORT = "REPORT"
 
@@ -760,6 +761,18 @@ class InsertNodesAlgorithm(QgsProcessingAlgorithm):
         p.setHelp(
             "Точка пересечения лежит на обоих рёбрах, поэтому такая вставка\n"
             "тоже не меняет ни формы, ни площади."
+        )
+        self.addParameter(p)
+
+        p = QgsProcessingParameterNumber(
+            self.MAX_PASSES, tr("Предельное число проходов"),
+            type=QgsProcessingParameterNumber.Integer, defaultValue=10,
+            minValue=1, maxValue=50)
+        p.setHelp(
+            "Вставленный узел сам иногда ложится на ребро третьего объекта,\n"
+            "поэтому проходы повторяются, пока узлы находятся. На согласованном\n"
+            "покрытии хватает двух-трёх. Если предел достигнут, значит слой\n"
+            "не является покрытием: скорее всего объекты в нём накладываются."
         )
         self.addParameter(p)
 
@@ -833,13 +846,14 @@ class InsertNodesAlgorithm(QgsProcessingAlgorithm):
 
         # Вставленный узел сам может лечь на ребро третьего объекта, поэтому
         # одного прохода мало. Повторяем, пока узлы находятся.
-        MAX_PASSES = 8
+        max_passes = self.parameterAsInt(parameters, self.MAX_PASSES, context)
         current = rings
         inserted_total = 0
         crossing_total = 0
+        unstable_total = 0
         events = []
         passes = 0
-        for step in range(MAX_PASSES):
+        for step in range(max_passes):
             if feedback.isCanceled():
                 return {}
             result = clean_topology(
@@ -851,9 +865,10 @@ class InsertNodesAlgorithm(QgsProcessingAlgorithm):
             passes = step + 1
             inserted_total += added
             crossing_total += result["stats"]["nodes_crossing"]
+            unstable_total += result["stats"].get("crossings_unstable", 0)
             events.extend(result["events"])
             current = [r if r is not None else [] for r in result["rings"]]
-            feedback.setProgress(10.0 + 70.0 * (step + 1) / MAX_PASSES)
+            feedback.setProgress(10.0 + 70.0 * (step + 1) / max_passes)
             if added == 0:
                 break
             feedback.pushInfo(tr("Проход %d: узлов %d") % (passes, added))
@@ -863,6 +878,7 @@ class InsertNodesAlgorithm(QgsProcessingAlgorithm):
         stats["nodes_inserted"] = inserted_total
         stats["nodes_crossing"] = crossing_total
         stats["passes"] = passes
+        stats["crossings_unstable"] = unstable_total
         new_rings = [r if r else None for r in current]
 
         (sink, dest_id) = self.parameterAsSink(
@@ -934,13 +950,30 @@ class InsertNodesAlgorithm(QgsProcessingAlgorithm):
         feedback.setProgress(98)
         feedback.pushInfo("")
         feedback.pushInfo(tr("── Результат ──"))
-        feedback.pushInfo(tr("Узлов вставлено:      %d (из них в пересечениях рёбер: %d)")
-                          % (stats["nodes_inserted"], stats["nodes_crossing"]))
-        feedback.pushInfo(tr("Проходов до полного согласования: %d") % stats["passes"])
-        if stats["passes"] >= 8:
+        on_edge = stats["nodes_inserted"] - stats["nodes_crossing"]
+        feedback.pushInfo(tr("Узлов вставлено всего: %d") % stats["nodes_inserted"])
+        feedback.pushInfo(tr("  на рёбрах соседей:   %d") % on_edge)
+        feedback.pushInfo(tr("  в пересечениях рёбер: %d") % stats["nodes_crossing"])
+        feedback.pushInfo(tr("Проходов: %d") % stats["passes"])
+        if stats.get("crossings_unstable"):
+            feedback.pushInfo(
+                tr("Пересечений пропущено как неустойчивые: %d")
+                % stats["crossings_unstable"])
+
+        if stats["passes"] >= max_passes and stats["nodes_inserted"]:
             feedback.pushWarning(
-                tr("Достигнут предел числа проходов. Возможно, узлы ещё нужны: "
-                "запустите инструмент повторно по результату."))
+                tr("Предел числа проходов достигнут, узлы могут быть ещё нужны. "
+                   "На согласованном покрытии хватает двух-трёх проходов. "
+                   "Запустите инструмент повторно по результату либо поднимите "
+                   "предел."))
+        if stats["nodes_crossing"] > 0.5 * max(1, stats["nodes_inserted"]):
+            feedback.pushWarning(
+                tr("Больше половины узлов пришлось на пересечения рёбер. Это "
+                   "признак того, что объекты слоя накладываются друг на друга, "
+                   "то есть слой не является единым покрытием. Посмотрите "
+                   "перекрытия инструментом 1.01. Если наложение входит "
+                   "в замысел, снимите галочку об узлах в пересечениях: тогда "
+                   "инструмент достроит только недостающие общие вершины."))
         feedback.pushInfo(tr("Объектов изменено:    %d") % touched)
         feedback.pushInfo(tr("Вершин было/стало:    %d / %d") % (vertices_before, vertices_after))
 

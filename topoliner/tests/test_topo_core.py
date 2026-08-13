@@ -468,3 +468,70 @@ class TestNodeNearVertex(unittest.TestCase):
             self.assertGreater(d, 0.0)
         self.assertEqual(res["stats"]["nodes_inserted"], 1,
                          "Только средний узел действительно нужен")
+
+
+class TestNearParallelEdges(unittest.TestCase):
+    """
+    Почти параллельные рёбра пересечением не считаются.
+
+    Случай из кадастрового слоя: граница двух соседей нарисована дважды,
+    почти одинаково. Формально рёбра пересекаются под углом в стотысячную
+    долю градуса, но точка пересечения вычисляется неустойчиво, и узел
+    возвращался на каждом проходе чуть в стороне. За восемь проходов
+    на слое из 742 тысяч вершин так набегало 610 тысяч узлов.
+    """
+
+    def duplicated_border(self, drift=1e-5):
+        """Две границы одной линии, нарисованные с микронным расхождением."""
+        a = [(6431900.0, 7761800.0), (6432100.0, 7761800.0 + drift),
+             (6432100.0, 7761700.0), (6431900.0, 7761700.0)]
+        b = [(6431900.0, 7761800.0 + drift), (6432100.0, 7761800.0),
+             (6432100.0, 7761900.0), (6431900.0, 7761900.0)]
+        return [a, b]
+
+    def test_no_nodes_at_near_parallel_crossing(self):
+        rings = self.duplicated_border()
+        res = clean_topology(rings, tolerance=1e-6, mode=MODE_INSERT,
+                             project_onto_edge=True)
+        self.assertEqual(res["stats"]["nodes_crossing"], 0)
+
+    def test_it_converges(self):
+        """Раньше узлы возвращались на каждом проходе."""
+        current = self.duplicated_border()
+        counts = []
+        for _ in range(6):
+            res = clean_topology(current, tolerance=1e-6, mode=MODE_INSERT,
+                                 project_onto_edge=True)
+            counts.append(res["stats"]["nodes_inserted"])
+            current = [r for r in res["rings"]]
+            if counts[-1] == 0:
+                break
+        self.assertLessEqual(len(counts), 3, "Не сошлось: %r" % counts)
+        self.assertEqual(counts[-1], 0)
+
+    def test_real_crossing_is_still_found(self):
+        """Настоящее пересечение под заметным углом никуда не делось."""
+        a = [(0, 0), (100, 0), (100, 100), (0, 100)]
+        b = [(50, -50), (150, -50), (150, 50), (50, 50)]
+        res = clean_topology([a, b], tolerance=1e-6, mode=MODE_INSERT,
+                             project_onto_edge=True)
+        self.assertGreater(res["stats"]["nodes_crossing"], 0)
+
+    def test_shallow_but_real_crossing_is_found(self):
+        """Пологое пересечение в один градус это ещё пересечение."""
+        import math
+        angle = math.radians(1.0)
+        a = [(0, 0), (1000, 0), (1000, 200), (0, 200)]
+        b = [(0, -5), (1000, -5 + 1000 * math.tan(angle)),
+             (1000, -205), (0, -205)]
+        res = clean_topology([a, b], tolerance=1e-6, mode=MODE_INSERT,
+                             project_onto_edge=True)
+        self.assertGreater(res["stats"]["nodes_crossing"], 0)
+
+    def test_large_coordinates_do_not_defeat_the_check(self):
+        """Проверка относительная, поэтому не зависит от величины координат."""
+        rings = self.duplicated_border()
+        shifted = [[(x + 6000000.0, y + 1000000.0) for x, y in r] for r in rings]
+        res = clean_topology(shifted, tolerance=1e-6, mode=MODE_INSERT,
+                             project_onto_edge=True)
+        self.assertEqual(res["stats"]["nodes_crossing"], 0)
