@@ -310,10 +310,15 @@ class TopologyAuditAlgorithm(QgsProcessingAlgorithm):
                         rings.append([(p[0], p[1]) for p in ring])
         if rings:
             _median, edge_p05, _count = segment_length_stats(rings)
-            widths = [ring_width(ring) for ring in rings]
-            widths = [w for w in widths if w > 0.0]
+            widths = sorted(w for w in (ring_width(ring) for ring in rings)
+                            if w > 0.0)
             if widths:
-                min_width = min(widths)
+                # Не минимум, а пятый процентиль. Одно волосяное кольцо
+                # не должно диктовать допуск для всего слоя, тем более что
+                # оно и само является находкой: на кадастровом слое
+                # Чусовского района минимальная ширина составила восемь
+                # микрон, и потолок по ней получался бессмысленным.
+                min_width = widths[len(widths) // 20]
 
         fields = finding_fields()
         (sink, dest_id) = self.parameterAsSink(

@@ -330,13 +330,13 @@ that has already been accepted.
 |---|---|---|
 | Input layer (polygons or lines) | - | |
 | Tolerance (in layer CRS units) | 2 | The maximum vertex displacement |
-| Mode | merge and insert | Options: insert nodes only, merge vertices only |
+| Mode | merge vertices and insert nodes | Other options: insert nodes only, vertices then do not move; merge vertices only |
 | Reference layer, *optional* | - | Its vertices are fixed and attract the input layer. It is not modified |
 | Which object attracts which | larger attract smaller | The other option: by object order in the layer |
 | Z value of an inserted node | interpolate along the edge | The other option: take from the attracted vertex |
 | Insert nodes at edge intersections | yes | |
 | Do not modify objects narrower than the tolerance | yes | Such an object would collapse into itself, so it stays as an anchor |
-| If snapping broke the geometry | repair, otherwise restore | Other options: restore the original, leave as is |
+| If snapping broke the geometry | repair, and restore the original if that fails | Other options: restore the original geometry at once; leave as is |
 | Check geometry validity before and after | yes | |
 | Snapped layer | - | |
 | Edit points, *optional* | - | Where vertices moved and nodes were inserted |

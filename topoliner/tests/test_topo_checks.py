@@ -1164,3 +1164,32 @@ class TestToleranceHint(unittest.TestCase):
         small = [0.01, 0.02, 0.03]
         hint = tc.tolerance_hint(self.findings(small), 2.0)
         self.assertFalse(hint["censored"])
+
+
+class TestCeilingIsRobust(unittest.TestCase):
+    """
+    Потолок допуска не должен зависеть от одного вырожденного кольца.
+
+    На кадастровом слое Чусовского района нашлось шесть волосяных колец
+    шириной в микроны. По минимуму потолок получался равным трём микронам,
+    то есть бессмысленным советом для слоя масштаба 1:10 000.
+    """
+
+    def test_hairline_ring_does_not_set_the_ceiling(self):
+        from topo_core import ring_width
+        normal = [[(0, 0), (100, 0), (100, 100), (0, 100)] for _ in range(40)]
+        hairline = [(0, 0), (10, 0), (10, 1e-5), (0, 1e-5)]
+        rings = normal + [hairline]
+
+        widths = sorted(w for w in (ring_width(r) for r in rings) if w > 0)
+        by_minimum = widths[0]
+        by_percentile = widths[len(widths) // 20]
+
+        self.assertLess(by_minimum, 1e-4)
+        self.assertGreater(by_percentile, 1.0,
+                           "Процентиль не должен садиться на волосяное кольцо")
+
+    def test_hint_uses_the_value_it_is_given(self):
+        findings = [{"type": tc.UNSNAPPED, "value": 0.2}]
+        hint = tc.tolerance_hint(findings, 2.0, edge_p05=16.0, min_width=28.0)
+        self.assertAlmostEqual(hint["ceiling"], 8.0)
