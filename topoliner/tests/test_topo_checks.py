@@ -1112,3 +1112,55 @@ class TestFindingsHaveNotes(Base):
         self.assertTrue(f)
         for item in f:
             self.assertTrue(item["note"], "Находка сборки без пояснения: %r" % item)
+
+
+class TestToleranceHint(unittest.TestCase):
+    """
+    Подсказка по допуску считается из данных.
+
+    Умолчание в поле нельзя выбрать заранее: два метра разумны для
+    геомеханических зон и велики для карты масштаба 1:10 000. Замечание
+    Андрея Пирогова: значений допусков разработчики толком не описывают,
+    им всё понятно.
+    """
+
+    def findings(self, distances):
+        return [{"type": tc.UNSNAPPED, "value": d} for d in distances]
+
+    def test_returns_nothing_without_data(self):
+        self.assertIsNone(tc.tolerance_hint([], 2.0))
+        self.assertIsNone(tc.tolerance_hint(self.findings([0.0]), 2.0))
+
+    def test_quantiles(self):
+        hint = tc.tolerance_hint(self.findings([0.1] * 50 + [1.0] * 50), 2.0)
+        self.assertEqual(hint["count"], 100)
+        self.assertAlmostEqual(hint["max"], 1.0)
+
+    def test_gap_is_found_when_it_exists(self):
+        """Погрешность оцифровки и разногласие разделены пустотой."""
+        near = [0.01 + 0.001 * i for i in range(40)]
+        far = [3.0 + 0.1 * i for i in range(40)]
+        hint = tc.tolerance_hint(self.findings(near + far), 10.0)
+        self.assertIsNotNone(hint["gap_at"])
+        self.assertLess(hint["gap_at"], 1.0)
+
+    def test_no_gap_is_reported_honestly(self):
+        """Сплошное распределение: число не выдумывается."""
+        spread = [0.05 * i for i in range(1, 60)]
+        hint = tc.tolerance_hint(self.findings(spread), 10.0)
+        self.assertIsNone(hint["gap_at"])
+
+    def test_ceiling_comes_from_the_data(self):
+        hint = tc.tolerance_hint(self.findings([0.1, 0.2, 0.3]), 2.0,
+                                 edge_p05=9.0, min_width=6.0)
+        self.assertAlmostEqual(hint["ceiling"], 3.0)
+
+    def test_censoring_is_detected(self):
+        """Медиана у самого допуска означает обрезанное распределение."""
+        at_limit = [1.8, 1.9, 1.95, 1.99]
+        hint = tc.tolerance_hint(self.findings(at_limit), 2.0)
+        self.assertTrue(hint["censored"])
+
+        small = [0.01, 0.02, 0.03]
+        hint = tc.tolerance_hint(self.findings(small), 2.0)
+        self.assertFalse(hint["censored"])

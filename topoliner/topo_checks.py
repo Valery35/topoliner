@@ -465,6 +465,78 @@ def summarize(findings):
     return out
 
 
+def tolerance_hint(findings, tolerance, edge_p05=None, min_width=None):
+    """
+    Подсказка по допуску, вычисленная из самих данных.
+
+    Умолчание в поле нельзя выбрать заранее: два метра разумны для
+    геомеханических зон и велики для карты масштаба 1:10 000. Зато после
+    проверки видно распределение расхождений, и по нему можно назвать число.
+
+    Считается по находкам «вершина рядом с ребром соседа»: их value это
+    расстояние. Величина усечена сверху заданным допуском, потому что
+    дальше него проверка не смотрит, и это оговаривается отдельно.
+
+    edge_p05   пятый процентиль длины ребра, если известен
+    min_width  минимальная ширина кольца, если известна
+
+    Возвращает словарь или None, если считать не по чему.
+    """
+    distances = sorted(f["value"] for f in findings
+                       if f["type"] == UNSNAPPED and f["value"] > 0.0)
+    if not distances:
+        return None
+
+    def quantile(q):
+        return distances[min(len(distances) - 1, int(q * len(distances)))]
+
+    median = quantile(0.5)
+    p95 = quantile(0.95)
+    biggest = distances[-1]
+
+    # Медиана у самого допуска означает, что распределение обрезано:
+    # настоящие расхождения крупнее, и проверка их просто не увидела.
+    censored = median > 0.5 * tolerance
+
+    # Верхняя граница безопасного допуска: слишком крупный схлопывает
+    # короткое ребро и узкий объект.
+    limits = [value for value in (edge_p05, min_width) if value]
+    ceiling = 0.5 * min(limits) if limits else None
+
+    # Естественный порог ищется как разрыв в распределении: погрешность
+    # оцифровки и настоящее разногласие обычно разделены пустотой.
+    # Если разрыва нет, число не выдумывается: расхождения размазаны,
+    # и выбор допуска остаётся решением человека.
+    gap_at = None
+    if len(distances) >= 8:
+        best_ratio = 1.0
+        low = int(0.1 * len(distances))
+        high = int(0.9 * len(distances))
+        for i in range(max(1, low), max(2, high)):
+            before = distances[i - 1]
+            after = distances[i]
+            if before <= 0.0:
+                continue
+            ratio = after / before
+            if ratio > best_ratio:
+                best_ratio = ratio
+                gap_at = before
+        if best_ratio < 3.0:
+            gap_at = None
+
+    return {
+        "count": len(distances),
+        "median": median,
+        "p95": p95,
+        "max": biggest,
+        "gap_at": gap_at,
+        "ceiling": ceiling,
+        "censored": censored,
+        "edge_p05": edge_p05,
+        "min_width": min_width,
+    }
+
+
 # ────────────────────────────────────────────────────────────────────────────
 # Исправление
 # ────────────────────────────────────────────────────────────────────────────

@@ -37,7 +37,7 @@ from .i18n import tr
 from .branding import banner, help_footer, help_url
 from .geom_backend import QgisBackend
 from .topo_algorithm import assemble, explode
-from .topo_core import _PointGrid
+from .topo_core import _PointGrid, ring_width, segment_length_stats
 
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -113,6 +113,47 @@ def read_items(source, feedback):
         if i % 500 == 0:
             feedback.setProgress(5.0 * i / total)
     return items, originals
+
+
+def print_tolerance_hint(feedback, hint, tolerance):
+    """
+    Печатает распределение расхождений и предлагает допуск.
+
+    Умолчание в поле нельзя выбрать заранее: два метра разумны для
+    геомеханических зон и велики для карты масштаба 1:10 000. Зато после
+    проверки видно, как расхождения распределены в этом слое, и по ним
+    можно назвать число.
+    """
+    if not hint:
+        return
+    feedback.pushInfo("")
+    feedback.pushInfo(tr("── Расхождения вершин с рёбрами соседей ──"))
+    feedback.pushInfo(tr("Найдено: %d, медиана %.4f, 95 процентиль %.4f, максимум %.4f")
+                      % (hint["count"], hint["median"], hint["p95"], hint["max"]))
+    if hint["edge_p05"]:
+        feedback.pushInfo(tr("Пятый процентиль длины ребра: %.4f") % hint["edge_p05"])
+    if hint["min_width"]:
+        feedback.pushInfo(tr("Минимальная ширина объекта: %.4f") % hint["min_width"])
+    if hint["gap_at"]:
+        feedback.pushInfo(
+            tr("В распределении есть разрыв около %.4f: до него погрешность "
+               "оцифровки, за ним разногласие между источниками. Допуск "
+               "разумно взять чуть больше этой величины.") % hint["gap_at"])
+    else:
+        feedback.pushInfo(
+            tr("Разрыва в распределении нет: расхождения идут сплошь, "
+               "и естественной границы между погрешностью и разногласием "
+               "в этих данных не видно. Выбор допуска остаётся за вами."))
+    if hint["ceiling"]:
+        feedback.pushInfo(
+            tr("Выше %.4f допуск брать не следует: он схлопнет короткие рёбра "
+               "и узкие объекты.") % hint["ceiling"])
+    if hint["censored"]:
+        feedback.pushWarning(
+            tr("Медиана расхождений близка к заданному допуску. Дальше него "
+               "проверка не смотрит, поэтому распределение обрезано и "
+               "настоящие расхождения крупнее. Повторите с допуском "
+               "покрупнее, чтобы увидеть картину целиком."))
 
 
 def print_summary(feedback, summary):
@@ -257,6 +298,23 @@ class TopologyAuditAlgorithm(QgsProcessingAlgorithm):
                 backend, items,
                 progress=lambda f: feedback.setProgress(5.0 + 90.0 * f), **common)
 
+        # Ограничители допуска: слишком крупный допуск схлопывает короткие
+        # рёбра и узкие объекты. Считаются по кольцам входного слоя.
+        edge_p05 = None
+        min_width = None
+        rings = []
+        for _fid, geom in items:
+            for part in backend.parts(geom):
+                for ring in backend.rings(part):
+                    if len(ring) >= 4:
+                        rings.append([(p[0], p[1]) for p in ring])
+        if rings:
+            _median, edge_p05, _count = segment_length_stats(rings)
+            widths = [ring_width(ring) for ring in rings]
+            widths = [w for w in widths if w > 0.0]
+            if widths:
+                min_width = min(widths)
+
         fields = finding_fields()
         (sink, dest_id) = self.parameterAsSink(
             parameters, self.OUTPUT, context, fields,
@@ -269,6 +327,11 @@ class TopologyAuditAlgorithm(QgsProcessingAlgorithm):
         feedback.pushInfo("")
         feedback.pushInfo(tr("── Топология ──"))
         print_summary(feedback, summary)
+        print_tolerance_hint(
+            feedback,
+            tc.tolerance_hint(findings, tolerance,
+                              edge_p05=edge_p05, min_width=min_width),
+            tolerance)
         feedback.pushInfo("")
         feedback.pushInfo(tr("Всего находок: %d, из них чинится автоматически: %d, решать человеку: %d")
                           % (n, auto, n - auto))

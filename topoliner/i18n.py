@@ -471,4 +471,25 @@ EN = {
     # Отчёт вставки узлов,
     "Пересечений пропущено как неустойчивые: %d":
         "Crossings skipped as unstable: %d",
+
+    # Подсказка по допуску
+    "── Расхождения вершин с рёбрами соседей ──":
+        "-- Discrepancies between vertices and neighbour edges --",
+    "Найдено: %d, медиана %.4f, 95 процентиль %.4f, максимум %.4f":
+        "Found: %d, median %.4f, 95th percentile %.4f, maximum %.4f",
+    "Пятый процентиль длины ребра: %.4f":
+        "Fifth percentile of edge length: %.4f",
+    "Минимальная ширина объекта: %.4f":
+        "Minimum object width: %.4f",
+    "Допуск для этого слоя разумно взять около %.4f":
+        "A sensible tolerance for this layer is around %.4f",
+    "Медиана расхождений близка к заданному допуску. Дальше него проверка не смотрит, поэтому распределение обрезано и настоящие расхождения крупнее. Повторите с допуском покрупнее, чтобы увидеть картину целиком.":
+        "The median discrepancy is close to the tolerance given. The check does not look beyond it, so the distribution is truncated and the real discrepancies are larger. Repeat with a larger tolerance to see the whole picture.",
+
+    "В распределении есть разрыв около %.4f: до него погрешность оцифровки, за ним разногласие между источниками. Допуск разумно взять чуть больше этой величины.":
+        "There is a break in the distribution around %.4f: below it lies digitising error, above it a disagreement between sources. A sensible tolerance is slightly above that value.",
+    "Разрыва в распределении нет: расхождения идут сплошь, и естественной границы между погрешностью и разногласием в этих данных не видно. Выбор допуска остаётся за вами.":
+        "There is no break in the distribution: the discrepancies run continuously, and no natural boundary between error and disagreement is visible in this data. The choice of tolerance is yours.",
+    "Выше %.4f допуск брать не следует: он схлопнет короткие рёбра и узкие объекты.":
+        "The tolerance should not exceed %.4f: it would collapse short edges and narrow objects.",
 }

@@ -3,7 +3,7 @@ name=Topoliner
 qgisMinimumVersion=3.16
 qgisMaximumVersion=4.99
 description=Topology check and cleanup for polygon and line layers: snapping, missing nodes, dangles and overshoots, assembly check, topology-preserving simplification
-version=0.9.3
+version=0.10.0
 author=ООО «Информ++»
 email=xbbster@gmail.com
 about=Brings polygon coverages into order. Finds topology violations and separates
@@ -26,7 +26,9 @@ icon=icons/icon.png
 experimental=False
 deprecated=False
 hasProcessingProvider=yes
-changelog=0.9.3 Speed: topology check twice as fast, simplification about
+changelog=0.10.0 The topology check now prints how discrepancies are
+      distributed and what tolerance suits this layer.
+      0.9.3 Speed: topology check twice as fast, simplification about
       twice, node insertion nearly three times faster than before.
       0.9.2 Node insertion and topology check made about twice as fast
       on large layers. Manual updated with performance and precision notes.

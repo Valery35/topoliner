@@ -132,6 +132,21 @@ polygon edge, and the left one has no vertex there.](figures/missing_node_en.png
 the working list; the `auto` points do not need looking at, the cleanup tool
 will remove them.
 
+**A tolerance hint.** After the check the tool prints how the discrepancies
+are distributed in this layer: how many there are, the median, the 95th
+percentile and the maximum. If the distribution has a break, it is named:
+below it lies digitising error, above it a disagreement between sources.
+If there is no break, the tool says so instead of inventing a number.
+
+A ceiling is printed separately: the value above which the tolerance should
+not be set, because it would collapse short edges and narrow objects. It is
+computed from the fifth percentile of edge length and the minimum object
+width.
+
+If the median discrepancy turns out to be close to the tolerance given, the
+distribution is truncated: the check does not look beyond the tolerance, and
+the real discrepancies are larger. It is worth repeating with a larger one.
+
 **Two similar violations are worth telling apart.** *A vertex lies on
 a neighbour edge* means a distance of zero: the borders coincide geometrically
 but the neighbours have different vertices. That is a defect under any
