@@ -267,6 +267,31 @@ RU = {
 ),
 
 
+"coverage": (
+    "<b>2.03 Топологическая модель покрытия</b><br><br>"
+    "Раскладывает покрытие на узлы и дуги. Слой не изменяется, на выходе "
+    "два новых: точки узлов и линии дуг.<br><br>"
+    "<b>Что это такое</b>. Та самая модель, что была в ArcInfo coverage. "
+    "Полигон описывается не своей границей, а ссылками на дуги. Дуга "
+    "хранится один раз и знает, что лежит слева и справа. Правка дуги "
+    "меняет обоих соседей сразу, поэтому границам просто негде "
+    "разойтись.<br><br>"
+    "<b>Узлы</b> несут степень, то есть число сходящихся дуг. Степень 1 "
+    "это висячий конец, 2 псевдоузел, который можно убрать слиянием дуг, "
+    "3 и больше настоящее ветвление, где сходятся три и более объекта.<br><br>"
+    "<b>Дуги</b> несут номера узлов начала и конца и идентификаторы обоих "
+    "соседей: <b>left_fid</b> и <b>right_fid</b>. Для края покрытия второй "
+    "сосед равен минус единице.<br><br>"
+    "<b>Чем отличается от 2.02</b>. Инструмент 2.02 выдаёт границы для "
+    "оформления: линии с признаком того, с чем они граничат. Здесь помимо "
+    "линий выдаются узлы со степенью, и дуги привязаны к ним номерами. "
+    "Это модель для разбора связности, а не для стилизации.<br><br>"
+    "<b>Отклонение при поиске общих вершин</b>. Узлы достраиваются перед "
+    "разбором, иначе общая граница не опознаётся и участок выходит двумя "
+    "дугами. Вершины при этом не двигаются."
+),
+
+
 "topologysimplify": (
     "<b>2.01 Упрощение с сохранением общих границ</b><br><br>"
     "Прореживает вершины так, что граница, общая для двух соседей, остаётся "
@@ -572,6 +597,32 @@ EN = {
     "without a node</b>.<br><br>"
     "There is no smoothing or simplification here: tool <b>2.01</b> does "
     "that, and it works with lines."
+),
+
+"coverage": (
+    "<b>2.03 Coverage topology model</b><br><br>"
+    "Breaks a coverage into nodes and arcs. The layer is not modified, "
+    "and two new ones are produced: node points and arc lines.<br><br>"
+    "<b>What this is</b>. The model that ArcInfo coverages used. A polygon "
+    "is described not by its own border but by references to arcs. An arc "
+    "is stored once and knows what lies to its left and to its right. "
+    "Editing an arc changes both neighbours at once, so the borders have "
+    "nowhere to diverge.<br><br>"
+    "<b>Nodes</b> carry a degree, the number of arcs meeting there. Degree 1 "
+    "is a dangle, 2 is a pseudo node that can be removed by merging arcs, "
+    "3 and above is a real junction where three or more objects "
+    "meet.<br><br>"
+    "<b>Arcs</b> carry the numbers of their start and end nodes and the "
+    "identifiers of both neighbours, <b>left_fid</b> and <b>right_fid</b>. "
+    "For the edge of the coverage the second neighbour is minus one.<br><br>"
+    "<b>How it differs from 2.02</b>. Tool 2.02 outputs borders for styling: "
+    "lines with a mark of what they border on. Here, besides the lines, "
+    "nodes with degrees are produced and the arcs are tied to them by "
+    "number. This is a model for reasoning about connectivity, not for "
+    "styling.<br><br>"
+    "<b>The deviation for matching shared vertices</b>. Nodes are added "
+    "before the analysis, otherwise a shared border is not recognised and "
+    "the stretch comes out as two arcs. The vertices do not move."
 ),
 
 "topologysimplify": (

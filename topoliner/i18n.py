@@ -492,4 +492,18 @@ EN = {
         "There is no break in the distribution: the discrepancies run continuously, and no natural boundary between error and disagreement is visible in this data. The choice of tolerance is yours.",
     "Выше %.4f допуск брать не следует: он схлопнет короткие рёбра и узкие объекты.":
         "The tolerance should not exceed %.4f: it would collapse short edges and narrow objects.",
+    "Отчёт списком": "Report as a list",
+    "Отчёт записан: %s": "Report written: %s",
+    "Topoliner. Проверка топологии слоя %s":
+        "Topoliner. Topology check of layer %s",
+
+    # Топологическая модель
+    "2.03 Топологическая модель покрытия": "2.03 Coverage topology model",
+    "Узлы": "Nodes",
+    "Дуги": "Arcs",
+    "висячий": "dangle",
+    "ветвление": "junction",
+    "Узлов: %d, дуг: %d": "Nodes: %d, arcs: %d",
+    "Дуг между двумя объектами: %d": "Arcs between two objects: %d",
+    "Висячих узлов: %d, псевдоузлов: %d": "Dangling nodes: %d, pseudo nodes: %d",
 }

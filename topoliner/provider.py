@@ -11,7 +11,11 @@ from .audit_algorithms import (
     TopologyFixAlgorithm,
 )
 from .line_algorithms import LineAuditAlgorithm, LineFixAlgorithm
-from .simplify_algorithm import BoundariesAlgorithm, TopologySimplifyAlgorithm
+from .simplify_algorithm import (
+    BoundariesAlgorithm,
+    CoverageAlgorithm,
+    TopologySimplifyAlgorithm,
+)
 from .topo_algorithm import InsertNodesAlgorithm, TopologyCleanAlgorithm
 
 
@@ -29,6 +33,7 @@ class TopolinerProvider(QgsProcessingProvider):
         self.addAlgorithm(AssemblyCheckAlgorithm())       # 1.07
         self.addAlgorithm(TopologySimplifyAlgorithm())    # 2.01
         self.addAlgorithm(BoundariesAlgorithm())          # 2.02
+        self.addAlgorithm(CoverageAlgorithm())            # 2.03
 
     def id(self):
         return "topoliner"

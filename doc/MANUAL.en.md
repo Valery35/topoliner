@@ -12,6 +12,8 @@ routine of snapping a layer to itself.
 
 ## Installation
 
+Works on QGIS from 3.16 up to and including 4.0.
+
 **Plugins - Manage and Install Plugins - Install from ZIP**, choose
 `topoliner.zip`. Restarting QGIS is not required.
 
@@ -45,6 +47,7 @@ separately if needed, verify the assembly.
 | **1.07 Assembly check by attribute** | Checks whether groups assemble into one body. Polygons and lines | No |
 | **2.01 Topology-preserving simplify** | Thins vertices of polygons and lines without tearing shared borders | Yes, into a new layer |
 | **2.02 Polygon borders as lines** | Outputs borders as separate lines, each one once | No |
+| **2.03 Coverage topology model** | Breaks a coverage into nodes and arcs | No |
 
 All tools work in models and in batch mode. The input layer is never modified;
 the result always goes to a new layer.
@@ -505,6 +508,35 @@ with tool 1.01.
 
 ---
 
+## 2.03 Coverage topology model
+
+Breaks a coverage into nodes and arcs. The layer is not modified, and two new
+ones are produced: node points and arc lines.
+
+**What this is.** The model that ArcInfo coverages used. A polygon is described
+not by its own border but by references to arcs. An arc is stored once and
+knows what lies to its left and to its right. Editing an arc changes both
+neighbours at once, so the borders have nowhere to diverge.
+
+**Nodes** carry a degree, the number of arcs meeting there. Degree 1 is
+a dangle, 2 is a pseudo node, 3 and above is a real junction.
+
+**Arcs** carry the numbers of their start and end nodes and the identifiers
+of both neighbours. For the edge of the coverage the second neighbour is
+minus one.
+
+**Parameters**
+
+| Parameter | Default | What it sets |
+|---|---|---|
+| Input layer (polygons) | - | The layer is not modified |
+| Deviation when matching shared vertices | 0.000001 | Nodes are added before the analysis, the vertices do not move |
+| Precision for matching shared vertices | 0.000001 | |
+| Nodes | - | Output point layer |
+| Arcs | - | Output line layer |
+
+---
+
 ## What is handled on shared borders
 
 | Case | Result |
@@ -598,6 +630,7 @@ was found.
 
 | Field | Type | What it holds |
 |---|---|---|
+| `num` | integer | Sequential number of the finding. Matches the number in the report |
 | `type` | string | Violation code: `overlap`, `gap`, `on_edge`, `dangle` and others. Convenient for filtering |
 | `label` | string | The same in the interface language, for reading |
 | `severity` | string | `auto` - debris, the cleanup tool will fix it. `review` - the operator decides |
@@ -606,6 +639,12 @@ was found.
 | `value` | real | The measured quantity: the area of an overlap or a gap, the distance to a neighbouring line, the number of removed vertices. The meaning depends on the type |
 | `note` | string | An explanation with the measured value: how this case differs from the next one of the same type |
 | `grp` | string | The group key, if a grouping field was set |
+
+**A report as a list.** Tool 1.01 can write the findings to a text file:
+the number, what is wrong, which objects, and where exactly. The number
+matches the `num` field in the layer, so the list points to a place on the map
+and the object identifier points into the source data. The list is convenient
+to hand to whoever prepared the data.
 
 **How to style it.** A rule on `severity`: `review` in red and larger, `auto`
 small and grey. The working list is then visible at once.
@@ -628,6 +667,29 @@ Produced by **1.06**.
 |---|---|---|
 | `kind` | string | `insert` - a node on an edge, `cross` - a node at an edge intersection |
 | `dist` | real | The deviation of the vertex from the edge. Usually zero |
+
+### The nodes layer
+
+Produced by **2.03**.
+
+| Field | Type | What it holds |
+|---|---|---|
+| `node_id` | integer | Node number, referenced by arcs |
+| `degree` | integer | How many arcs meet at the node |
+| `kind` | string | Dangle at degree 1, pseudo node at 2, junction at 3 and above |
+
+### The arcs layer
+
+Produced by **2.03**.
+
+| Field | Type | What it holds |
+|---|---|---|
+| `arc_id` | integer | Arc number |
+| `from_node` | integer | Start node |
+| `to_node` | integer | End node |
+| `left_fid` | integer | The object to the left of the arc along its direction |
+| `right_fid` | integer | The object to the right, or -1 for the edge of the coverage |
+| `length` | real | Length of the arc |
 
 ### The borders layer
 
@@ -653,6 +715,23 @@ style.
 The attributes of the input layer are preserved in full. No fields are added.
 The geometry of a cleaned layer is always of multi type: a repair may split
 an object into several parts.
+
+---
+
+## Companions
+
+Three plugins solve neighbouring tasks and work together.
+
+- **[Isoliner](https://plugins.qgis.org/plugins/grid_isolines/)** - kriging,
+  contour lines and polygons, terrain hydrology, borehole sections.
+  [Source](https://github.com/Valery35/qgis-isoliner)
+- **[Isoliner3D](https://plugins.qgis.org/plugins/isoliner3d/)** - a standalone
+  3D viewer for surfaces, bed bodies, boreholes and polyhedra, with reserve
+  calculation from a block model.
+  [Source](https://github.com/Valery35/qgis-isoliner3d)
+
+Contours and borders built in Isoliner are put in order by Topoliner, and the
+result is viewed in Isoliner3D.
 
 ---
 

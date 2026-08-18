@@ -53,6 +53,21 @@ to the operator and is never fixed automatically under any settings.
 - Attributes are preserved; objects are never deleted without explicit permission.
 - Insertion of missing nodes does not change the area at all.
 
+## Companions
+
+Three plugins solve neighbouring tasks and work together.
+
+- **[Isoliner](https://plugins.qgis.org/plugins/grid_isolines/)** - kriging,
+  contour lines and polygons, terrain hydrology, borehole sections.
+  [Source](https://github.com/Valery35/qgis-isoliner)
+- **[Isoliner3D](https://plugins.qgis.org/plugins/isoliner3d/)** - a standalone
+  3D viewer for surfaces, bed bodies, boreholes and polyhedra, with reserve
+  calculation from a block model.
+  [Source](https://github.com/Valery35/qgis-isoliner3d)
+
+Contours and borders built in Isoliner are put in order by Topoliner, and the
+result is viewed in Isoliner3D.
+
 ## Installation
 
 From the QGIS plugin repository, or from a ZIP file:

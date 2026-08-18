@@ -14,6 +14,11 @@ PLUGIN_NAME = "Topoliner"
 COMPANY_URL = "https://www.informpp.ru/главная-страница/предприятиям"
 PRODUCT_URL = "https://www.informpp.ru/главная-страница/qgis-topoliner"
 
+# Спутники: три плагина решают соседние задачи и ссылаются друг на друга,
+# чтобы человек, пришедший за одним, знал про остальные.
+ISOLINER_URL = "https://plugins.qgis.org/plugins/grid_isolines/"
+ISOLINER3D_URL = "https://plugins.qgis.org/plugins/isoliner3d/"
+
 _version = None
 
 
@@ -39,7 +44,10 @@ def plugin_version():
 
 def manual_path():
     """Путь к руководству на языке интерфейса, либо пустая строка."""
-    from .i18n import is_russian
+    try:  # внутри плагина QGIS
+        from .i18n import is_russian
+    except ImportError:  # headless-тесты
+        from i18n import is_russian
     name = "Topoliner.pdf" if is_russian() else "Topoliner_en.pdf"
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "doc", name)
     return path if os.path.exists(path) else ""
@@ -65,23 +73,40 @@ def banner():
 
 
 def help_footer():
-    """Хвост справки: название с версией, страница продукта и обращение."""
-    from .i18n import is_russian
+    """Хвост справки: название с версией, страницы продуктов и обращение."""
+    try:  # внутри плагина QGIS
+        from .i18n import is_russian
+    except ImportError:  # headless-тесты
+        from i18n import is_russian
 
     version = plugin_version()
     title = "%s v%s" % (PLUGIN_NAME, version) if version else PLUGIN_NAME
+
     if is_russian():
+        companions = (
+            "Спутники: <b>Isoliner</b>, кригинг и изолинии, %s"
+            "<br><b>Isoliner3D</b>, трёхмерный просмотр поверхностей и тел, %s"
+            % (ISOLINER_URL, ISOLINER3D_URL)
+        )
         return (
             "<br><br>%s<br><br>"
             "Страница плагина: %s<br><br>"
+            "%s<br><br>"
             "%s развивается на задачах реальных предприятий. Если вашему "
             "производству не хватает функции, напишите нам: %s"
-            % (title, PRODUCT_URL, PLUGIN_NAME, COMPANY_URL)
+            % (title, PRODUCT_URL, companions, PLUGIN_NAME, COMPANY_URL)
         )
+
+    companions = (
+        "Companions: <b>Isoliner</b>, kriging and contouring, %s"
+        "<br><b>Isoliner3D</b>, standalone 3D viewer for surfaces and bodies, %s"
+        % (ISOLINER_URL, ISOLINER3D_URL)
+    )
     return (
         "<br><br>%s<br><br>"
         "Plugin page: %s<br><br>"
+        "%s<br><br>"
         "%s grows on the tasks of real enterprises. If your operation "
         "is missing a feature, write to us: %s"
-        % (title, PRODUCT_URL, PLUGIN_NAME, COMPANY_URL)
+        % (title, PRODUCT_URL, companions, PLUGIN_NAME, COMPANY_URL)
     )

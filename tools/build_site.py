@@ -240,6 +240,12 @@ TEXTS = {
 "ftr.line1":  ("лицензия GNU GPL v3 или новее · QGIS 3.16 и новее",
                "GNU GPL v3 or later · QGIS 3.16 and newer"),
 "ftr.line2":  ("Разработано ООО «Информ++»", "Developed by Inform++ LLC"),
+"companions": ("Спутники: Isoliner - кригинг и изолинии, Isoliner3D - "
+               "трёхмерный просмотр поверхностей и тел.",
+               "Companions: Isoliner for kriging and contouring, Isoliner3D "
+               "for viewing surfaces and bodies in three dimensions."),
+"c.isoliner": ("Isoliner", "Isoliner"),
+"c.isoliner3d": ("Isoliner3D", "Isoliner3D"),
 "ftr.line3":  ("Плагин развивается на задачах реальных предприятий. Если вашему "
                "производству не хватает функции, напишите нам.",
                "The plugin grows on the tasks of real enterprises. If your "
@@ -465,6 +471,11 @@ figcaption{margin-top:10px;font-size:14px;color:var(--ink-soft)}
     Topoliner __VERSION__ &middot; <span data-i18n="ftr.line1"></span><br>
     <span data-i18n="ftr.line2"></span>,
     <a href="https://www.informpp.ru/">www.informpp.ru</a><br>
+    <span data-i18n="companions"></span>
+    <a href="https://plugins.qgis.org/plugins/grid_isolines/"
+       data-i18n="c.isoliner"></a> &middot;
+    <a href="https://plugins.qgis.org/plugins/isoliner3d/"
+       data-i18n="c.isoliner3d"></a><br>
     <span data-i18n="ftr.line3"></span>
   </div>
 </footer>

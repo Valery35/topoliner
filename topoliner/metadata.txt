@@ -2,8 +2,8 @@
 name=Topoliner
 qgisMinimumVersion=3.16
 qgisMaximumVersion=4.99
-description=Topology check and cleanup for polygon and line layers: snapping, missing nodes, dangles and overshoots, assembly check, topology-preserving simplification
-version=0.10.2
+description=Topology check, cleanup and coverage model for polygon and line layers: snapping, missing nodes, dangles and overshoots, assembly check, topology-preserving simplification
+version=0.12.2
 author=ООО «Информ++»
 email=xbbster@gmail.com
 about=Brings polygon coverages into order. Finds topology violations and separates
@@ -16,6 +16,11 @@ about=Brings polygon coverages into order. Finds topology violations and separat
       Replaces the manual routine of snapping a layer to itself followed by
       a dissolve without attributes. All tools live in the Processing panel
       and work in models and in batch mode. Interface in English and Russian.
+      Tested on QGIS 3.16 through 4.0.
+      A companion to the Isoliner kriging and contouring toolset
+      (plugins.qgis.org/plugins/grid_isolines) and to Isoliner3D, a standalone
+      3D viewer for geological surfaces and bodies
+      (plugins.qgis.org/plugins/isoliner3d).
       Developed with the support of Inform++ LLC (www.informpp.ru).
 tracker=https://github.com/Valery35/topoliner/issues
 repository=https://github.com/Valery35/topoliner
@@ -26,7 +31,13 @@ icon=icons/icon.png
 experimental=False
 deprecated=False
 hasProcessingProvider=yes
-changelog=0.10.2 Documentation revision: the tolerance hint is described in
+changelog=0.12.2 Cross-links to the companion plugins Isoliner and Isoliner3D.
+      0.12.1 Confirmed working on QGIS 4.
+      0.12.0 New tool 2.03: coverage topology model, nodes and arcs
+      as in ArcInfo coverages.
+      0.11.0 Findings are numbered and can be written out as a list,
+      so the result can be handed to whoever prepared the data.
+      0.10.2 Documentation revision: the tolerance hint is described in
       the tool help, option lists in the parameter tables completed.
       0.10.1 Fixed: a single hairline ring could make the tolerance
       ceiling meaningless.

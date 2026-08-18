@@ -436,3 +436,68 @@ class TestQgisPitfalls(unittest.TestCase):
         self.assertEqual(_raw_fields({"F": "pl"}, "F"), ["pl"])
         self.assertEqual(_raw_fields({"F": ["a", "b"]}, "F"), ["a", "b"])
         self.assertEqual(_raw_fields({}, "F"), [])
+
+
+class TestReport(unittest.TestCase):
+    """
+    Текстовый отчёт о находках.
+
+    Предложение Ивана Иванова после публикации на GIS-Lab: нумерованный
+    список найденного плюс слой с отметками, чтобы автор данных мог найти
+    место и в оригинале, и в результате.
+    """
+
+    def setUp(self):
+        i18n.set_language("ru")
+
+    def sample(self):
+        import topo_checks as tc
+        return [
+            {"num": 1, "type": tc.OVERLAP, "severity": tc.SEVERITY_AUTO,
+             "fid": 5, "fid_b": 7, "value": 0.4, "x": 100.0, "y": 200.0,
+             "note": "полоса шириной меньше допуска"},
+            {"num": 2, "type": tc.GAP, "severity": tc.SEVERITY_REVIEW,
+             "fid": None, "fid_b": None, "value": 150.0, "x": 110.0,
+             "y": 210.0, "note": "дыра в покрытии"},
+        ]
+
+    def test_report_lists_every_finding(self):
+        from report import build_report
+        import topo_checks as tc
+        findings = self.sample()
+        text = build_report(findings, tc.summarize(findings))
+        for f in findings:
+            self.assertIn(str(f["num"]), text)
+            self.assertIn(f["note"], text)
+
+    def test_review_and_auto_are_separated(self):
+        from report import build_report
+        import topo_checks as tc
+        findings = self.sample()
+        text = build_report(findings, tc.summarize(findings))
+        self.assertIn("Решать человеку", text)
+        self.assertIn("Чинится автоматически", text)
+        self.assertLess(text.index("Решать человеку"),
+                        text.index("Чинится автоматически"),
+                        "То, что решает человек, идёт первым")
+
+    def test_empty_report_says_so(self):
+        from report import build_report
+        text = build_report([], {})
+        self.assertIn("Нарушений не найдено", text)
+
+    def test_object_identifiers_are_present(self):
+        from report import build_report
+        import topo_checks as tc
+        findings = self.sample()
+        text = build_report(findings, tc.summarize(findings))
+        self.assertIn("5, 7", text)
+
+    def test_switches_language(self):
+        from report import build_report
+        import topo_checks as tc
+        findings = self.sample()
+        i18n.set_language("en")
+        text = build_report(findings, tc.summarize(findings))
+        self.assertIn("Left to the operator", text)
+        i18n.set_language("ru")

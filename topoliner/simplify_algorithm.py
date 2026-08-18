@@ -31,7 +31,7 @@ from .qgis_helpers import fields_from
 from .i18n import tr
 from qgis.PyQt.QtCore import QVariant
 
-from . import boundaries
+from . import boundaries, coverage
 from .branding import banner, help_footer, help_url
 from .topo_algorithm import assemble, explode
 from .topo_simplify import simplify_topology
@@ -474,3 +474,169 @@ class BoundariesAlgorithm(QgsProcessingAlgorithm):
         feedback.pushInfo(tr("Всего линий:            %d") % len(result))
         feedback.setProgress(100)
         return {self.OUTPUT: dest_id}
+
+
+# ────────────────────────────────────────────────────────────────────────────
+# 2.03 Топологическая модель покрытия
+# ────────────────────────────────────────────────────────────────────────────
+
+class CoverageAlgorithm(QgsProcessingAlgorithm):
+    """
+    Раскладывает покрытие на узлы и дуги, как в ArcInfo coverage.
+
+    Полигон описывается не своей границей, а ссылками на дуги. Дуга хранится
+    один раз и знает, что лежит слева и справа. Правка дуги меняет обоих
+    соседей сразу, поэтому границам просто негде разойтись.
+    """
+
+    INPUT = "INPUT"
+    NODE_EPS = "NODE_EPS"
+    GRID = "GRID"
+    NODES = "NODES"
+    ARCS = "ARCS"
+
+    def name(self):
+        return "coverage"
+
+    def displayName(self):
+        return tr("2.03 Топологическая модель покрытия")
+
+    def group(self):
+        return tr("2. Генерализация")
+
+    def groupId(self):
+        return "generalization"
+
+    def createInstance(self):
+        return CoverageAlgorithm()
+
+    def helpUrl(self):
+        return help_url()
+
+    def shortHelpString(self):
+        return help_for("coverage") + help_footer()
+
+    def initAlgorithm(self, config=None):
+        self.addParameter(QgsProcessingParameterFeatureSource(
+            self.INPUT, tr("Входной слой (полигоны)"),
+            [QgsProcessing.TypeVectorPolygon]))
+
+        p = QgsProcessingParameterNumber(
+            self.NODE_EPS, tr("Отклонение при поиске общих вершин"),
+            type=QgsProcessingParameterNumber.Double, defaultValue=1e-6,
+            minValue=0.0)
+        p.setHelp(
+            "Узлы достраиваются перед разбором, иначе общая граница\n"
+            "не опознаётся. Вершины при этом не двигаются."
+        )
+        self.addParameter(p)
+
+        p = QgsProcessingParameterNumber(
+            self.GRID, tr("Точность опознания общих вершин"),
+            type=QgsProcessingParameterNumber.Double, defaultValue=1e-6,
+            minValue=1e-12)
+        self.addParameter(p)
+
+        self.addParameter(QgsProcessingParameterFeatureSink(
+            self.NODES, tr("Узлы"), QgsProcessing.TypeVectorPoint))
+        self.addParameter(QgsProcessingParameterFeatureSink(
+            self.ARCS, tr("Дуги"), QgsProcessing.TypeVectorLine))
+
+    def processAlgorithm(self, parameters, context, feedback):
+        context.setInvalidGeometryCheck(QgsFeatureRequest.GeometryNoCheck)
+        source = self.parameterAsSource(parameters, self.INPUT, context)
+        if source is None:
+            raise QgsProcessingException("Не удалось прочитать входной слой.")
+
+        node_eps = self.parameterAsDouble(parameters, self.NODE_EPS, context)
+        grid = self.parameterAsDouble(parameters, self.GRID, context)
+
+        feedback.pushInfo(banner())
+        feedback.pushInfo(tr("Чтение слоя..."))
+
+        items = []
+        total = source.featureCount() or 1
+        for i, feat in enumerate(source.getFeatures()):
+            if feedback.isCanceled():
+                return {}
+            parts = explode(feat.geometry(), False)
+            if not parts:
+                continue
+            items.append((feat.id(), [[[(p[0], p[1]) for p in ring]
+                                       for ring in part] for part in parts]))
+            if i % 500 == 0:
+                feedback.setProgress(10.0 * i / total)
+
+        if not items:
+            raise QgsProcessingException("Во входном слое нет полигонов.")
+
+        feedback.pushInfo(tr("Объектов: %d") % len(items))
+        feedback.setProgress(20)
+
+        model = coverage.build_coverage(items, grid=grid, node_eps=node_eps)
+        feedback.setProgress(70)
+
+        # ── Узлы ─────────────────────────────────────────────────────────
+        node_fields = QgsFields()
+        node_fields.append(QgsField("node_id", QVariant.Int))
+        node_fields.append(QgsField("degree", QVariant.Int))
+        node_fields.append(QgsField("kind", QVariant.String))
+
+        (node_sink, nodes_id) = self.parameterAsSink(
+            parameters, self.NODES, context, node_fields,
+            QgsWkbTypes.Point, source.sourceCrs())
+        if node_sink is None:
+            raise QgsProcessingException("Не удалось создать слой узлов.")
+
+        kinds = {1: tr("висячий"), 2: tr("псевдоузел")}
+        for node in model["nodes"]:
+            feat = QgsFeature(node_fields)
+            feat.setGeometry(QgsGeometry(QgsPoint(node["x"], node["y"])))
+            feat.setAttributes([node["id"], node["degree"],
+                                kinds.get(node["degree"], tr("ветвление"))])
+            node_sink.addFeature(feat, QgsFeatureSink.FastInsert)
+
+        # ── Дуги ─────────────────────────────────────────────────────────
+        arc_fields = QgsFields()
+        arc_fields.append(QgsField("arc_id", QVariant.Int))
+        arc_fields.append(QgsField("from_node", QVariant.Int))
+        arc_fields.append(QgsField("to_node", QVariant.Int))
+        arc_fields.append(QgsField("left_fid", QVariant.LongLong))
+        arc_fields.append(QgsField("right_fid", QVariant.LongLong))
+        arc_fields.append(QgsField("length", QVariant.Double))
+
+        (arc_sink, arcs_id) = self.parameterAsSink(
+            parameters, self.ARCS, context, arc_fields,
+            QgsWkbTypes.LineString, source.sourceCrs())
+        if arc_sink is None:
+            raise QgsProcessingException("Не удалось создать слой дуг.")
+
+        for arc in model["arcs"]:
+            if feedback.isCanceled():
+                return {}
+            line = QgsGeometry(QgsLineString(
+                [QgsPoint(p[0], p[1]) for p in arc["coords"]]))
+            feat = QgsFeature(arc_fields)
+            feat.setGeometry(line)
+            feat.setAttributes([
+                arc["id"], arc["from_node"], arc["to_node"],
+                -1 if arc["left"] is None else int(arc["left"]),
+                -1 if arc["right"] is None else int(arc["right"]),
+                float(line.length()),
+            ])
+            arc_sink.addFeature(feat, QgsFeatureSink.FastInsert)
+
+        degrees = {}
+        for node in model["nodes"]:
+            degrees[node["degree"]] = degrees.get(node["degree"], 0) + 1
+        shared = sum(1 for a in model["arcs"] if a["right"] is not None)
+
+        feedback.pushInfo("")
+        feedback.pushInfo(tr("── Результат ──"))
+        feedback.pushInfo(tr("Узлов: %d, дуг: %d") % (len(model["nodes"]),
+                                                      len(model["arcs"])))
+        feedback.pushInfo(tr("Дуг между двумя объектами: %d") % shared)
+        feedback.pushInfo(tr("Висячих узлов: %d, псевдоузлов: %d")
+                          % (degrees.get(1, 0), degrees.get(2, 0)))
+        feedback.setProgress(100)
+        return {self.NODES: nodes_id, self.ARCS: arcs_id}

@@ -23,6 +23,7 @@ from qgis.core import (
     QgsProcessingParameterBoolean,
     QgsProcessingParameterEnum,
     QgsProcessingParameterFeatureSink,
+    QgsProcessingParameterFileDestination,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterField,
     QgsProcessingParameterNumber,
@@ -32,6 +33,7 @@ from qgis.PyQt.QtCore import QVariant
 
 from . import topo_checks as tc
 from .help_texts import help_for
+from .report import build_report
 from .qgis_helpers import fields_from
 from .i18n import tr
 from .branding import banner, help_footer, help_url
@@ -46,6 +48,10 @@ from .topo_core import _PointGrid, ring_width, segment_length_stats
 
 def finding_fields():
     fields = QgsFields()
+    # Сквозной номер идёт первым: по нему находку ищут в отчёте и на карте.
+    # Предложение Ивана Иванова: нумерованный список плюс слой с точками,
+    # чтобы автор данных нашёл место и в оригинале, и в результате.
+    fields.append(QgsField("num", QVariant.Int))
     fields.append(QgsField("type", QVariant.String))
     fields.append(QgsField("label", QVariant.String))
     fields.append(QgsField("severity", QVariant.String))
@@ -58,14 +64,23 @@ def finding_fields():
 
 
 def write_findings(sink, fields, findings):
+    """
+    Пишет находки в слой точек и проставляет сквозные номера.
+
+    Номер кладётся и в саму находку, чтобы текстовый отчёт и слой ссылались
+    на одно и то же число.
+    """
     if sink is None:
         return 0
     n = 0
     for f in findings:
+        n += 1
+        f["num"] = n
         feat = QgsFeature(fields)
         if f["x"] is not None:
             feat.setGeometry(QgsGeometry(QgsPoint(f["x"], f["y"])))
         feat.setAttributes([
+            n,
             f["type"],
             tc.label_of(f["type"]),
             f["severity"],
@@ -76,7 +91,6 @@ def write_findings(sink, fields, findings):
             f.get("key", ""),
         ])
         sink.addFeature(feat, QgsFeatureSink.FastInsert)
-        n += 1
     return n
 
 
@@ -183,6 +197,7 @@ class TopologyAuditAlgorithm(QgsProcessingAlgorithm):
     DO_NODES = "DO_NODES"
     CAVITY = "CAVITY"
     FIELDS = "FIELDS"
+    REPORT_FILE = "REPORT_FILE"
     OUTPUT = "OUTPUT"
 
     def name(self):
@@ -253,6 +268,19 @@ class TopologyAuditAlgorithm(QgsProcessingAlgorithm):
             self.DO_GAPS, tr("Искать щели в покрытии"), defaultValue=True))
         self.addParameter(QgsProcessingParameterBoolean(
             self.DO_NODES, tr("Искать вершины без узла на соседнем ребре"), defaultValue=True))
+
+        p = QgsProcessingParameterFileDestination(
+            self.REPORT_FILE, tr("Отчёт списком"),
+            fileFilter="Текстовый файл (*.txt)", optional=True,
+            createByDefault=False)
+        p.setHelp(
+            "Нумерованный список находок: номер, что не так, у каких\n"
+            "объектов, где именно. Номер совпадает с полем num в слое\n"
+            "находок, поэтому по списку место ищется на карте, а по\n"
+            "идентификатору объекта в исходных данных.\n"
+            "Список удобно передать тому, кто данные готовил."
+        )
+        self.addParameter(p)
 
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUTPUT, tr("Находки"), QgsProcessing.TypeVectorPoint))
@@ -340,8 +368,27 @@ class TopologyAuditAlgorithm(QgsProcessingAlgorithm):
         feedback.pushInfo("")
         feedback.pushInfo(tr("Всего находок: %d, из них чинится автоматически: %d, решать человеку: %d")
                           % (n, auto, n - auto))
+        # Отчёт пишется после нумерации: write_findings проставляет номера,
+        # и список ссылается на те же числа, что и слой.
+        report_path = self.parameterAsFileOutput(
+            parameters, self.REPORT_FILE, context)
+        if report_path:
+            text = build_report(
+                findings, summary,
+                header=tr("Topoliner. Проверка топологии слоя %s")
+                % source.sourceName(),
+                tolerance=tolerance, area_threshold=area,
+                hint=tc.tolerance_hint(findings, tolerance,
+                                       edge_p05=edge_p05, min_width=min_width))
+            with open(report_path, "w", encoding="utf-8") as handle:
+                handle.write(text)
+            feedback.pushInfo(tr("Отчёт записан: %s") % report_path)
+
         feedback.setProgress(100)
-        return {self.OUTPUT: dest_id}
+        out = {self.OUTPUT: dest_id}
+        if report_path:
+            out[self.REPORT_FILE] = report_path
+        return out
 
 
 # ────────────────────────────────────────────────────────────────────────────
