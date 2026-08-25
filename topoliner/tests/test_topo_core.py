@@ -579,3 +579,34 @@ class TestGridOrigin(unittest.TestCase):
         grid.add(0, 6431900.5, 7761800.5)
         self.assertTrue(grid.has_vertex(0, 6431900.5, 7761800.5, 1e-6))
         self.assertFalse(grid.has_vertex(0, 6431901.5, 7761800.5, 1e-6))
+
+
+class TestDetectOnly(unittest.TestCase):
+    """
+    Режим только обнаружения: события есть, собранных колец нет.
+
+    Проверке нужны события вставки, а геометрию она выбрасывает. Сборка
+    результата на слое в семьсот тысяч вершин стоит времени и памяти.
+    """
+
+    def scene(self):
+        return [[(0, 0), (10, 0), (10, 10), (0, 10)],
+                [(10, 0), (20, 0), (20, 10), (10, 10)],
+                [(0, 10), (20, 10), (20, 20), (0, 20)]]
+
+    def test_events_are_the_same(self):
+        full = clean_topology(self.scene(), tolerance=1e-6, mode=MODE_INSERT)
+        short = clean_topology(self.scene(), tolerance=1e-6, mode=MODE_INSERT,
+                               detect_only=True)
+        self.assertEqual(len(full["events"]), len(short["events"]))
+        self.assertEqual(full["stats"]["nodes_inserted"],
+                         short["stats"]["nodes_inserted"])
+
+    def test_rings_are_not_built(self):
+        short = clean_topology(self.scene(), tolerance=1e-6, mode=MODE_INSERT,
+                               detect_only=True)
+        self.assertEqual(short["rings"], [])
+
+    def test_normal_mode_still_builds_rings(self):
+        full = clean_topology(self.scene(), tolerance=1e-6, mode=MODE_INSERT)
+        self.assertEqual(len(full["rings"]), 3)

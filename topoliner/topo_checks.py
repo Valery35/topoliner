@@ -407,7 +407,11 @@ def check_items(backend, items, tolerance, area_threshold,
                     rings.append(list(ring) + [ring[0]])
                     owner.append(fid)
         if rings:
-            probe = clean_topology(rings, tolerance=tolerance, mode=MODE_INSERT)
+            # Узлы в пересечениях рёбер здесь не нужны: ниже берутся только
+            # события вставки по вершинам, а события пересечений отбрасываются.
+            # На кадастровом слое их поиск занимал четверть времени проверки.
+            probe = clean_topology(rings, tolerance=tolerance, mode=MODE_INSERT,
+                                   node_crossings=False, detect_only=True)
             # Ноль означает, что вершина лежит точно на ребре соседа.
             # Это дефект вершинности при любом допуске. Ненулевое расстояние
             # означает лишь близость и целиком зависит от выбранного допуска.

@@ -142,8 +142,13 @@ class TopologySimplifyAlgorithm(QgsProcessingAlgorithm):
         )
         self.addParameter(p)
 
-        self.addParameter(QgsProcessingParameterBoolean(
-            self.KEEP_Z, tr("Сохранять отметки Z"), defaultValue=True))
+        p = QgsProcessingParameterBoolean(
+            self.KEEP_Z, tr("Сохранять отметки Z"), defaultValue=True)
+        p.setHelp(
+            "Прореживание идёт по плановым координатам, отметка переносится\n"
+            "с оставшихся вершин."
+        )
+        self.addParameter(p)
 
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUTPUT, tr("Упрощённый слой")))
@@ -373,6 +378,11 @@ class BoundariesAlgorithm(QgsProcessingAlgorithm):
             self.GRID, tr("Точность опознания общих вершин"),
             type=QgsProcessingParameterNumber.Double, defaultValue=1e-6,
             minValue=1e-12)
+        p.setHelp(
+            "Координаты соседей могут быть записаны с разной точностью.\n"
+            "Величина нужна, чтобы такие вершины считались одной. Это не допуск:\n"
+            "увеличивать её до метров не следует."
+        )
         self.addParameter(p)
 
         self.addParameter(QgsProcessingParameterFeatureSink(
@@ -535,6 +545,11 @@ class CoverageAlgorithm(QgsProcessingAlgorithm):
             self.GRID, tr("Точность опознания общих вершин"),
             type=QgsProcessingParameterNumber.Double, defaultValue=1e-6,
             minValue=1e-12)
+        p.setHelp(
+            "Координаты соседей могут быть записаны с разной точностью.\n"
+            "Величина нужна, чтобы такие вершины считались одной. Это не допуск:\n"
+            "увеличивать её до метров не следует."
+        )
         self.addParameter(p)
 
         self.addParameter(QgsProcessingParameterFeatureSink(

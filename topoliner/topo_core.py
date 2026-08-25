@@ -734,7 +734,7 @@ def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=Fals
 
 def clean_topology(rings, tolerance, mode=MODE_BOTH, fixed_rings=None,
                    z_insert=Z_INTERPOLATE, node_crossings=True, frozen=None,
-                   project_onto_edge=False, progress=None):
+                   project_onto_edge=False, detect_only=False, progress=None):
     """
     Сшивает набор колец.
 
@@ -754,6 +754,9 @@ def clean_topology(rings, tolerance, mode=MODE_BOTH, fixed_rings=None,
                  того же кольца, такого смещения хватает, чтобы контур
                  пересёк сам себя. Для сшивки проекция не годится: там узел
                  обязан совпасть с вершиной соседа.
+    detect_only  вернуть только события, не собирая изменённые кольца.
+                 Нужно проверке: она читает события и выбрасывает геометрию,
+                 а сборка на слое в семьсот тысяч вершин заметно стоит.
     frozen       множество индексов колец, которые нельзя изменять. Их вершины
                  неподвижны и служат опорой для соседей, а рёбра не принимают
                  узлов. Нужно для объектов уже допуска: у такого кольца
@@ -966,6 +969,10 @@ def clean_topology(rings, tolerance, mode=MODE_BOTH, fixed_rings=None,
 
         stats["nodes_inserted"] += _apply_inserts(norm, inserts, events, "insert")
     tick(0.92)
+
+    if detect_only:
+        tick(1.0)
+        return {"rings": [], "stats": stats, "events": events}
 
     # ── Шаг 4. Финальная сборка ──────────────────────────────────────────
     out_rings = []

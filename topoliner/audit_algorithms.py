@@ -262,10 +262,20 @@ class TopologyAuditAlgorithm(QgsProcessingAlgorithm):
         )
         self.addParameter(p)
 
-        self.addParameter(QgsProcessingParameterBoolean(
-            self.DO_OVERLAPS, tr("Искать перекрытия, дубликаты и вложения"), defaultValue=True))
-        self.addParameter(QgsProcessingParameterBoolean(
-            self.DO_GAPS, tr("Искать щели в покрытии"), defaultValue=True))
+        p = QgsProcessingParameterBoolean(
+            self.DO_OVERLAPS, tr("Искать перекрытия, дубликаты и вложения"), defaultValue=True)
+        p.setHelp(
+            "Попарное сравнение объектов. На больших слоях это самая долгая часть\n"
+            "проверки, и её можно отключить, если интересуют только вершины и щели."
+        )
+        self.addParameter(p)
+        p = QgsProcessingParameterBoolean(
+            self.DO_GAPS, tr("Искать щели в покрытии"), defaultValue=True)
+        p.setHelp(
+            "Щель это дыра в объединении покрытия. Зазор, выходящий на внешний край,\n"
+            "дырой не является и здесь не находится: его закрывает сшивка вершин."
+        )
+        self.addParameter(p)
         self.addParameter(QgsProcessingParameterBoolean(
             self.DO_NODES, tr("Искать вершины без узла на соседнем ребре"), defaultValue=True))
 
@@ -463,12 +473,27 @@ class TopologyFixAlgorithm(QgsProcessingAlgorithm):
         )
         self.addParameter(p)
 
-        self.addParameter(QgsProcessingParameterBoolean(
-            self.DO_SNAP, tr("Сшивать вершины и узлы"), defaultValue=True))
-        self.addParameter(QgsProcessingParameterBoolean(
-            self.DO_VALID, tr("Исправлять некорректную геометрию"), defaultValue=True))
-        self.addParameter(QgsProcessingParameterBoolean(
-            self.DO_OVERLAPS, tr("Убирать мелкие перекрытия"), defaultValue=True))
+        p = QgsProcessingParameterBoolean(
+            self.DO_SNAP, tr("Сшивать вершины и узлы"), defaultValue=True)
+        p.setHelp(
+            "Слияние близких вершин и вставка недостающих узлов. Без этого шага\n"
+            "остальные работают по несогласованному покрытию."
+        )
+        self.addParameter(p)
+        p = QgsProcessingParameterBoolean(
+            self.DO_VALID, tr("Исправлять некорректную геометрию"), defaultValue=True)
+        p.setHelp(
+            "Самопересечения и вывернутые кольца. Правка, отнимающая больше четверти\n"
+            "площади объекта, отменяется, и объект попадает в оставшиеся проблемы."
+        )
+        self.addParameter(p)
+        p = QgsProcessingParameterBoolean(
+            self.DO_OVERLAPS, tr("Убирать мелкие перекрытия"), defaultValue=True)
+        p.setHelp(
+            "Вычитается только узкая полоса, шириной меньше допуска. Широкое\n"
+            "перекрытие это спор за площадь, и оно остаётся человеку."
+        )
+        self.addParameter(p)
         self.addParameter(QgsProcessingParameterBoolean(
             self.DO_GAPS, tr("Заполнять мелкие щели"), defaultValue=True))
 
@@ -508,8 +533,14 @@ class TopologyFixAlgorithm(QgsProcessingAlgorithm):
         )
         self.addParameter(p)
 
-        self.addParameter(QgsProcessingParameterBoolean(
-            self.KEEP_Z, tr("Восстанавливать отметки Z"), defaultValue=True))
+        p = QgsProcessingParameterBoolean(
+            self.KEEP_Z, tr("Восстанавливать отметки Z"), defaultValue=True)
+        p.setHelp(
+            "Операции пересечения работают в плане, поэтому Z берётся у ближайшей\n"
+            "исходной вершины. Для покрытий это верно, для слоёв с резким перепадом\n"
+            "высоты вдоль границы результат стоит проверить."
+        )
+        self.addParameter(p)
 
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUTPUT, tr("Очищенный слой")))

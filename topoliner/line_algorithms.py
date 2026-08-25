@@ -166,13 +166,29 @@ class LineAuditAlgorithm(QgsProcessingAlgorithm):
         p.setHelp("Линии короче этой длины попадают в находки.")
         self.addParameter(p)
 
-        self.addParameter(QgsProcessingParameterBoolean(
+        p = QgsProcessingParameterBoolean(
             self.DO_DANGLES, tr("Искать висячие концы, недоводы и перелёты"),
-            defaultValue=True))
-        self.addParameter(QgsProcessingParameterBoolean(
-            self.DO_CROSSINGS, tr("Искать пересечения без узла"), defaultValue=True))
-        self.addParameter(QgsProcessingParameterBoolean(
-            self.DO_PSEUDO, tr("Искать псевдоузлы"), defaultValue=False))
+            defaultValue=True)
+        p.setHelp(
+            "Три разных случая на конце линии. Недовод и перелёт короче допуска\n"
+            "относятся к мусору, висячий конец остаётся человеку: у гидросети\n"
+            "или сети выработок это устье либо тупик."
+        )
+        self.addParameter(p)
+        p = QgsProcessingParameterBoolean(
+            self.DO_CROSSINGS, tr("Искать пересечения без узла"), defaultValue=True)
+        p.setHelp(
+            "Линии пересекаются, а вершины в точке пересечения нет ни у одной."
+        )
+        self.addParameter(p)
+        p = QgsProcessingParameterBoolean(
+            self.DO_PSEUDO, tr("Искать псевдоузлы"), defaultValue=False)
+        p.setHelp(
+            "Стык двух линий концами, где больше ничего нет: такие линии можно\n"
+            "объединить. Выключено намеренно, во многих слоях разбиение на участки\n"
+            "сделано специально."
+        )
+        self.addParameter(p)
 
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUTPUT, tr("Находки"), QgsProcessing.TypeVectorPoint))
@@ -280,13 +296,27 @@ class LineFixAlgorithm(QgsProcessingAlgorithm):
             self.MIN_LENGTH, tr("Порог длины линии (0 - не учитывать)"),
             type=QgsProcessingParameterNumber.Double, defaultValue=0.0,
             minValue=0.0)
+        p.setHelp(
+            "Линии короче этой длины попадают в оставшиеся проблемы. Удаляются\n"
+            "они только с отдельной галочки: удаление уничтожает и атрибуты."
+        )
         self.addParameter(p)
 
-        self.addParameter(QgsProcessingParameterBoolean(
-            self.DO_TRIM, tr("Обрезать перелёты за узел"), defaultValue=True))
-        self.addParameter(QgsProcessingParameterBoolean(
+        p = QgsProcessingParameterBoolean(
+            self.DO_TRIM, tr("Обрезать перелёты за узел"), defaultValue=True)
+        p.setHelp(
+            "Хвост, торчащий за пересечением, отрезается до самой точки пересечения.\n"
+            "Обрезаются только хвосты короче допуска."
+        )
+        self.addParameter(p)
+        p = QgsProcessingParameterBoolean(
             self.DO_CLOSE, tr("Дотягивать недоводы до соседней линии"),
-            defaultValue=True))
+            defaultValue=True)
+        p.setHelp(
+            "Конец переносится на проекцию, то есть на ближайшую точку соседнего\n"
+            "ребра. Смещение не превышает допуска."
+        )
+        self.addParameter(p)
         self.addParameter(QgsProcessingParameterBoolean(
             self.DO_SNAP, tr("Вставлять недостающие узлы"), defaultValue=True))
 
@@ -303,6 +333,10 @@ class LineFixAlgorithm(QgsProcessingAlgorithm):
             self.SPIKE, tr("Порог угла иглы, градусы"),
             type=QgsProcessingParameterNumber.Double, defaultValue=1.0,
             minValue=0.0, maxValue=45.0)
+        p.setHelp(
+            "Игла это разворот линии назад почти на месте. Угол между входящим\n"
+            "и исходящим ребром меньше этого значения считается иглой."
+        )
         self.addParameter(p)
 
         self.addParameter(QgsProcessingParameterFeatureSink(

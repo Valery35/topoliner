@@ -593,9 +593,10 @@ vertex snapping when their width is below the tolerance.
 
 | Tool | Time |
 |---|---|
-| 1.01 Topology check, tolerance 2 | 51 s |
-| 1.06 Insertion of missing nodes | 78 s |
-| 2.01 Topology-preserving simplification, tolerance 5 | 6 s |
+| 1.01 Topology check, tolerance 2 | 48 s |
+| 1.06 Insertion of missing nodes | 84 s |
+| 2.01 Topology-preserving simplification, tolerance 5 | 7 s |
+| 2.03 Coverage topology model | 96 s |
 
 For layers of millions of vertices, process them in parts.
 
