@@ -3,7 +3,7 @@ name=Topoliner
 qgisMinimumVersion=3.16
 qgisMaximumVersion=4.99
 description=Topology check, cleanup and coverage model for polygon and line layers: snapping, missing nodes, dangles and overshoots, assembly check, topology-preserving simplification
-version=0.12.3
+version=0.12.4
 author=ООО «Информ++»
 email=xbbster@gmail.com
 about=Brings polygon coverages into order. Finds topology violations and separates
@@ -31,7 +31,8 @@ icon=icons/icon.png
 experimental=False
 deprecated=False
 hasProcessingProvider=yes
-changelog=0.12.3 Every dialog field now has a hint; the topology check no
+changelog=0.12.4 Rebuild for the catalogue.
+      0.12.3 Every dialog field now has a hint; the topology check no
       longer does work it throws away.
       0.12.2 Cross-links to the companion plugins Isoliner and Isoliner3D.
       0.12.1 Confirmed working on QGIS 4.
