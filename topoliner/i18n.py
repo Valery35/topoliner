@@ -31,12 +31,17 @@ def _detect():
         value = QgsSettings().value("locale/userLocale", "") or ""
 
     if not value:
-        import locale
-        try:
-            value = locale.getdefaultlocale()[0] or ""
-        except ValueError:
-            # Некорректная переменная окружения с локалью.
-            value = ""
+        # locale.getdefaultlocale объявлен устаревшим и выдаёт предупреждение
+        # Python. Само по себе оно безобидно, но обработчик предупреждений
+        # QGIS, вызванный из фонового потока Processing, роняет программу
+        # с нарушением доступа. Поэтому берём язык из переменных окружения
+        # напрямую, как это делает сама библиотека.
+        import os
+        for name in ("LC_ALL", "LC_MESSAGES", "LANG", "LANGUAGE"):
+            found = os.environ.get(name)
+            if found:
+                value = found.split(":")[0].split(".")[0]
+                break
 
     return (value or "en")[:2].lower()
 
