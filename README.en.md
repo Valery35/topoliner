@@ -49,7 +49,8 @@ to the operator and is never fixed automatically under any settings.
 - No vertex moves further than the tolerance.
 - An edit that takes more than a quarter of an object's area is cancelled.
 - Objects narrower than the tolerance are left untouched and serve as anchors.
-- A repeat run over the result changes nothing.
+- A repeat run over the result changes nothing. There is one exception:
+  simplification with smoothing, where every pass cuts the corners again.
 - Attributes are preserved; objects are never deleted without explicit permission.
 - Insertion of missing nodes does not change the area at all.
 

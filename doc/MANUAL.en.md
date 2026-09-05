@@ -444,6 +444,10 @@ border stays shared. Chaikin's scheme does not leave the original line, so no
 overshoots and no new self-intersections appear. Each pass roughly doubles the
 vertex count.
 
+Smoothing is the one place where a repeated run changes the geometry:
+each pass cuts the corners again. Thinning without smoothing changes
+nothing on a repeat.
+
 **How it works.** Shared edges are glued into arcs between branch nodes, each
 arc is thinned exactly once, and both neighbours receive the same result.
 Arc ends are fixed, so the nodes where three polygons meet do not move.

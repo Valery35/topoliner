@@ -451,3 +451,46 @@ class TestVisvalingam(Base):
                                 method=METHOD_VISVALINGAM)
         for ring in res["rings"]:
             self.assertTrue(self.b.is_valid(self.poly(ring)))
+
+
+class TestIdempotence(Base):
+    """
+    Повторный запуск по результату.
+
+    Прореживание при повторе ничего не меняет: вершины, пережившие первый
+    проход, переживут и второй. Сглаживание ведёт себя иначе, каждый проход
+    срезает углы заново, и это не дефект, а природа схемы Чайкина. Тест
+    закрепляет оба поведения, чтобы обещание в руководстве не разошлось
+    с кодом.
+    """
+
+    def noisy(self):
+        return [[(0, 0), (10, 0), (10.3, 5), (10, 10), (0, 10)],
+                [(10, 0), (20, 0), (20, 10), (10.3, 5), (10, 10)]]
+
+    def run_twice(self, **kw):
+        first = simplify_topology([list(r) for r in self.noisy()], **kw)["rings"]
+        second = simplify_topology([list(r) for r in first], **kw)["rings"]
+        return first, second
+
+    def same(self, a, b):
+        if len(a) != len(b):
+            return False
+        for x, y in zip(a, b):
+            if len(x) != len(y):
+                return False
+            for p, q in zip(x, y):
+                if abs(p[0] - q[0]) > 1e-9 or abs(p[1] - q[1]) > 1e-9:
+                    return False
+        return True
+
+    def test_thinning_is_idempotent(self):
+        first, second = self.run_twice(tolerance=1.0, grid=1e-6)
+        self.assertTrue(self.same(first, second),
+                        "Прореживание обязано быть идемпотентным")
+
+    def test_smoothing_is_not_and_that_is_stated(self):
+        first, second = self.run_twice(tolerance=1.0, smooth=2, grid=1e-6)
+        self.assertFalse(self.same(first, second),
+                         "Сглаживание меняет геометрию при каждом проходе. "
+                         "Если это перестало быть так, поправьте руководство")
