@@ -3,7 +3,7 @@ name=Topoliner
 qgisMinimumVersion=3.16
 qgisMaximumVersion=4.99
 description=Topology check, cleanup and coverage model for polygon and line layers: snapping, missing nodes, dangles and overshoots, assembly check, topology-preserving simplification
-version=0.12.6
+version=0.12.7
 author=ООО «Информ++»
 email=xbbster@gmail.com
 about=Brings polygon coverages into order. Finds topology violations and separates
@@ -31,7 +31,8 @@ icon=icons/icon.png
 experimental=False
 deprecated=False
 hasProcessingProvider=yes
-changelog=0.12.6 The idempotence guarantee now names its one exception:
+changelog=0.12.7 AGENTS.md added; the tool table in both READMEs now lists 2.03.
+      0.12.6 The idempotence guarantee now names its one exception:
       simplification with smoothing.
       0.12.5 Fixed one more deprecated call that could crash QGIS from
       a worker thread. Verified in a real QGIS run.

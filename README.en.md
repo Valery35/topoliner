@@ -35,6 +35,7 @@ and with guarantees.
 | 1.07 Assembly check by attribute | Checks whether groups assemble into one body | No |
 | 2.01 Topology-preserving simplify | Thins vertices without tearing shared borders | Yes, into a new layer |
 | 2.02 Polygon borders as lines | Outputs borders as separate lines, each one once | No |
+| 2.03 Coverage topology model | Breaks a coverage into nodes and arcs | No |
 
 ## The main principle
 
