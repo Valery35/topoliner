@@ -84,8 +84,8 @@ def collect_repo():
     оба распаковываются целиком в одно место и выбирать при копировании
     ничего не нужно.
     """
-    top_files = ("README.md", "README.en.md", "CHANGELOG.md", "LICENSE",
-                 ".gitignore", ".gitattributes")
+    top_files = ("README.md", "README.en.md", "CHANGELOG.md", "AGENTS.md",
+                 "LICENSE", ".gitignore", ".gitattributes")
     for name in top_files:
         path = os.path.join(ROOT, name)
         if os.path.exists(path):

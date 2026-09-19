@@ -273,7 +273,7 @@ class TopologyAuditAlgorithm(QgsProcessingAlgorithm):
             self.DO_GAPS, tr("Искать щели в покрытии"), defaultValue=True)
         p.setHelp(
             "Щель это дыра в объединении покрытия. Зазор, выходящий на внешний край,\n"
-            "дырой не является и здесь не находится: его закрывает сшивка вершин."
+            "дырой не является и здесь не находится. Его закрывает сшивка вершин."
         )
         self.addParameter(p)
         self.addParameter(QgsProcessingParameterBoolean(
@@ -507,7 +507,7 @@ class TopologyFixAlgorithm(QgsProcessingAlgorithm):
         p = QgsProcessingParameterBoolean(
             self.DROP_TINY, tr("Удалять объекты мельче порога площади"), defaultValue=False)
         p.setHelp(
-            "По умолчанию выключено: удаление объекта уничтожает и его атрибуты.\n"
+            "По умолчанию выключено. Удаление объекта уничтожает и его атрибуты.\n"
             "Без этой галочки такие объекты только попадают в слой оставшихся проблем."
         )
         self.addParameter(p)

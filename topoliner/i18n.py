@@ -290,8 +290,8 @@ EN = {
         "Edge length: median %.4f, fifth percentile %.4f (%d edges)",
     "Допуск больше пяти процентов самых коротких рёбер (%.4f), мелкие изгибы будут сглажены.":
         "The tolerance exceeds the fifth percentile of edge length (%.4f), small bends will be smoothed out.",
-    "Достигнут предел числа проходов. Возможно, узлы ещё нужны: запустите инструмент повторно по результату.":
-        "The pass limit has been reached. More nodes may still be needed: run the tool again over the result.",
+    "Достигнут предел количества проходов. Возможно, узлы ещё нужны, запустите инструмент повторно по результату.":
+        "The pass limit has been reached. More nodes may still be needed, run the tool again over the result.",
     "Колец уже допуска: %d. Они оставлены без изменений и служат опорой для соседей.":
         "Rings narrower than the tolerance: %d. They are left unchanged and serve as an anchor for their neighbours.",
     "Колец уже допуска: %d. У такого кольца противоположные берега слипнутся, и оно схлопнется само в себя. Включите защиту узких объектов либо возьмите допуск меньше %.4f.":
@@ -330,7 +330,7 @@ EN = {
         "Ring width: minimum %.4f, median %.4f",
     "GEOS считает геометрию некорректной, подробностей нет":
         "GEOS considers the geometry invalid, no details available",
-    "Сглаживание, число проходов (0 - без сглаживания)":
+    "Сглаживание, количество проходов (0 - без сглаживания)":
         "Smoothing, number of passes (0 - no smoothing)",
     "Сглаживание: проходов %d": "Smoothing: %d passes",
     "Длина до/после: %.3f / %.3f (%+.6f %%)":
@@ -456,7 +456,7 @@ EN = {
     "Метод: Висвалингам": "Method: Visvalingam",
 
     # Отчёт вставки узлов
-    "Предельное число проходов":
+    "Предельное количество проходов":
         "Maximum number of passes",
     "Узлов вставлено всего: %d":
         "Nodes inserted in total: %d",
@@ -466,12 +466,12 @@ EN = {
         "  at edge intersections: %d",
     "Проходов: %d":
         "Passes: %d",
-    "Предел числа проходов достигнут, узлы могут быть ещё нужны. На согласованном покрытии хватает двух-трёх проходов. Запустите инструмент повторно по результату либо поднимите предел.":
+    "Предел количества проходов достигнут, узлы могут быть ещё нужны. На согласованном покрытии хватает двух-трёх проходов. Запустите инструмент повторно по результату либо поднимите предел.":
         "The pass limit has been reached and more nodes may still be needed. Two or three passes are enough for a consistent coverage. Run the tool again over the result or raise the limit.",
     "Больше половины узлов пришлось на пересечения рёбер. Это признак того, что объекты слоя накладываются друг на друга, то есть слой не является единым покрытием. Посмотрите перекрытия инструментом 1.01. Если наложение входит в замысел, снимите галочку об узлах в пересечениях: тогда инструмент достроит только недостающие общие вершины.":
         "More than half of the nodes fell on edge intersections. This means the objects of the layer overlap each other, that is the layer is not a single coverage. Look at the overlaps with tool 1.01. If the overlap is by design, clear the edge intersection option: the tool will then only add the missing shared vertices.",
-    "Вершин добавлено больше половины от исходного числа. Проверьте, то ли это, чего вы ждали.":
-        "More than half as many vertices were added as there were to begin with. Check that this is what you expected.",
+    "Вершин добавлено больше половины от исходного количества. Проверьте, соответствует ли это ожидаемому.":
+        "More than half as many vertices were added as there were to begin with. Check that this matches what you expected.",
 
     # Отчёт вставки узлов,
     "Пересечений пропущено как неустойчивые: %d":

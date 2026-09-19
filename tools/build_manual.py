@@ -8,10 +8,16 @@
 
     python tools/build_manual.py
 
-Нужны pandoc и xelatex. Если их нет, скрипт скажет об этом и выйдет,
+Порядок сборки. Pandoc превращает markdown в самодостаточную страницу HTML
+со встроенными картинками и оглавлением, браузер печатает эту страницу в PDF.
+Pandoc берётся из PATH либо из пакета pypandoc_binary, браузером служит Edge
+или Chrome. TeX не нужен.
+
+Если pandoc или браузер не найдены, скрипт говорит об этом и выходит,
 не роняя остальную сборку.
 """
 
+import glob
 import os
 import shutil
 import subprocess
@@ -22,94 +28,172 @@ PLUGIN = "topoliner"
 DOC_SRC = os.path.join(ROOT, "doc")
 DOC_OUT = os.path.join(ROOT, PLUGIN, "doc")
 
-# Шрифт с кириллицей и полным набором знаков. Заголовок документа не задаём:
-# в нём кириллица иногда выходит квадратами.
-HEADER_COMMON = r"""
-\usepackage{float}
-\floatplacement{figure}{H}
-\usepackage{microtype}
-\setlength{\emergencystretch}{3em}
-"""
-
-# Русское оглавление и переносы. Без этого заголовок содержания
-# остаётся английским, а слова переносятся по английским правилам.
-HEADER_RU = r"""
-\usepackage{polyglossia}
-\setmainlanguage{russian}
-\setotherlanguage{english}
-"""
-
 BOOKS = [
-    ("MANUAL.md", "Topoliner.pdf", "russian"),
-    ("MANUAL.en.md", "Topoliner_en.pdf", "english"),
+    ("MANUAL.md", "Topoliner.pdf", "ru", "Содержание"),
+    ("MANUAL.en.md", "Topoliner_en.pdf", "en", "Contents"),
 ]
 
+# Оформление задаётся здесь, а не в браузере. Поля и размер страницы идут
+# через @page, потому что колонтитулы браузера отключены отдельным ключом.
+CSS = """
+@page { size: A4; margin: 20mm 18mm; }
+html { -webkit-print-color-adjust: exact; }
+body {
+  font-family: "DejaVu Serif", "Georgia", serif;
+  font-size: 10.5pt; line-height: 1.45; color: #111; margin: 0;
+}
+h1, h2, h3, h4 {
+  font-family: "DejaVu Sans", "Segoe UI", sans-serif;
+  color: #0f2e3d; line-height: 1.25; margin: 1.1em 0 0.4em;
+  page-break-after: avoid;
+}
+h1 { font-size: 19pt; border-bottom: 2px solid #0f766e; padding-bottom: 4px; }
+h2 { font-size: 15pt; page-break-before: auto; }
+h3 { font-size: 12.5pt; }
+h4 { font-size: 11pt; }
+p { margin: 0.45em 0; orphans: 3; widows: 3; }
+a { color: #0f766e; text-decoration: none; }
+code, pre {
+  font-family: "DejaVu Sans Mono", Consolas, monospace; font-size: 9pt;
+}
+code { background: #f2f5f5; padding: 0 2px; border-radius: 2px; }
+pre {
+  background: #f2f5f5; border-left: 3px solid #0f766e;
+  padding: 7px 10px; overflow-x: auto; page-break-inside: avoid;
+}
+pre code { background: none; padding: 0; }
+table {
+  border-collapse: collapse; width: 100%; margin: 0.7em 0; font-size: 9pt;
+  page-break-inside: auto;
+}
+th, td { border: 1px solid #c8d2d2; padding: 4px 6px; vertical-align: top; }
+th { background: #eef4f4; text-align: left; }
+tr { page-break-inside: avoid; }
+img { max-width: 100%; height: auto; display: block; margin: 0.6em auto; }
+figure { margin: 0.8em 0; page-break-inside: avoid; }
+figcaption { font-size: 9pt; font-style: italic; text-align: center; color: #444; }
+blockquote {
+  border-left: 3px solid #c8d2d2; margin: 0.6em 0; padding: 0 0 0 10px; color: #333;
+}
+hr { border: 0; border-top: 1px solid #d8e0e0; margin: 1.2em 0; }
+#TOC { page-break-after: always; }
+#TOC ul { list-style: none; padding-left: 1.1em; margin: 0.2em 0; }
+#TOC > ul { padding-left: 0; }
+#TOC a { color: #111; }
+"""
 
-def have(tool):
-    return shutil.which(tool) is not None
+
+def find_pandoc():
+    """Pandoc из PATH, иначе из пакета pypandoc_binary."""
+    found = shutil.which("pandoc")
+    if found:
+        return found
+    try:
+        import pypandoc
+    except ImportError:
+        return None
+    path = pypandoc.get_pandoc_path()
+    if os.path.isfile(path):
+        return path
+    exe = path + ".exe"
+    return exe if os.path.isfile(exe) else None
 
 
-def build(source, target, language):
-    """
-    Собирает один PDF.
+def find_browser():
+    """Edge или Chrome, они умеют печатать страницу в PDF без окна."""
+    for name in ("msedge", "chrome", "chromium", "google-chrome"):
+        found = shutil.which(name)
+        if found:
+            return found
+    patterns = [
+        r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+        r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+        r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+    ]
+    for pattern in patterns:
+        hit = glob.glob(pattern)
+        if hit:
+            return hit[0]
+    return None
 
-    Используется свой шаблон: в стандартном шаблоне pandoc жёстко прописан
-    пакет lmodern, которого может не быть в урезанной установке TeX,
-    а шрифты мы всё равно задаём явно.
-    """
-    header_path = os.path.join(DOC_SRC, "_header.tex")
-    with open(header_path, "w", encoding="utf-8") as fh:
-        fh.write(HEADER_COMMON)
-        if language == "russian":
-            fh.write(HEADER_RU)
 
+def to_html(pandoc, source, target, language, toc_title):
+    """Markdown в самодостаточную страницу со встроенными картинками."""
+    css_path = os.path.join(DOC_SRC, "_print.css")
+    with open(css_path, "w", encoding="utf-8") as fh:
+        fh.write(CSS)
     command = [
-        "pandoc", source,
+        pandoc, source,
+        "-f", "gfm",
+        "-t", "html5",
         "-o", target,
-        "--pdf-engine=xelatex",
+        "--standalone",
+        "--embed-resources",
         "--toc", "--toc-depth=3",
-        "-V", "mainfont=DejaVu Serif",
-        "-V", "sansfont=DejaVu Sans",
-        "-V", "monofont=DejaVu Sans Mono",
-        "-V", "geometry:margin=2.2cm",
-        "-V", "colorlinks=true",
-        # Шаблон pandoc по умолчанию тянет lmodern, которого может не быть.
-        # Шрифты у нас заданы явно, поэтому пакет не нужен.
-        "-V", "linkcolor=NavyBlue",
-        "--template=_template.tex",
-        "-H", header_path,
+        "--metadata", "lang=" + language,
+        "--metadata", "title=Topoliner",
+        "--variable", "toc-title=" + toc_title,
+        "--css", "_print.css",
         "--resource-path=" + DOC_SRC,
     ]
     result = subprocess.run(command, cwd=DOC_SRC, capture_output=True, text=True)
-    os.remove(header_path)
+    os.remove(css_path)
     if result.returncode != 0:
         print(result.stdout[-2000:])
         print(result.stderr[-2000:])
         raise SystemExit("pandoc вернул ошибку на %s" % source)
 
 
+def to_pdf(browser, html_path, pdf_path):
+    """Печать готовой страницы в PDF без окна браузера."""
+    url = "file:///" + os.path.abspath(html_path).replace("\\", "/")
+    command = [
+        browser,
+        "--headless=new",
+        "--disable-gpu",
+        "--no-sandbox",
+        "--no-pdf-header-footer",
+        "--run-all-compositor-stages-before-draw",
+        "--virtual-time-budget=20000",
+        "--print-to-pdf=" + os.path.abspath(pdf_path),
+        url,
+    ]
+    result = subprocess.run(command, capture_output=True, text=True, timeout=300)
+    if not os.path.exists(pdf_path) or os.path.getsize(pdf_path) < 10000:
+        print(result.stdout[-2000:])
+        print(result.stderr[-2000:])
+        raise SystemExit("браузер не напечатал %s" % pdf_path)
+
+
 def main():
-    for tool in ("pandoc", "xelatex"):
-        if not have(tool):
-            print("Нет %s, руководство не собрано." % tool)
-            return 0
+    pandoc = find_pandoc()
+    if pandoc is None:
+        print("Нет pandoc, руководство не собрано.")
+        print("Поставить можно так: python -m pip install --user pypandoc_binary")
+        return
+    browser = find_browser()
+    if browser is None:
+        print("Нет браузера для печати, руководство не собрано.")
+        return
 
-    figures = os.path.join(DOC_SRC, "figures")
-    if not os.path.isdir(figures):
-        print("Нет папки doc/figures, сначала запустите tools/make_figures.py")
-        return 1
+    if not os.path.isdir(DOC_OUT):
+        os.makedirs(DOC_OUT)
 
-    os.makedirs(DOC_OUT, exist_ok=True)
-    for source, target, language in BOOKS:
+    for source, target, language, toc_title in BOOKS:
         source_path = os.path.join(DOC_SRC, source)
         if not os.path.exists(source_path):
-            print("Пропущено: нет %s" % source)
+            print("Нет файла %s, пропущен." % source)
             continue
-        out_path = os.path.join(DOC_OUT, target)
-        build(source, out_path, language)
-        size = os.path.getsize(out_path) / 1024.0
-        print("%-18s %7.1f КБ" % (target, size))
-    return 0
+        html_path = os.path.join(DOC_SRC, "_" + target.replace(".pdf", ".html"))
+        pdf_path = os.path.join(DOC_OUT, target)
+        to_html(pandoc, source, html_path, language, toc_title)
+        try:
+            to_pdf(browser, html_path, pdf_path)
+        finally:
+            if os.path.exists(html_path):
+                os.remove(html_path)
+        print("%-18s %8.1f КБ" % (target, os.path.getsize(pdf_path) / 1024.0))
 
 
 if __name__ == "__main__":

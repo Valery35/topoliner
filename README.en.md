@@ -17,8 +17,8 @@ Interface in English and Russian, chosen by the QGIS locale.
 ## Why
 
 The usual manual routine looks like this: snap a layer to itself with some
-tolerance, then dissolve without attributes, then stare at the result looking
-for scratches. It is well known, repeatable and done by hand every time.
+tolerance, then dissolve without attributes, then inspect the result for
+discrepancies. It is well known, repeatable and done by hand every time.
 The plugin does the same thing reproducibly, with a numeric report
 and with guarantees.
 

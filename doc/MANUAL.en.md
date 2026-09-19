@@ -2,9 +2,9 @@
 
 [Русская версия](MANUAL.md)
 
-Version 0.6.0
+Version 0.12.8
 
-The plugin adds a **Topoliner** group with six tools to the Processing panel.
+The plugin adds a **Topoliner** group with ten tools to the Processing panel.
 Its purpose is to bring a polygon coverage into order without the manual
 routine of snapping a layer to itself.
 
@@ -99,7 +99,11 @@ of the discrepancies and well below the width of the narrowest object.
 For borders digitised from plans this is usually 1 to 2 metres.
 
 **The main rule for the tolerance: it must be smaller than the width of the
-narrowest object.** An object narrower than the tolerance has its opposite
+narrowest object.**
+
+![An object narrower than the tolerance is left untouched, so it does not collapse.](figures/narrow_en.png)
+
+An object narrower than the tolerance has its opposite
 banks stick together and collapses into itself. Tool 1.05 prints the minimum
 and median ring width before the computation and reports how many rings are
 narrower than the tolerance. Such rings are left untouched by default and
@@ -473,6 +477,8 @@ damaged: check the result with 1.01, the number of findings must not grow.
 ---
 
 ## 2.02 Polygon borders as lines
+
+![The usual conversion gives two coincident lines, tool 2.02 gives one.](figures/shared_border_en.png)
 
 Outputs the borders of a coverage as separate lines, from node to node.
 The layer is not modified.
