@@ -34,7 +34,7 @@ from qgis.PyQt.QtCore import QVariant
 from . import topo_checks as tc
 from .help_texts import help_for
 from .report import build_report
-from .qgis_helpers import fields_from, set_field_aliases
+from .qgis_helpers import fields_from, set_field_aliases, write_field_aliases
 from . import field_aliases
 from .i18n import tr
 from .rounding import fmt, nice
@@ -218,6 +218,11 @@ class TopologyAuditAlgorithm(QgsProcessingAlgorithm):
     def createInstance(self):
         return TopologyAuditAlgorithm()
 
+    def postProcessAlgorithm(self, context, feedback):
+        """Псевдонимы полей в сам файл, если результат лёг в GeoPackage."""
+        write_field_aliases(self, feedback)
+        return {}
+
     def helpUrl(self):
         return help_url()
 
@@ -398,7 +403,7 @@ class TopologyAuditAlgorithm(QgsProcessingAlgorithm):
             feedback.pushInfo(tr("Отчёт записан: %s") % report_path)
 
         feedback.setProgress(100)
-        set_field_aliases(context, dest_id, field_aliases.findings())
+        set_field_aliases(self, context, dest_id, field_aliases.findings())
         out = {self.OUTPUT: dest_id}
         if report_path:
             out[self.REPORT_FILE] = report_path
@@ -441,6 +446,11 @@ class TopologyFixAlgorithm(QgsProcessingAlgorithm):
 
     def createInstance(self):
         return TopologyFixAlgorithm()
+
+    def postProcessAlgorithm(self, context, feedback):
+        """Псевдонимы полей в сам файл, если результат лёг в GeoPackage."""
+        write_field_aliases(self, feedback)
+        return {}
 
     def helpUrl(self):
         return help_url()
@@ -705,7 +715,7 @@ class TopologyFixAlgorithm(QgsProcessingAlgorithm):
                 "Проверьте пороги. Скорее всего порог площади завышен."))
         feedback.setProgress(100)
 
-        set_field_aliases(context, remains_id, field_aliases.findings())
+        set_field_aliases(self, context, remains_id, field_aliases.findings())
         out = {self.OUTPUT: dest_id}
         if remains_id is not None:
             out[self.REMAINS] = remains_id
@@ -766,6 +776,11 @@ class AssemblyCheckAlgorithm(QgsProcessingAlgorithm):
 
     def createInstance(self):
         return AssemblyCheckAlgorithm()
+
+    def postProcessAlgorithm(self, context, feedback):
+        """Псевдонимы полей в сам файл, если результат лёг в GeoPackage."""
+        write_field_aliases(self, feedback)
+        return {}
 
     def helpUrl(self):
         return help_url()
@@ -891,5 +906,5 @@ class AssemblyCheckAlgorithm(QgsProcessingAlgorithm):
         else:
             feedback.pushInfo(tr("Дефектов сборки не найдено."))
         feedback.setProgress(100)
-        set_field_aliases(context, dest_id, field_aliases.findings())
+        set_field_aliases(self, context, dest_id, field_aliases.findings())
         return {self.OUTPUT: dest_id}

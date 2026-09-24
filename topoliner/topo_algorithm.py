@@ -37,7 +37,7 @@ from .help_texts import help_for
 from .i18n import tr
 from .rounding import fmt, nice
 from . import field_aliases
-from .qgis_helpers import set_field_aliases
+from .qgis_helpers import set_field_aliases, write_field_aliases
 from .branding import banner, help_footer, help_url
 from .topo_core import (
     MODE_BOTH,
@@ -201,6 +201,11 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
 
     def createInstance(self):
         return TopologyCleanAlgorithm()
+
+    def postProcessAlgorithm(self, context, feedback):
+        """Псевдонимы полей в сам файл, если результат лёг в GeoPackage."""
+        write_field_aliases(self, feedback)
+        return {}
 
     def helpUrl(self):
         return help_url()
@@ -650,7 +655,7 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
                 )
         feedback.pushInfo(tr("Объектов записано:    %d") % written)
         feedback.setProgress(100)
-        set_field_aliases(context, report_id, field_aliases.edits())
+        set_field_aliases(self, context, report_id, field_aliases.edits())
 
         out = {self.OUTPUT: dest_id}
         if report_id is not None:
@@ -726,6 +731,11 @@ class InsertNodesAlgorithm(QgsProcessingAlgorithm):
 
     def createInstance(self):
         return InsertNodesAlgorithm()
+
+    def postProcessAlgorithm(self, context, feedback):
+        """Псевдонимы полей в сам файл, если результат лёг в GeoPackage."""
+        write_field_aliases(self, feedback)
+        return {}
 
     def helpUrl(self):
         return help_url()
@@ -1022,7 +1032,7 @@ class InsertNodesAlgorithm(QgsProcessingAlgorithm):
         if stats["rings_degenerate"]:
             feedback.pushWarning(tr("Вырожденных колец: %d") % stats["rings_degenerate"])
         feedback.setProgress(100)
-        set_field_aliases(context, report_id, field_aliases.inserted_nodes())
+        set_field_aliases(self, context, report_id, field_aliases.inserted_nodes())
 
         out = {self.OUTPUT: dest_id}
         if report_id is not None:

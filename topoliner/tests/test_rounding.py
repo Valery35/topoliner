@@ -12,7 +12,10 @@
 
 import os
 import re
+import shutil
+import subprocess
 import sys
+import tempfile
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -20,8 +23,15 @@ PLUGIN = os.path.dirname(HERE)
 sys.path.insert(0, PLUGIN)
 
 import field_aliases  # noqa: E402
+import qgis_helpers  # noqa: E402
 import i18n  # noqa: E402
 from rounding import DIGITS, fmt, nice  # noqa: E402
+
+try:
+    from osgeo import ogr  # noqa: F401
+    HAS_GDAL = True
+except ImportError:  # сборка без GDAL
+    HAS_GDAL = False
 
 
 class TestNice(unittest.TestCase):
@@ -129,6 +139,106 @@ class TestAliases(unittest.TestCase):
                       field_aliases.coverage_arcs, field_aliases.borders):
             for name, alias in maker().items():
                 self.assertIn(alias, i18n.EN, "%s без перевода" % name)
+
+
+class TestGpkgTarget(unittest.TestCase):
+    """Разбор ссылки на результат. Псевдоним в файл умеет только GeoPackage."""
+
+    def test_path_with_layer_name(self):
+        self.assertEqual(
+            qgis_helpers.gpkg_target("C:/данные/файл.gpkg|layername=узлы"),
+            ("C:/данные/файл.gpkg", "узлы"))
+
+    def test_bare_path(self):
+        self.assertEqual(qgis_helpers.gpkg_target("C:/данные/файл.gpkg"),
+                         ("C:/данные/файл.gpkg", None))
+
+    def test_upper_case_extension(self):
+        self.assertEqual(qgis_helpers.gpkg_target("C:/файл.GPKG"),
+                         ("C:/файл.GPKG", None))
+
+    def test_other_formats_are_skipped(self):
+        for ref in ("C:/файл.shp", "memory:вывод", "", None, 17,
+                    "TEMPORARY_OUTPUT"):
+            self.assertIsNone(qgis_helpers.gpkg_target(ref), repr(ref))
+
+
+@unittest.skipUnless(HAS_GDAL, "нет GDAL")
+class TestBakeAliases(unittest.TestCase):
+    """Запись псевдонимов в сам файл."""
+
+    def setUp(self):
+        from osgeo import ogr
+        self.folder = tempfile.mkdtemp(prefix="topoliner_")
+        self.path = os.path.join(self.folder, "проба.gpkg")
+        driver = ogr.GetDriverByName("GPKG")
+        source = driver.CreateDataSource(self.path)
+        layer = source.CreateLayer("дуги", geom_type=ogr.wkbLineString)
+        for name, kind in (("arc_id", ogr.OFTInteger),
+                           ("left_fid", ogr.OFTInteger64)):
+            layer.CreateField(ogr.FieldDefn(name, kind))
+        source = None
+
+    def tearDown(self):
+        shutil.rmtree(self.folder, ignore_errors=True)
+
+    def aliases_in_file(self):
+        from osgeo import gdal
+        source = gdal.OpenEx(self.path, gdal.OF_VECTOR)
+        definition = source.GetLayerByName("дуги").GetLayerDefn()
+        found = {}
+        for i in range(definition.GetFieldCount()):
+            field = definition.GetFieldDefn(i)
+            found[field.GetName()] = field.GetAlternativeName()
+        source = None
+        return found
+
+    def test_alias_survives_without_a_project(self):
+        written = qgis_helpers._write_to_gpkg(
+            self.path, "дуги",
+            {"arc_id": "Номер дуги", "left_fid": "Объект слева"})
+        self.assertEqual(written, 2)
+        self.assertEqual(self.aliases_in_file(),
+                         {"arc_id": "Номер дуги", "left_fid": "Объект слева"})
+
+    def test_foreign_field_is_not_touched(self):
+        qgis_helpers._write_to_gpkg(self.path, "дуги", {"arc_id": "Номер дуги"})
+        self.assertEqual(self.aliases_in_file()["left_fid"], "")
+
+    def test_no_python_warning_escapes(self):
+        """
+        Предупреждение Python из этого кода роняет QGIS, см. AGENTS.md.
+
+        Проверка идёт в отдельном процессе, потому что предупреждение
+        библиотеки выдаётся один раз за процесс. В том же процессе его
+        мог бы вызвать любой предыдущий тест, и сторож ничего не поймал бы.
+        """
+        code = (
+            "import sys; sys.path.insert(0, %r);"
+            "import qgis_helpers;"
+            "qgis_helpers._write_to_gpkg(%r, 'дуги', {'arc_id': 'Номер дуги'})"
+            % (PLUGIN, self.path))
+        done = subprocess.run([sys.executable, "-W", "error::FutureWarning",
+                               "-W", "error::DeprecationWarning", "-c", code],
+                              capture_output=True, text=True, timeout=120)
+        self.assertEqual(done.returncode, 0, done.stderr[-800:])
+
+    def test_missing_file_is_silent(self):
+        self.assertEqual(
+            qgis_helpers._write_to_gpkg(os.path.join(self.folder, "нет.gpkg"),
+                                        None, {"arc_id": "Номер дуги"}), 0)
+
+    def test_targets_are_remembered_and_written(self):
+        """Заявка копится на алгоритме, запись идёт после прогона."""
+        class Fake(object):
+            pass
+
+        alg = Fake()
+        qgis_helpers.set_field_aliases(
+            alg, None, self.path + "|layername=дуги", {"arc_id": "Номер дуги"})
+        self.assertEqual(len(alg._alias_targets), 1)
+        qgis_helpers.write_field_aliases(alg)
+        self.assertEqual(self.aliases_in_file()["arc_id"], "Номер дуги")
 
 
 if __name__ == "__main__":

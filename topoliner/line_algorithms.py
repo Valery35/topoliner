@@ -29,7 +29,7 @@ from qgis.core import (
 
 from . import line_checks as lc
 from . import field_aliases
-from .qgis_helpers import set_field_aliases
+from .qgis_helpers import set_field_aliases, write_field_aliases
 from .audit_algorithms import finding_fields, write_findings
 from .branding import banner, help_footer, help_url
 from .help_texts import help_for
@@ -141,6 +141,11 @@ class LineAuditAlgorithm(QgsProcessingAlgorithm):
     def createInstance(self):
         return LineAuditAlgorithm()
 
+    def postProcessAlgorithm(self, context, feedback):
+        """Псевдонимы полей в сам файл, если результат лёг в GeoPackage."""
+        write_field_aliases(self, feedback)
+        return {}
+
     def helpUrl(self):
         return help_url()
 
@@ -239,7 +244,7 @@ class LineAuditAlgorithm(QgsProcessingAlgorithm):
             tr("Всего находок: %d, из них чинится автоматически: %d, решать человеку: %d")
             % (written, auto, written - auto))
         feedback.setProgress(100)
-        set_field_aliases(context, dest_id, field_aliases.findings())
+        set_field_aliases(self, context, dest_id, field_aliases.findings())
         return {self.OUTPUT: dest_id}
 
 
@@ -274,6 +279,11 @@ class LineFixAlgorithm(QgsProcessingAlgorithm):
 
     def createInstance(self):
         return LineFixAlgorithm()
+
+    def postProcessAlgorithm(self, context, feedback):
+        """Псевдонимы полей в сам файл, если результат лёг в GeoPackage."""
+        write_field_aliases(self, feedback)
+        return {}
 
     def helpUrl(self):
         return help_url()
@@ -433,7 +443,7 @@ class LineFixAlgorithm(QgsProcessingAlgorithm):
             feedback.pushWarning(tr("Объектов потеряно: %d") % lost)
         feedback.setProgress(100)
 
-        set_field_aliases(context, remains_id, field_aliases.findings())
+        set_field_aliases(self, context, remains_id, field_aliases.findings())
         out = {self.OUTPUT: dest_id}
         if remains_id is not None:
             out[self.REMAINS] = remains_id

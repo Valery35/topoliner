@@ -21,6 +21,7 @@ Python. Само по себе оно безобидно, но обработч�
 ставятся слою после загрузки, обработчиком завершения.
 """
 
+import os
 import warnings
 
 try:  # внутри плагина QGIS
@@ -28,7 +29,7 @@ try:  # внутри плагина QGIS
 except ImportError:  # headless-тесты
     QgsProcessingLayerPostProcessorInterface = object
 
-__all__ = ["fields_from", "set_field_aliases"]
+__all__ = ["fields_from", "set_field_aliases", "write_field_aliases"]
 
 # Обработчик должен пережить вызов processAlgorithm, иначе QGIS получит
 # ссылку на уничтоженный объект. Список держит его до конца сеанса.
@@ -53,16 +54,21 @@ class _AliasPostProcessor(QgsProcessingLayerPostProcessorInterface):
                 layer.setFieldAlias(index, alias)
 
 
-def set_field_aliases(context, destination, aliases):
+def set_field_aliases(algorithm, context, destination, aliases):
     """
-    Назначить псевдонимы полей выходному слою после загрузки.
+    Назначить псевдонимы полей выходному слою.
 
-    Молча ничего не делает, если слой не загружается в проект. При выгрузке
-    в файл псевдонимы теряются вместе с проектом, это свойство формата,
-    а не пропущенный случай.
+    Делает две вещи. Ставит псевдоним слою, который загружается в проект,
+    и запоминает, куда лёг результат, чтобы после прогона записать подписи
+    в сам файл. Запись в файл выполняет write_field_aliases.
     """
     if not destination or not aliases:
         return
+    targets = getattr(algorithm, "_alias_targets", None)
+    if targets is None:
+        targets = []
+        algorithm._alias_targets = targets
+    targets.append((destination, aliases))
     try:
         if not context.willLoadLayerOnCompletion(destination):
             return
@@ -72,6 +78,103 @@ def set_field_aliases(context, destination, aliases):
             processor)
     except (AttributeError, KeyError, RuntimeError, TypeError):
         return
+
+
+def gpkg_target(reference):
+    """
+    Путь и имя слоя для ссылки на GeoPackage, иначе None.
+
+    Ссылка приходит в двух видах. От загрузки в проект с именем слоя,
+    `C:/путь/файл.gpkg|layername=x`. От приёмника результата одним путём,
+    и тогда имя слоя разбирает тот, кто открывает файл. Память, shapefile
+    и прочее сюда не попадают, потому что псевдоним в файл умеет только
+    GeoPackage.
+    """
+    if not isinstance(reference, str) or not reference:
+        return None
+    path, separator, tail = reference.partition("|layername=")
+    if not path.lower().endswith(".gpkg"):
+        return None
+    if not separator:
+        return (path, None)
+    name = tail.split("|")[0].strip()
+    return (path, name or None)
+
+
+def _layer_of(source, path, layer_name):
+    """Слой GeoPackage по имени, а без имени по имени файла."""
+    if layer_name:
+        return source.GetLayerByName(layer_name)
+    stem = os.path.splitext(os.path.basename(path))[0]
+    found = source.GetLayerByName(stem)
+    if found is not None:
+        return found
+    return source.GetLayer(0) if source.GetLayerCount() == 1 else None
+
+
+def _write_to_gpkg(path, layer_name, aliases):
+    """
+    Пишет псевдонимы в сам файл. Возвращает количество полей.
+
+    Работа с GDAL идёт с погашенными предупреждениями Python. Библиотека
+    предупреждает о будущем переходе на исключения при первом обращении,
+    а обработчик предупреждений QGIS роняет программу. По той же причине
+    обойдён parameterAsFields, см. начало файла.
+    """
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from osgeo import gdal, ogr
+        if not hasattr(ogr, "ALTER_ALTERNATIVE_NAME_FLAG"):
+            return 0  # GDAL до 3.7 второго имени поля не знает
+        source = gdal.OpenEx(path, gdal.OF_UPDATE | gdal.OF_VECTOR)
+        if source is None:
+            return 0
+        layer = _layer_of(source, path, layer_name)
+        if layer is None:
+            return 0
+        definition = layer.GetLayerDefn()
+        done = 0
+        for index in range(definition.GetFieldCount()):
+            old = definition.GetFieldDefn(index)
+            alias = aliases.get(old.GetName())
+            if not alias:
+                continue
+            if old.GetAlternativeName() == alias:
+                done += 1
+                continue
+            fresh = ogr.FieldDefn(old.GetName(), old.GetType())
+            fresh.SetSubType(old.GetSubType())
+            fresh.SetAlternativeName(alias)
+            if layer.AlterFieldDefn(index, fresh,
+                                    ogr.ALTER_ALTERNATIVE_NAME_FLAG) == 0:
+                done += 1
+        return done
+
+
+def write_field_aliases(algorithm, feedback=None):
+    """
+    Записать псевдонимы в сами файлы результатов.
+
+    Псевдоним, поставленный слою, живёт в проекте. Слой, открытый файлом
+    из другого проекта, показывал бы латинские имена. GeoPackage хранит
+    второе имя поля рядом с самим полем, и QGIS читает его при любом
+    открытии.
+
+    Записывается язык интерфейса на момент прогона. Вызывается после
+    прогона, когда приёмник уже закрыл файл.
+    """
+    seen = set()
+    for destination, aliases in getattr(algorithm, "_alias_targets", []):
+        target = gpkg_target(destination)
+        if target is None or target in seen:
+            continue
+        seen.add(target)
+        try:
+            _write_to_gpkg(target[0], target[1], aliases)
+        except (ImportError, AttributeError, RuntimeError, TypeError) as why:
+            if feedback is not None:
+                feedback.pushDebugInfo(
+                    "Псевдонимы в файл не записаны: %s" % why)
 
 
 def fields_from(algorithm, parameters, name, context):

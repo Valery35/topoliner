@@ -27,7 +27,7 @@ from qgis.core import (
 )
 
 from .help_texts import help_for
-from .qgis_helpers import fields_from, set_field_aliases
+from .qgis_helpers import fields_from, set_field_aliases, write_field_aliases
 from . import field_aliases
 from .i18n import tr
 from .rounding import fmt, nice
@@ -344,6 +344,11 @@ class BoundariesAlgorithm(QgsProcessingAlgorithm):
     def createInstance(self):
         return BoundariesAlgorithm()
 
+    def postProcessAlgorithm(self, context, feedback):
+        """Псевдонимы полей в сам файл, если результат лёг в GeoPackage."""
+        write_field_aliases(self, feedback)
+        return {}
+
     def helpUrl(self):
         return help_url()
 
@@ -485,7 +490,7 @@ class BoundariesAlgorithm(QgsProcessingAlgorithm):
                           % counts.get(boundaries.KIND_HOLE, 0))
         feedback.pushInfo(tr("Всего линий:            %d") % len(result))
         feedback.setProgress(100)
-        set_field_aliases(context, dest_id, field_aliases.borders())
+        set_field_aliases(self, context, dest_id, field_aliases.borders())
         return {self.OUTPUT: dest_id}
 
 
@@ -522,6 +527,11 @@ class CoverageAlgorithm(QgsProcessingAlgorithm):
 
     def createInstance(self):
         return CoverageAlgorithm()
+
+    def postProcessAlgorithm(self, context, feedback):
+        """Псевдонимы полей в сам файл, если результат лёг в GeoPackage."""
+        write_field_aliases(self, feedback)
+        return {}
 
     def helpUrl(self):
         return help_url()
@@ -657,6 +667,6 @@ class CoverageAlgorithm(QgsProcessingAlgorithm):
         feedback.pushInfo(tr("Висячих узлов: %d, псевдоузлов: %d")
                           % (degrees.get(1, 0), degrees.get(2, 0)))
         feedback.setProgress(100)
-        set_field_aliases(context, nodes_id, field_aliases.coverage_nodes())
-        set_field_aliases(context, arcs_id, field_aliases.coverage_arcs())
+        set_field_aliases(self, context, nodes_id, field_aliases.coverage_nodes())
+        set_field_aliases(self, context, arcs_id, field_aliases.coverage_arcs())
         return {self.NODES: nodes_id, self.ARCS: arcs_id}
