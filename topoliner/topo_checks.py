@@ -22,8 +22,10 @@ import math
 
 try:  # внутри плагина QGIS
     from .i18n import tr
+    from .rounding import fmt
 except ImportError:  # headless-тесты
     from i18n import tr
+    from rounding import fmt
 
 try:  # внутри плагина QGIS
     from .topo_core import (
@@ -282,7 +284,8 @@ def check_items(backend, items, tolerance, area_threshold,
             findings.append(finding(
                 TINY_FEATURE, SEVERITY_REVIEW, fid, value=area,
                 xy=_safe_point(backend, g),
-                note=tr("площадь %.4f при пороге %.4f") % (area, area_threshold)))
+                note=tr("площадь %s при пороге %s")
+                     % (fmt(area), fmt(area_threshold))))
 
         # Вершинные проверки идут независимо от корректности геометрии:
         # именно у некорректных объектов артефактов больше всего.
@@ -294,7 +297,7 @@ def check_items(backend, items, tolerance, area_threshold,
                 if len(parts) > 1 and a < area_threshold:
                     findings.append(finding(
                         TINY_PART, SEVERITY_AUTO, fid, value=a, xy=ext[0],
-                        note=tr("часть площадью %.4f из %d") % (a, len(parts))))
+                        note=tr("часть площадью %s из %d") % (fmt(a), len(parts))))
                 w = ring_width(ext)
                 if a >= area_threshold and w < tolerance:
                     findings.append(finding(
@@ -305,8 +308,8 @@ def check_items(backend, items, tolerance, area_threshold,
                     if ai < area_threshold:
                         findings.append(finding(
                             TINY_HOLE, SEVERITY_AUTO, fid, value=ai, xy=inner[0],
-                            note=tr("дыра площадью %.4f при пороге %.4f")
-                                 % (ai, area_threshold)))
+                            note=tr("дыра площадью %s при пороге %s")
+                                 % (fmt(ai), fmt(area_threshold))))
                 for ring in rings:
                     _, dups = drop_repeated_vertices(ring, True, tolerance=1e-9)
                     if dups:
@@ -392,7 +395,7 @@ def check_items(backend, items, tolerance, area_threshold,
                 sev = SEVERITY_AUTO if a < area_threshold else SEVERITY_REVIEW
                 findings.append(finding(
                     GAP, sev, value=a, xy=_safe_point(backend, hole),
-                    note=tr("дыра в объединении покрытия площадью %.4f") % a))
+                    note=tr("дыра в объединении покрытия площадью %s") % fmt(a)))
     tick(0.85)
 
     # ── Несогласованные узлы ─────────────────────────────────────────────
@@ -426,7 +429,7 @@ def check_items(backend, items, tolerance, area_threshold,
                         value=dist, xy=(x, y),
                         note=(tr("границы совпадают геометрически, узла нет")
                               if on_edge
-                              else tr("вершина в %.4f от ребра соседа") % dist)))
+                              else tr("вершина в %s от ребра соседа") % fmt(dist))))
     tick(1.0)
 
     summary = summarize(findings)
@@ -1002,7 +1005,7 @@ def check_assembly(backend, items, area_threshold=0.0, max_gap=0.0,
                 findings.append(finding(
                     GROUP_SPLIT, SEVERITY_REVIEW, value=measure(extra),
                     xy=_safe_point(backend, extra), key=key,
-                    note=tr("разрыв до ближайшей части %.4f") % gap))
+                    note=tr("разрыв до ближайшей части %s") % fmt(gap)))
 
         if not ignore_holes and not is_line:
             for part in parts:
@@ -1014,7 +1017,7 @@ def check_assembly(backend, items, area_threshold=0.0, max_gap=0.0,
                     holes += 1
                     findings.append(finding(
                         GROUP_HOLE, sev, value=a, xy=_safe_point(backend, hole),
-                        key=key, note=tr("полость внутри группы площадью %.4f") % a))
+                        key=key, note=tr("полость внутри группы площадью %s") % fmt(a)))
 
         per_group[key] = {
             "features": len(members),

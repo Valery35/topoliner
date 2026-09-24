@@ -27,8 +27,10 @@ from qgis.core import (
 )
 
 from .help_texts import help_for
-from .qgis_helpers import fields_from
+from .qgis_helpers import fields_from, set_field_aliases
+from . import field_aliases
 from .i18n import tr
+from .rounding import fmt, nice
 from qgis.PyQt.QtCore import QVariant
 
 from . import boundaries, coverage
@@ -288,11 +290,11 @@ class TopologySimplifyAlgorithm(QgsProcessingAlgorithm):
         delta = area_after - area_before
         rel = (100.0 * delta / area_before) if area_before else 0.0
         if is_polygon:
-            feedback.pushInfo(tr("Площадь до/после: %.3f / %.3f (%+.6f %%)")
-                              % (area_before, area_after, rel))
+            feedback.pushInfo(tr("Площадь до/после: %s / %s (%+.3f %%)")
+                              % (fmt(area_before), fmt(area_after), rel))
         else:
-            feedback.pushInfo(tr("Длина до/после: %.3f / %.3f (%+.6f %%)")
-                              % (area_before, area_after, rel))
+            feedback.pushInfo(tr("Длина до/после: %s / %s (%+.3f %%)")
+                              % (fmt(area_before), fmt(area_after), rel))
         feedback.pushInfo(tr("Объектов на входе/выходе: %d / %d") % (len(records), written))
         if dropped:
             feedback.pushWarning(
@@ -463,7 +465,7 @@ class BoundariesAlgorithm(QgsProcessingAlgorithm):
             attrs = [item["kind"], labels.get(item["kind"], item["kind"]),
                      int(item["fid_a"]),
                      -1 if item["fid_b"] is None else int(item["fid_b"]),
-                     float(line.length())]
+                     nice(line.length())]
             if field:
                 a = values.get(item["fid_a"])
                 b = values.get(item["fid_b"])
@@ -483,6 +485,7 @@ class BoundariesAlgorithm(QgsProcessingAlgorithm):
                           % counts.get(boundaries.KIND_HOLE, 0))
         feedback.pushInfo(tr("Всего линий:            %d") % len(result))
         feedback.setProgress(100)
+        set_field_aliases(context, dest_id, field_aliases.borders())
         return {self.OUTPUT: dest_id}
 
 
@@ -637,7 +640,7 @@ class CoverageAlgorithm(QgsProcessingAlgorithm):
                 arc["id"], arc["from_node"], arc["to_node"],
                 -1 if arc["left"] is None else int(arc["left"]),
                 -1 if arc["right"] is None else int(arc["right"]),
-                float(line.length()),
+                nice(line.length()),
             ])
             arc_sink.addFeature(feat, QgsFeatureSink.FastInsert)
 
@@ -654,4 +657,6 @@ class CoverageAlgorithm(QgsProcessingAlgorithm):
         feedback.pushInfo(tr("Висячих узлов: %d, псевдоузлов: %d")
                           % (degrees.get(1, 0), degrees.get(2, 0)))
         feedback.setProgress(100)
+        set_field_aliases(context, nodes_id, field_aliases.coverage_nodes())
+        set_field_aliases(context, arcs_id, field_aliases.coverage_arcs())
         return {self.NODES: nodes_id, self.ARCS: arcs_id}

@@ -34,8 +34,10 @@ from qgis.PyQt.QtCore import QVariant
 from . import topo_checks as tc
 from .help_texts import help_for
 from .report import build_report
-from .qgis_helpers import fields_from
+from .qgis_helpers import fields_from, set_field_aliases
+from . import field_aliases
 from .i18n import tr
+from .rounding import fmt, nice
 from .branding import banner, help_footer, help_url
 from .geom_backend import QgisBackend
 from .topo_algorithm import assemble, explode
@@ -86,7 +88,7 @@ def write_findings(sink, fields, findings):
             f["severity"],
             -1 if f["fid"] is None else int(f["fid"]),
             -1 if f["fid_b"] is None else int(f["fid_b"]),
-            float(f["value"]),
+            nice(f["value"]),
             f["note"],
             f.get("key", ""),
         ])
@@ -142,26 +144,27 @@ def print_tolerance_hint(feedback, hint, tolerance):
         return
     feedback.pushInfo("")
     feedback.pushInfo(tr("── Расхождения вершин с рёбрами соседей ──"))
-    feedback.pushInfo(tr("Найдено: %d, медиана %.4f, 95 процентиль %.4f, максимум %.4f")
-                      % (hint["count"], hint["median"], hint["p95"], hint["max"]))
+    feedback.pushInfo(tr("Найдено: %d, медиана %s, 95 процентиль %s, максимум %s")
+                      % (hint["count"], fmt(hint["median"]), fmt(hint["p95"]),
+                         fmt(hint["max"])))
     if hint["edge_p05"]:
-        feedback.pushInfo(tr("Пятый процентиль длины ребра: %.4f") % hint["edge_p05"])
+        feedback.pushInfo(tr("Пятый процентиль длины ребра: %s") % fmt(hint["edge_p05"]))
     if hint["min_width"]:
-        feedback.pushInfo(tr("Минимальная ширина объекта: %.4f") % hint["min_width"])
+        feedback.pushInfo(tr("Минимальная ширина объекта: %s") % fmt(hint["min_width"]))
     if hint["gap_at"]:
         feedback.pushInfo(
-            tr("В распределении есть разрыв около %.4f: до него погрешность "
+            tr("В распределении есть разрыв около %s. До него погрешность "
                "оцифровки, за ним разногласие между источниками. Допуск "
-               "разумно взять чуть больше этой величины.") % hint["gap_at"])
+               "разумно взять чуть больше этой величины.") % fmt(hint["gap_at"]))
     else:
         feedback.pushInfo(
-            tr("Разрыва в распределении нет: расхождения идут сплошь, "
+            tr("Разрыва в распределении нет. Расхождения идут сплошь, "
                "и естественной границы между погрешностью и разногласием "
                "в этих данных не видно. Выбор допуска остаётся за вами."))
     if hint["ceiling"]:
         feedback.pushInfo(
-            tr("Выше %.4f допуск брать не следует: он схлопнет короткие рёбра "
-               "и узкие объекты.") % hint["ceiling"])
+            tr("Выше %s допуск брать не следует. Он схлопнет короткие рёбра "
+               "и узкие объекты.") % fmt(hint["ceiling"]))
     if hint["censored"]:
         feedback.pushWarning(
             tr("Медиана расхождений близка к заданному допуску. Дальше него "
@@ -395,6 +398,7 @@ class TopologyAuditAlgorithm(QgsProcessingAlgorithm):
             feedback.pushInfo(tr("Отчёт записан: %s") % report_path)
 
         feedback.setProgress(100)
+        set_field_aliases(context, dest_id, field_aliases.findings())
         out = {self.OUTPUT: dest_id}
         if report_path:
             out[self.REPORT_FILE] = report_path
@@ -650,8 +654,8 @@ class TopologyFixAlgorithm(QgsProcessingAlgorithm):
         feedback.pushInfo(tr("── Исправлено молча ──"))
         feedback.pushInfo(tr("Повторяющихся вершин снято:  %d") % stats["dup_vertices"])
         feedback.pushInfo(tr("Игл снято:                   %d") % stats["spikes"])
-        feedback.pushInfo(tr("Вершин сведено:              %d (макс. смещение %.4f)")
-                          % (stats["vertices_moved"], stats["max_move"]))
+        feedback.pushInfo(tr("Вершин сведено:              %d (макс. смещение %s)")
+                          % (stats["vertices_moved"], fmt(stats["max_move"])))
         feedback.pushInfo(tr("Узлов вставлено:             %d") % stats["nodes_inserted"])
         feedback.pushInfo(tr("Микрочастей удалено:         %d") % stats["tiny_parts"])
         feedback.pushInfo(tr("Микродыр залито:             %d") % stats["tiny_holes"])
@@ -687,7 +691,7 @@ class TopologyFixAlgorithm(QgsProcessingAlgorithm):
         after = stats["area_after"]
         rel = (100.0 * (after - before) / before) if before else 0.0
         feedback.pushInfo("")
-        feedback.pushInfo(tr("Площадь до/после: %.3f / %.3f (%+.6f %%)") % (before, after, rel))
+        feedback.pushInfo(tr("Площадь до/после: %s / %s (%+.3f %%)") % (fmt(before), fmt(after), rel))
         feedback.pushInfo(tr("Объектов на входе/выходе: %d / %d") % (len(items), written))
         if stats["features_lost"]:
             feedback.pushWarning(tr("Объектов исчезло: %d, см. слой оставшихся проблем")
@@ -698,9 +702,10 @@ class TopologyFixAlgorithm(QgsProcessingAlgorithm):
         if abs(rel) > 1.0:
             feedback.pushWarning(
                 tr("Суммарная площадь изменилась более чем на процент. "
-                "Проверьте пороги: скорее всего порог площади завышен."))
+                "Проверьте пороги. Скорее всего порог площади завышен."))
         feedback.setProgress(100)
 
+        set_field_aliases(context, remains_id, field_aliases.findings())
         out = {self.OUTPUT: dest_id}
         if remains_id is not None:
             out[self.REMAINS] = remains_id
@@ -879,11 +884,12 @@ class AssemblyCheckAlgorithm(QgsProcessingAlgorithm):
             if len(bad) > 40:
                 feedback.pushInfo(tr("... и ещё %d групп, см. слой находок") % (len(bad) - 40))
             feedback.pushWarning(
-                tr("Групп с дефектами сборки: %d. Смотрите поле note: там расстояние, "
+                tr("Групп с дефектами сборки: %d. Смотрите поле note. Там стоит расстояние, "
                 "которого не хватило допуску. Если разрывы измеряются сотнями метров, "
                 "значит группы не обязаны быть цельными и нужно задать "
                 "максимальный разрыв.") % len(bad))
         else:
             feedback.pushInfo(tr("Дефектов сборки не найдено."))
         feedback.setProgress(100)
+        set_field_aliases(context, dest_id, field_aliases.findings())
         return {self.OUTPUT: dest_id}

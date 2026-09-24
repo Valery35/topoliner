@@ -28,10 +28,13 @@ from qgis.core import (
 )
 
 from . import line_checks as lc
+from . import field_aliases
+from .qgis_helpers import set_field_aliases
 from .audit_algorithms import finding_fields, write_findings
 from .branding import banner, help_footer, help_url
 from .help_texts import help_for
 from .i18n import tr
+from .rounding import fmt
 
 
 def read_lines(source, feedback):
@@ -236,6 +239,7 @@ class LineAuditAlgorithm(QgsProcessingAlgorithm):
             tr("Всего находок: %d, из них чинится автоматически: %d, решать человеку: %d")
             % (written, auto, written - auto))
         feedback.setProgress(100)
+        set_field_aliases(context, dest_id, field_aliases.findings())
         return {self.OUTPUT: dest_id}
 
 
@@ -410,8 +414,8 @@ class LineFixAlgorithm(QgsProcessingAlgorithm):
         feedback.pushInfo(tr("Повторяющихся вершин снято:  %d") % stats["dup_vertices"])
         feedback.pushInfo(tr("Игл снято:                   %d") % stats["spikes"])
         feedback.pushInfo(tr("Перелётов обрезано:          %d") % stats["overshoots_trimmed"])
-        feedback.pushInfo(tr("Недоводов закрыто:           %d (макс. смещение %.4f)")
-                          % (stats["undershoots_closed"], stats["max_move"]))
+        feedback.pushInfo(tr("Недоводов закрыто:           %d (макс. смещение %s)")
+                          % (stats["undershoots_closed"], fmt(stats["max_move"])))
         feedback.pushInfo(tr("Узлов вставлено:             %d") % stats["nodes_inserted"])
         if stats["zero_dropped"]:
             feedback.pushInfo(tr("Линий нулевой длины удалено: %d") % stats["zero_dropped"])
@@ -421,14 +425,15 @@ class LineFixAlgorithm(QgsProcessingAlgorithm):
         before, after = stats["length_before"], stats["length_after"]
         rel = (100.0 * (after - before) / before) if before else 0.0
         feedback.pushInfo("")
-        feedback.pushInfo(tr("Длина до/после: %.3f / %.3f (%+.6f %%)")
-                          % (before, after, rel))
+        feedback.pushInfo(tr("Длина до/после: %s / %s (%+.3f %%)")
+                          % (fmt(before), fmt(after), rel))
         feedback.pushInfo(tr("Объектов на входе/выходе: %d / %d")
                           % (len(parts_of), written))
         if lost:
             feedback.pushWarning(tr("Объектов потеряно: %d") % lost)
         feedback.setProgress(100)
 
+        set_field_aliases(context, remains_id, field_aliases.findings())
         out = {self.OUTPUT: dest_id}
         if remains_id is not None:
             out[self.REMAINS] = remains_id

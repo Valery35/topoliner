@@ -21,8 +21,10 @@ import math
 
 try:  # внутри плагина QGIS
     from .i18n import tr
+    from .rounding import fmt
 except ImportError:  # headless-тесты
     from i18n import tr
+    from rounding import fmt
 
 try:  # внутри плагина QGIS
     from .topo_checks import (
@@ -210,8 +212,8 @@ def check_lines(items, tolerance, min_length=0.0, grid=1e-7,
         if min_length > 0 and length < min_length:
             findings.append(finding(SHORT_LINE, SEVERITY_REVIEW, fid,
                                     value=length, xy=coords[0],
-                                    note=tr("длина %.4f при пороге %.4f")
-                                         % (length, min_length)))
+                                    note=tr("длина %s при пороге %s")
+                                         % (fmt(length), fmt(min_length))))
 
         _, dups = drop_repeated_vertices(coords, False, tolerance=EPS)
         if dups:
@@ -291,15 +293,15 @@ def check_lines(items, tolerance, min_length=0.0, grid=1e-7,
                 if tail is not None and tail <= tolerance:
                     findings.append(finding(OVERSHOOT, SEVERITY_AUTO, fids[i],
                                             value=tail, xy=point,
-                                            note=tr("хвост за узлом длиной %.4f")
-                                                 % tail))
+                                            note=tr("хвост за узлом длиной %s")
+                                                 % fmt(tail)))
                     continue
 
                 if nearest <= tolerance:
                     findings.append(finding(UNDERSHOOT, SEVERITY_AUTO, fids[i],
                                             value=nearest, xy=point,
                                             note=tr("не доходит до соседней линии "
-                                                 "на %.4f") % nearest))
+                                                 "на %s") % fmt(nearest)))
                     continue
 
                 findings.append(finding(DANGLE, SEVERITY_REVIEW, fids[i],

@@ -217,8 +217,8 @@ EN = {
     "Вершин было/стало:    %d / %d": "Vertices before/after: %d / %d",
     "Вершин было/стало: %d / %d (%.1f %%)":
         "Vertices before/after: %d / %d (%.1f %%)",
-    "Вершин сведено:              %d (макс. смещение %.4f)":
-        "Vertices merged:             %d (max shift %.4f)",
+    "Вершин сведено:              %d (макс. смещение %s)":
+        "Vertices merged:             %d (max shift %s)",
     "Вершин сдвинуто:      %d": "Vertices moved:       %d",
     "Всего находок: %d, из них чинится автоматически: %d, решать человеку: %d":
         "Findings in total: %d, auto-fixed: %d, left to the operator: %d",
@@ -258,8 +258,8 @@ EN = {
     "Опорный слой: колец %d": "Donor layer: %d rings",
     "Перекрытий убрано:           %d": "Overlaps removed:            %d",
     "Площадь до/после:     %.6f / %.6f": "Area before/after:    %.6f / %.6f",
-    "Площадь до/после: %.3f / %.3f (%+.6f %%)":
-        "Area before/after: %.3f / %.3f (%+.6f %%)",
+    "Площадь до/после: %s / %s (%+.3f %%)":
+        "Area before/after: %s / %s (%+.3f %%)",
     "Площадь не изменилась ни на единицу.":
         "The area did not change by a single unit.",
     "Повторяющихся вершин снято:  %d": "Repeated vertices removed:   %d",
@@ -284,24 +284,24 @@ EN = {
         "Degenerate rings removed: %d (the tolerance exceeds the object size)",
     "Групп из нескольких отдельных тел: %d (разрыв больше заданного порога, нарушением не считается)":
         "Groups made of several separate bodies: %d (the gap exceeds the given threshold and is not a violation)",
-    "Групп с дефектами сборки: %d. Смотрите поле note: там расстояние, которого не хватило допуску. Если разрывы измеряются сотнями метров, значит группы не обязаны быть цельными и нужно задать максимальный разрыв.":
-        "Groups with assembly defects: %d. See the note field: it holds the distance the tolerance was missing. If the gaps are hundreds of metres, the groups need not be whole and a maximum gap should be set.",
-    "Длина ребра: медиана %.4f, пятый процентиль %.4f (рёбер %d)":
-        "Edge length: median %.4f, fifth percentile %.4f (%d edges)",
-    "Допуск больше пяти процентов самых коротких рёбер (%.4f), мелкие изгибы будут сглажены.":
-        "The tolerance exceeds the fifth percentile of edge length (%.4f), small bends will be smoothed out.",
+    "Групп с дефектами сборки: %d. Смотрите поле note. Там стоит расстояние, которого не хватило допуску. Если разрывы измеряются сотнями метров, значит группы не обязаны быть цельными и нужно задать максимальный разрыв.":
+        "Groups with assembly defects: %d. See the note field. It holds the distance the tolerance was missing. If the gaps are hundreds of metres, the groups need not be whole and a maximum gap should be set.",
+    "Длина ребра: медиана %s, пятый процентиль %s (рёбер %d)":
+        "Edge length: median %s, fifth percentile %s (%d edges)",
+    "Допуск больше пяти процентов самых коротких рёбер (%s), мелкие изгибы будут сглажены.":
+        "The tolerance exceeds the fifth percentile of edge length (%s), small bends will be smoothed out.",
     "Достигнут предел количества проходов. Возможно, узлы ещё нужны, запустите инструмент повторно по результату.":
         "The pass limit has been reached. More nodes may still be needed, run the tool again over the result.",
     "Колец уже допуска: %d. Они оставлены без изменений и служат опорой для соседей.":
         "Rings narrower than the tolerance: %d. They are left unchanged and serve as an anchor for their neighbours.",
-    "Колец уже допуска: %d. У такого кольца противоположные берега слипнутся, и оно схлопнется само в себя. Включите защиту узких объектов либо возьмите допуск меньше %.4f.":
-        "Rings narrower than the tolerance: %d. The opposite banks of such a ring would stick together and it would collapse into itself. Enable the protection of narrow objects or use a tolerance below %.4f.",
+    "Колец уже допуска: %d. У такого кольца противоположные берега слипнутся, и оно схлопнется само в себя. Включите защиту узких объектов либо возьмите допуск меньше %s.":
+        "Rings narrower than the tolerance: %d. The opposite banks of such a ring would stick together and it would collapse into itself. Enable the protection of narrow objects or use a tolerance below %s.",
     "Некорректных геометрий до/после: %d / %d":
         "Invalid geometries before/after: %d / %d",
     "Некорректных геометрий: %d. Уменьшите допуск.":
         "Invalid geometries: %d. Reduce the tolerance.",
-    "Некорректных стало больше. Уменьшите допуск: ориентир это пятый процентиль длины ребра, он напечатан выше.":
-        "The number of invalid geometries has grown. Reduce the tolerance: the fifth percentile of edge length printed above is a good reference.",
+    "Некорректных стало больше. Уменьшите допуск. Ориентир это пятый процентиль длины ребра, он напечатан выше.":
+        "The number of invalid geometries has grown. Reduce the tolerance. The fifth percentile of edge length printed above is a good reference.",
     "Общих границ не найдено. Если объекты соприкасаются, увеличьте точность опознания общих вершин.":
         "No shared borders were found. If the objects do touch, increase the precision for matching shared vertices.",
     "Объектов возвращено к исходному виду: %d. Вставка узла вывернула их геометрию, узлы для них не добавлены. Идентификаторы: %s%s":
@@ -310,31 +310,31 @@ EN = {
         "Objects lost: %d. The tolerance exceeds the object size.",
     "Объектов с самокасанием колец: %d. GEOS считает такую геометрию корректной, а SQL Server может её отклонить. При заливке в MSSQL применяйте MakeValid на стороне сервера.":
         "Objects with ring self-touches: %d. GEOS considers such geometry valid while SQL Server may reject it. When loading into MSSQL apply MakeValid on the server side.",
-    "Площадь до/после:     %.3f / %.3f (%+.5f, %+.6f %%)":
-        "Area before/after:    %.3f / %.3f (%+.5f, %+.6f %%)",
-    "Площадь изменилась на %.6f. Инструмент обещает не менять её вовсе, поэтому проверьте отклонение от ребра: скорее всего оно завышено.":
-        "The area changed by %.6f. The tool promises not to change it at all, so check the deviation from the edge: it is most likely too large.",
+    "Площадь до/после:     %s / %s (%s, %+.3f %%)":
+        "Area before/after:    %s / %s (%s, %+.3f %%)",
+    "Площадь изменилась на %s. Инструмент обещает не менять её вовсе, поэтому проверьте отклонение от ребра. Скорее всего оно завышено.":
+        "The area changed by %s. The tool promises not to change it at all, so check the deviation from the edge. It is most likely too large.",
     "Расхождение площади %.3e, это ошибка округления.":
         "Area discrepancy %.3e, this is a rounding error.",
-    "Смещение макс/сред:   %.4f / %.4f":
-        "Shift max/mean:       %.4f / %.4f",
+    "Смещение макс/сред:   %s / %s":
+        "Shift max/mean:       %s / %s",
     "Совпадающих вершин снято: %d (точные дубликаты, на форму не влияют)":
         "Coincident vertices removed: %d (exact duplicates, they do not affect the shape)",
-    "Суммарная площадь изменилась более чем на процент. Проверьте пороги: скорее всего порог площади завышен.":
-        "The total area changed by more than one per cent. Check the thresholds: the area threshold is most likely too high.",
+    "Суммарная площадь изменилась более чем на процент. Проверьте пороги. Скорее всего порог площади завышен.":
+        "The total area changed by more than one per cent. Check the thresholds. The area threshold is most likely too high.",
     "Сшивка: колец %d, вершин %d, допуск %g":
         "Snapping: %d rings, %d vertices, tolerance %g",
     "Чтобы понять природу, запустите ещё раз со снятой галочкой об узлах в пересечениях рёбер. Если откаты исчезнут, дело в пересечениях, если останутся, в самих вершинах на рёбрах.":
         "To understand the cause, run again with the edge intersection nodes option turned off. If the rollbacks disappear, the intersections are to blame; if they remain, the vertices on edges are.",
-    "Ширина колец: минимум %.4f, медиана %.4f":
-        "Ring width: minimum %.4f, median %.4f",
+    "Ширина колец: минимум %s, медиана %s":
+        "Ring width: minimum %s, median %s",
     "GEOS считает геометрию некорректной, подробностей нет":
         "GEOS considers the geometry invalid, no details available",
     "Сглаживание, количество проходов (0 - без сглаживания)":
         "Smoothing, number of passes (0 - no smoothing)",
     "Сглаживание: проходов %d": "Smoothing: %d passes",
-    "Длина до/после: %.3f / %.3f (%+.6f %%)":
-        "Length before/after: %.3f / %.3f (%+.6f %%)",
+    "Длина до/после: %s / %s (%+.3f %%)":
+        "Length before/after: %s / %s (%+.3f %%)",
 
     # Линейные инструменты
     "1.02 Проверка топологии линий": "1.02 Line topology check",
@@ -357,8 +357,8 @@ EN = {
     "Линий: %d, допуск %g": "Lines: %d, tolerance %g",
     "── Топология линий ──": "-- Line topology --",
     "Перелётов обрезано:          %d": "Overshoots trimmed:          %d",
-    "Недоводов закрыто:           %d (макс. смещение %.4f)":
-        "Undershoots closed:          %d (max shift %.4f)",
+    "Недоводов закрыто:           %d (макс. смещение %s)":
+        "Undershoots closed:          %d (max shift %s)",
     "Линий нулевой длины удалено: %d": "Zero-length lines removed:   %d",
     "Коротких линий удалено:      %d": "Short lines removed:         %d",
     "Объектов потеряно: %d": "Objects lost: %d",
@@ -400,39 +400,39 @@ EN = {
         "vertices in a row at the same point: %d",
     "вычитание съедало слишком много площади":
         "the subtraction was taking too much area",
-    "длина %.4f при пороге %.4f": "length %.4f against the threshold %.4f",
-    "дыра в объединении покрытия площадью %.4f":
-        "a hole in the union of the coverage, area %.4f",
-    "дыра площадью %.4f при пороге %.4f":
-        "a hole of area %.4f against the threshold %.4f",
+    "длина %s при пороге %s": "length %s against the threshold %s",
+    "дыра в объединении покрытия площадью %s":
+        "a hole in the union of the coverage, area %s",
+    "дыра площадью %s при пороге %s":
+        "a hole of area %s against the threshold %s",
     "линия короче порога, удаление не выполнялось":
         "the line is shorter than the threshold, no deletion was performed",
-    "не доходит до соседней линии на %.4f":
-        "falls short of the neighbouring line by %.4f",
+    "не доходит до соседней линии на %s":
+        "falls short of the neighbouring line by %s",
     "объект исчез при исправлении": "the object disappeared during repair",
     "объект мельче порога, удаление не выполнялось":
         "the object is smaller than the threshold, no deletion was performed",
     "перекрытие шире допуска, это спор за площадь":
         "the overlap is wider than the tolerance, a dispute over area",
-    "площадь %.4f при пороге %.4f": "area %.4f against the threshold %.4f",
-    "полость внутри группы площадью %.4f":
-        "a cavity inside the group, area %.4f",
+    "площадь %s при пороге %s": "area %s against the threshold %s",
+    "полость внутри группы площадью %s":
+        "a cavity inside the group, area %s",
     "пустая геометрия": "empty geometry",
     "разворотов границы назад: %d": "border turns back on itself: %d",
     "разворотов линии назад: %d": "line turns back on itself: %d",
-    "разрыв до ближайшей части %.4f": "gap to the nearest part %.4f",
+    "разрыв до ближайшей части %s": "gap to the nearest part %s",
     "совпадение или вложение решается человеком":
         "coincidence or nesting is decided by the operator",
     "сосед не найден": "no neighbour found",
     "сшивка испортила объект, исправление не помогло, возвращена исходная геометрия":
         "snapping broke the object, the repair did not help, the original geometry was restored",
-    "хвост за узлом длиной %.4f": "a tail past a node, length %.4f",
-    "часть площадью %.4f из %d": "a part of area %.4f out of %d",
+    "хвост за узлом длиной %s": "a tail past a node, length %s",
+    "часть площадью %s из %d": "a part of area %s out of %d",
     "щель крупнее порога, не заполнялась":
         "the gap is larger than the threshold, it was not filled",
     "эффективная ширина меньше допуска":
         "the effective width is below the tolerance",
-    "вершина в %.4f от ребра соседа": "vertex %.4f away from a neighbour edge",
+    "вершина в %s от ребра соседа": "vertex %s away from a neighbour edge",
 
     # Извлечение границ
     "2.02 Границы полигонов линиями": "2.02 Polygon borders as lines",
@@ -468,8 +468,8 @@ EN = {
         "Passes: %d",
     "Предел количества проходов достигнут, узлы могут быть ещё нужны. На согласованном покрытии хватает двух-трёх проходов. Запустите инструмент повторно по результату либо поднимите предел.":
         "The pass limit has been reached and more nodes may still be needed. Two or three passes are enough for a consistent coverage. Run the tool again over the result or raise the limit.",
-    "Больше половины узлов пришлось на пересечения рёбер. Это признак того, что объекты слоя накладываются друг на друга, то есть слой не является единым покрытием. Посмотрите перекрытия инструментом 1.01. Если наложение входит в замысел, снимите галочку об узлах в пересечениях: тогда инструмент достроит только недостающие общие вершины.":
-        "More than half of the nodes fell on edge intersections. This means the objects of the layer overlap each other, that is the layer is not a single coverage. Look at the overlaps with tool 1.01. If the overlap is by design, clear the edge intersection option: the tool will then only add the missing shared vertices.",
+    "Больше половины узлов пришлось на пересечения рёбер. Это признак того, что объекты слоя накладываются друг на друга, то есть слой не является единым покрытием. Посмотрите перекрытия инструментом 1.01. Если наложение входит в замысел, снимите галочку об узлах в пересечениях. Тогда инструмент достроит только недостающие общие вершины.":
+        "More than half of the nodes fell on edge intersections. This means the objects of the layer overlap each other, that is the layer is not a single coverage. Look at the overlaps with tool 1.01. If the overlap is by design, clear the edge intersection option. The tool will then only add the missing shared vertices.",
     "Вершин добавлено больше половины от исходного количества. Проверьте, соответствует ли это ожидаемому.":
         "More than half as many vertices were added as there were to begin with. Check that this matches what you expected.",
 
@@ -480,23 +480,23 @@ EN = {
     # Подсказка по допуску
     "── Расхождения вершин с рёбрами соседей ──":
         "-- Discrepancies between vertices and neighbour edges --",
-    "Найдено: %d, медиана %.4f, 95 процентиль %.4f, максимум %.4f":
-        "Found: %d, median %.4f, 95th percentile %.4f, maximum %.4f",
-    "Пятый процентиль длины ребра: %.4f":
-        "Fifth percentile of edge length: %.4f",
-    "Минимальная ширина объекта: %.4f":
-        "Minimum object width: %.4f",
+    "Найдено: %d, медиана %s, 95 процентиль %s, максимум %s":
+        "Found: %d, median %s, 95th percentile %s, maximum %s",
+    "Пятый процентиль длины ребра: %s":
+        "Fifth percentile of edge length: %s",
+    "Минимальная ширина объекта: %s":
+        "Minimum object width: %s",
     "Допуск для этого слоя разумно взять около %.4f":
         "A sensible tolerance for this layer is around %.4f",
     "Медиана расхождений близка к заданному допуску. Дальше него проверка не смотрит, поэтому распределение обрезано и настоящие расхождения крупнее. Повторите с допуском покрупнее, чтобы увидеть картину целиком.":
         "The median discrepancy is close to the tolerance given. The check does not look beyond it, so the distribution is truncated and the real discrepancies are larger. Repeat with a larger tolerance to see the whole picture.",
 
-    "В распределении есть разрыв около %.4f: до него погрешность оцифровки, за ним разногласие между источниками. Допуск разумно взять чуть больше этой величины.":
-        "There is a break in the distribution around %.4f: below it lies digitising error, above it a disagreement between sources. A sensible tolerance is slightly above that value.",
-    "Разрыва в распределении нет: расхождения идут сплошь, и естественной границы между погрешностью и разногласием в этих данных не видно. Выбор допуска остаётся за вами.":
-        "There is no break in the distribution: the discrepancies run continuously, and no natural boundary between error and disagreement is visible in this data. The choice of tolerance is yours.",
-    "Выше %.4f допуск брать не следует: он схлопнет короткие рёбра и узкие объекты.":
-        "The tolerance should not exceed %.4f: it would collapse short edges and narrow objects.",
+    "В распределении есть разрыв около %s. До него погрешность оцифровки, за ним разногласие между источниками. Допуск разумно взять чуть больше этой величины.":
+        "There is a break in the distribution around %s. Below it lies digitising error, above it a disagreement between sources. A sensible tolerance is slightly above that value.",
+    "Разрыва в распределении нет. Расхождения идут сплошь, и естественной границы между погрешностью и разногласием в этих данных не видно. Выбор допуска остаётся за вами.":
+        "There is no break in the distribution. The discrepancies run continuously, and no natural boundary between error and disagreement is visible in this data. The choice of tolerance is yours.",
+    "Выше %s допуск брать не следует. Он схлопнет короткие рёбра и узкие объекты.":
+        "The tolerance should not exceed %s. It would collapse short edges and narrow objects.",
     "Отчёт списком": "Report as a list",
     "Отчёт записан: %s": "Report written: %s",
     "Topoliner. Проверка топологии слоя %s":
@@ -511,4 +511,34 @@ EN = {
     "Узлов: %d, дуг: %d": "Nodes: %d, arcs: %d",
     "Дуг между двумя объектами: %d": "Arcs between two objects: %d",
     "Висячих узлов: %d, псевдоузлов: %d": "Dangling nodes: %d, pseudo nodes: %d",
+
+    # Псевдонимы полей выходных слоёв
+    "Номер": "Number",
+    "Код нарушения": "Violation code",
+    "Нарушение": "Violation",
+    "Разряд": "Severity",
+    "Объект": "Feature",
+    "Второй объект": "Second feature",
+    "Величина": "Value",
+    "Пояснение": "Note",
+    "Группа": "Group",
+    "Вид правки": "Edit kind",
+    "Смещение": "Displacement",
+    "Кольцо": "Ring",
+    "Вид узла": "Node kind",
+    "Отклонение от ребра": "Offset from the edge",
+    "Номер узла": "Node number",
+    "Степень": "Degree",
+    "Номер дуги": "Arc number",
+    "Узел начала": "Start node",
+    "Узел конца": "End node",
+    "Объект слева": "Feature on the left",
+    "Объект справа": "Feature on the right",
+    "Длина": "Length",
+    "Код вида": "Kind code",
+    "Вид границы": "Border kind",
+    "Объект с одной стороны": "Feature on one side",
+    "Объект с другой стороны": "Feature on the other side",
+    "Значение с одной стороны": "Value on one side",
+    "Значение с другой стороны": "Value on the other side",
 }

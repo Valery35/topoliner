@@ -249,5 +249,8 @@ class TestLineNotes(Base):
         f, _s = check_lines(self.messy(), tolerance=2.0)
         under = self.kinds(f, UNDERSHOOT)[0]
         over = self.kinds(f, OVERSHOOT)[0]
-        self.assertIn("0.5000", under["note"])
-        self.assertIn("1.5000", over["note"])
+        self.assertIn("0.5", under["note"])
+        self.assertIn("1.5", over["note"])
+        # Хвостовых нулей быть не должно: величина округляется до значащих
+        # цифр, а не до фиксированного количества знаков.
+        self.assertNotIn("0.5000", under["note"])

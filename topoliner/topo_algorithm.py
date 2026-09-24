@@ -35,6 +35,9 @@ from qgis.PyQt.QtCore import QVariant
 
 from .help_texts import help_for
 from .i18n import tr
+from .rounding import fmt, nice
+from . import field_aliases
+from .qgis_helpers import set_field_aliases
 from .branding import banner, help_footer, help_url
 from .topo_core import (
     MODE_BOTH,
@@ -459,8 +462,8 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
             % (len(rings), sum(len(r) for r in rings), tolerance)
         )
         feedback.pushInfo(
-            tr("Длина ребра: медиана %.4f, пятый процентиль %.4f (рёбер %d)")
-            % (median, p05, n_seg)
+            tr("Длина ребра: медиана %s, пятый процентиль %s (рёбер %d)")
+            % (fmt(median), fmt(p05), n_seg)
         )
         if is_polygon:
             narrow = 0
@@ -474,8 +477,8 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
             if widths:
                 widths.sort()
                 feedback.pushInfo(
-                    tr("Ширина колец: минимум %.4f, медиана %.4f")
-                    % (widths[0], widths[len(widths) // 2]))
+                    tr("Ширина колец: минимум %s, медиана %s")
+                    % (fmt(widths[0]), fmt(widths[len(widths) // 2])))
             if narrow and protect:
                 feedback.pushInfo(
                     tr("Колец уже допуска: %d. Они оставлены без изменений и служат "
@@ -484,12 +487,12 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
                 feedback.pushWarning(
                     tr("Колец уже допуска: %d. У такого кольца противоположные берега "
                     "слипнутся, и оно схлопнется само в себя. Включите защиту "
-                    "узких объектов либо возьмите допуск меньше %.4f.")
-                    % (narrow, widths[0] if widths else tolerance))
+                    "узких объектов либо возьмите допуск меньше %s.")
+                    % (narrow, fmt(widths[0] if widths else tolerance)))
         if p05 > 0 and tolerance > p05:
             feedback.pushInfo(
-                tr("Допуск больше пяти процентов самых коротких рёбер (%.4f), "
-                "мелкие изгибы будут сглажены.") % p05)
+                tr("Допуск больше пяти процентов самых коротких рёбер (%s), "
+                "мелкие изгибы будут сглажены.") % fmt(p05))
 
         def progress(fraction):
             feedback.setProgress(10.0 + 70.0 * fraction)
@@ -589,7 +592,7 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
                     f = QgsFeature(fields)
                     f.setGeometry(QgsGeometry(QgsPoint(x, y)))
                     src_idx = order[ring_pos] if ring_pos < len(order) else -1
-                    f.setAttributes([kind, float(dist), int(src_idx)])
+                    f.setAttributes([kind, nice(dist), int(src_idx)])
                     rsink.addFeature(f, QgsFeatureSink.FastInsert)
 
         # ── Отчёт ─────────────────────────────────────────────────────────
@@ -598,7 +601,8 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
         feedback.pushInfo(tr("── Результат ──"))
         feedback.pushInfo(tr("Вершин сдвинуто:      %d") % stats["vertices_moved"])
         feedback.pushInfo(
-            tr("Смещение макс/сред:   %.4f / %.4f") % (stats["max_move"], stats["mean_move"])
+            tr("Смещение макс/сред:   %s / %s")
+            % (fmt(stats["max_move"]), fmt(stats["mean_move"]))
         )
         if stats.get("rings_frozen"):
             feedback.pushInfo(tr("Колец не изменялось:  %d (уже допуска)")
@@ -612,8 +616,8 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
             delta = area_after - area_before
             rel = (100.0 * delta / area_before) if area_before else 0.0
             feedback.pushInfo(
-                tr("Площадь до/после:     %.3f / %.3f (%+.5f, %+.6f %%)")
-                % (area_before, area_after, delta, rel)
+                tr("Площадь до/после:     %s / %s (%s, %+.3f %%)")
+                % (fmt(area_before), fmt(area_after), fmt(delta), rel)
             )
         if stats["rings_degenerate"]:
             feedback.pushWarning(
@@ -641,11 +645,12 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
             )
             if invalid_after > invalid_before:
                 feedback.pushWarning(
-                    tr("Некорректных стало больше. Уменьшите допуск: ориентир это "
+                    tr("Некорректных стало больше. Уменьшите допуск. Ориентир это "
                     "пятый процентиль длины ребра, он напечатан выше.")
                 )
         feedback.pushInfo(tr("Объектов записано:    %d") % written)
         feedback.setProgress(100)
+        set_field_aliases(context, report_id, field_aliases.edits())
 
         out = {self.OUTPUT: dest_id}
         if report_id is not None:
@@ -943,7 +948,7 @@ class InsertNodesAlgorithm(QgsProcessingAlgorithm):
                 for x, y, kind, dist, _ring in result["events"]:
                     f = QgsFeature(fields)
                     f.setGeometry(QgsGeometry(QgsPoint(x, y)))
-                    f.setAttributes([kind, float(dist)])
+                    f.setAttributes([kind, nice(dist)])
                     rsink.addFeature(f, QgsFeatureSink.FastInsert)
 
         # ── Отчёт ─────────────────────────────────────────────────────────
@@ -972,7 +977,7 @@ class InsertNodesAlgorithm(QgsProcessingAlgorithm):
                    "признак того, что объекты слоя накладываются друг на друга, "
                    "то есть слой не является единым покрытием. Посмотрите "
                    "перекрытия инструментом 1.01. Если наложение входит "
-                   "в замысел, снимите галочку об узлах в пересечениях: тогда "
+                   "в замысел, снимите галочку об узлах в пересечениях. Тогда "
                    "инструмент достроит только недостающие общие вершины."))
         feedback.pushInfo(tr("Объектов изменено:    %d") % touched)
         feedback.pushInfo(tr("Вершин было/стало:    %d / %d") % (vertices_before, vertices_after))
@@ -995,9 +1000,9 @@ class InsertNodesAlgorithm(QgsProcessingAlgorithm):
                         tr("Расхождение площади %.3e, это ошибка округления.") % abs(delta))
                 else:
                     feedback.pushWarning(
-                        tr("Площадь изменилась на %.6f. Инструмент обещает не менять её "
-                        "вовсе, поэтому проверьте отклонение от ребра: скорее всего "
-                        "оно завышено.") % delta)
+                        tr("Площадь изменилась на %s. Инструмент обещает не менять её "
+                        "вовсе, поэтому проверьте отклонение от ребра. Скорее всего "
+                        "оно завышено.") % fmt(delta))
 
         if reverted:
             feedback.pushWarning(
@@ -1017,6 +1022,7 @@ class InsertNodesAlgorithm(QgsProcessingAlgorithm):
         if stats["rings_degenerate"]:
             feedback.pushWarning(tr("Вырожденных колец: %d") % stats["rings_degenerate"])
         feedback.setProgress(100)
+        set_field_aliases(context, report_id, field_aliases.inserted_nodes())
 
         out = {self.OUTPUT: dest_id}
         if report_id is not None:

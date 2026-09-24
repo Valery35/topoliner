@@ -18,9 +18,11 @@ report
 
 try:  # внутри плагина QGIS
     from .i18n import is_russian
+    from .rounding import fmt
     from . import topo_checks as tc
 except ImportError:  # headless-тесты
     from i18n import is_russian
+    from rounding import fmt
     import topo_checks as tc
 
 __all__ = ["build_report"]
@@ -50,10 +52,10 @@ def build_report(findings, summary, header=None, tolerance=None,
     line()
 
     if tolerance is not None:
-        line((("Допуск: %g" if russian else "Tolerance: %g") % tolerance))
+        line((("Допуск: %s" if russian else "Tolerance: %s") % fmt(tolerance)))
     if area_threshold is not None:
-        line((("Порог площади: %g" if russian else "Area threshold: %g")
-              % area_threshold))
+        line((("Порог площади: %s" if russian else "Area threshold: %s")
+              % fmt(area_threshold)))
     line()
 
     if not findings:
@@ -77,17 +79,17 @@ def build_report(findings, summary, header=None, tolerance=None,
         line("Расхождения вершин с рёбрами соседей" if russian
              else "Discrepancies between vertices and neighbour edges")
         line("-" * 70)
-        line(("медиана %.4f, 95 процентиль %.4f, максимум %.4f" if russian
-              else "median %.4f, 95th percentile %.4f, maximum %.4f")
-             % (hint["median"], hint["p95"], hint["max"]))
+        line(("медиана %s, 95 процентиль %s, максимум %s" if russian
+              else "median %s, 95th percentile %s, maximum %s")
+             % (fmt(hint["median"]), fmt(hint["p95"]), fmt(hint["max"])))
         if hint.get("gap_at"):
-            line(("разрыв в распределении около %.4f" if russian
-                  else "break in the distribution around %.4f")
-                 % hint["gap_at"])
+            line(("разрыв в распределении около %s" if russian
+                  else "break in the distribution around %s")
+                 % fmt(hint["gap_at"]))
         if hint.get("ceiling"):
-            line(("выше %.4f допуск брать не следует" if russian
-                  else "the tolerance should not exceed %.4f")
-                 % hint["ceiling"])
+            line(("выше %s допуск брать не следует" if russian
+                  else "the tolerance should not exceed %s")
+                 % fmt(hint["ceiling"]))
         line()
 
     # ── Разбор человеком ─────────────────────────────────────────────────

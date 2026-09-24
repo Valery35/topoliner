@@ -2,7 +2,7 @@
 
 [Русская версия](MANUAL.md)
 
-Version 0.12.8
+Version 0.12.9
 
 The plugin adds a **Topoliner** group with ten tools to the Processing panel.
 Its purpose is to bring a polygon coverage into order without the manual
@@ -632,6 +632,18 @@ the operator.
 ---
 
 ## Output layer field reference
+
+Field names are short and Latin, because expressions and filters are written
+against them. Every field also carries an alias in the interface language. The
+alias appears as the column label in the attribute table and in the feature
+form, while expressions still use the field name from the tables below. The
+alias lives in the project and is not saved when the layer is exported to a
+file, which is a property of the formats rather than an omission.
+
+Measured values are rounded to four significant digits. The rounding follows
+significant digits rather than decimal places, so an area of a few square
+microns does not become zero and a length of several thousand metres does not
+carry digits the source data never had. Counts are not rounded at all.
 
 ### The findings layer
 
