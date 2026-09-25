@@ -3,7 +3,7 @@ name=Topoliner
 qgisMinimumVersion=3.16
 qgisMaximumVersion=4.99
 description=Topology check, cleanup and coverage model for polygon and line layers: snapping, missing nodes, dangles and overshoots, assembly check, topology-preserving simplification
-version=0.12.10
+version=0.13.0
 author=ООО «Информ++»
 email=xbbster@gmail.com
 about=Brings polygon coverages into order. Finds topology violations and separates
@@ -15,7 +15,8 @@ about=Brings polygon coverages into order. Finds topology violations and separat
       and simplifies while keeping shared borders shared.
       Replaces the manual routine of snapping a layer to itself followed by
       a dissolve without attributes. All tools live in the Processing panel
-      and work in models and in batch mode. Interface in English and Russian.
+      and work in models and in batch mode, and cutting a contour into
+      a coverage also has a toolbar button for edit mode. Interface in English and Russian.
       Tested on QGIS 3.16 through 4.0.
       A companion to the Isoliner kriging and contouring toolset
       (plugins.qgis.org/plugins/grid_isolines) and to Isoliner3D, a standalone
@@ -31,7 +32,10 @@ icon=icons/icon.png
 experimental=False
 deprecated=False
 hasProcessingProvider=yes
-changelog=0.12.10 Field aliases are now written into the GeoPackage itself, so a layer opened outside the project keeps them.
+changelog=0.13.0 New tool 1.08, cutting contours into a coverage. The cut edge
+      reaches both sides the same, so no discrepancy is left behind. Cutting in
+      also has a toolbar button for edit mode, and the plugin got an About window.
+      0.12.10 Field aliases are now written into the GeoPackage itself, so a layer opened outside the project keeps them.
       0.12.6 The idempotence guarantee now names its one exception:
       simplification with smoothing.
       0.12.5 Fixed one more deprecated call that could crash QGIS from

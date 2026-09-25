@@ -10,6 +10,7 @@ from .audit_algorithms import (
     TopologyAuditAlgorithm,
     TopologyFixAlgorithm,
 )
+from .cut_algorithm import CutIntoCoverageAlgorithm
 from .line_algorithms import LineAuditAlgorithm, LineFixAlgorithm
 from .simplify_algorithm import (
     BoundariesAlgorithm,
@@ -31,6 +32,7 @@ class TopolinerProvider(QgsProcessingProvider):
         self.addAlgorithm(TopologyCleanAlgorithm())       # 1.05
         self.addAlgorithm(InsertNodesAlgorithm())         # 1.06
         self.addAlgorithm(AssemblyCheckAlgorithm())       # 1.07
+        self.addAlgorithm(CutIntoCoverageAlgorithm())     # 1.08
         self.addAlgorithm(TopologySimplifyAlgorithm())    # 2.01
         self.addAlgorithm(BoundariesAlgorithm())          # 2.02
         self.addAlgorithm(CoverageAlgorithm())            # 2.03

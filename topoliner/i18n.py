@@ -78,6 +78,7 @@ EN = {
     "1.03 Очистка топологии полигонов": "1.03 Polygon topology cleanup",
     "1.05 Сшивка узлов и вершин": "1.05 Node and vertex snapping",
     "1.07 Контроль сборки по атрибуту": "1.07 Assembly check by attribute",
+    "1.08 Врезка контуров в покрытие": "1.08 Cutting contours into a coverage",
     "1.06 Вставка недостающих узлов": "1.06 Insertion of missing nodes",
     "2.01 Топологическое упрощение": "2.01 Topology-preserving simplify",
     "Topoliner - топология и обработка геометрии":
@@ -342,6 +343,122 @@ EN = {
     "── Топология линий ──": "-- Line topology --",
     "Проверяемый слой (линии)": "Layer to check (lines)",
     "Входной слой (линии)": "Input layer (lines)",
+    # Панель «Покрытие»
+    "Покрытие": "Coverage",
+    "Слой покрытия": "Coverage layer",
+    "Таблица классов": "Table of classes",
+    "нет таблицы": "no table",
+    "Поле": "Field",
+    "Подпись": "Label",
+    "Заполняются поля: %s": "Fields filled: %s",
+    "Таблица классов не выбрана. Новый объект возьмёт атрибуты у соседей.":
+        "No table of classes is selected. The new feature will take its "
+        "attributes from the neighbours.",
+    "Совпадающих полей у таблицы и слоя нет. Класс записать некуда.":
+        "The table and the layer share no field names. There is nowhere to "
+        "write the class.",
+    "Автозаполнять при создании": "Fill in on creation",
+    "Флажок снят, и после отрисовки открывается обычная форма атрибутов слоя.":
+        "With the box cleared, the usual attribute form of the layer opens "
+        "once the contour is drawn.",
+    "Применить к выделенным объектам": "Apply to the selected features",
+    "Класс выделенным объектам": "Class for the selected features",
+    "Класс не выбран.": "No class is selected.",
+    "Не выделено ни одного объекта.": "Not a single feature is selected.",
+    "Класс записан объектам: %d": "The class was written to features: %d",
+    "Режим наложения": "Overlay mode",
+    "Наложение": "Overlay",
+    "Отсечение": "Clipping",
+    "Новый объект получает весь контур, соседи урезаются.":
+        "The new feature gets the whole contour, the neighbours are trimmed.",
+    "Новый объект ложится только в свободное место, соседи площади не теряют.":
+        "The new feature lies in free space only, the neighbours lose no area.",
+    "Новый объект получает только то, что лежит внутри покрытия. Площадь покрытия не меняется.":
+        "The new feature gets only what lies inside the coverage. The area of "
+        "the coverage does not change.",
+    "Режим рисования: ВКЛ": "Drawing mode: ON",
+    "Режим рисования: ВЫКЛ": "Drawing mode: OFF",
+    "Сглаживать линии": "Smooth the lines",
+    "Тот же переключатель стоит на клавише S во время рисования.":
+        "The same switch sits on the S key while drawing.",
+    "Панель ввода нарисованных контуров в покрытие":
+        "The panel that puts drawn contours into a coverage",
+    "Ввод контура": "Putting a contour in",
+    "Нужен слой полигонов.": "A polygon layer is needed.",
+    "Отменено.": "Cancelled.",
+    "Одиннадцать инструментов стоят в панели Processing, в группах «1. Топология» и «2. Генерализация». Панель «Покрытие» вводит нарисованный контур прямо в режиме редактирования.":
+        "Eleven tools stand in the Processing panel, in the groups "
+        "\"1. Topology\" and \"2. Generalisation\". The Coverage panel puts "
+        "a drawn contour in right in edit mode.",
+
+    # Кнопка врезки и окна плагина
+    "Врезка": "Cutting in",
+    "Контуру нужно не меньше трёх вершин.":
+        "The contour needs at least three vertices.",
+    "Изменено %d, добавлено %d, удалено %d, узлов вставлено %d":
+        "Changed %d, added %d, deleted %d, nodes inserted %d",
+    "Нарисовать контур и врезать его в активный слой":
+        "Draw a contour and cut it into the active layer",
+    "Параметры врезки": "Cutting parameters",
+    "О модуле": "About",
+    "О модуле Topoliner": "About Topoliner",
+    "Руководство": "Manual",
+    "Порог площади": "Area threshold",
+    "Отклонение вершины от ребра": "Deviation of a vertex from an edge",
+    "Остаток соседа мельче этой площади отходит контуру целиком. Кусок соседа мельче этой площади контуру не достаётся.":
+        "A remainder of a neighbour smaller than this area goes to the contour "
+        "whole. A piece of a neighbour smaller than this area does not reach "
+        "the contour.",
+    "Разрез кладёт вершину на границу соседа с третьим объектом. Узел в этой точке достраивается. Ноль отключает вставку.":
+        "The cut puts a vertex on the border of a neighbour with a third "
+        "feature. A node is added at that point. Zero switches the insertion "
+        "off.",
+    "Отметка вершины берётся с ближайшего исходного ребра.":
+        "The value of a vertex is taken from the nearest source edge.",
+    "Топология полигональных и линейных покрытий. Инструменты находят нарушения и отделяют технический мусор от того, что может нести смысл. Мусор исправляется в новый слой.":
+        "Topology of polygon and line coverages. The tools find violations and "
+        "separate certain debris from what may carry meaning. The debris is "
+        "repaired into a new layer.",
+    "Одиннадцать инструментов стоят в панели Processing, в группах «1. Топология» и «2. Генерализация». Врезка контура работает кнопкой, прямо в режиме редактирования.":
+        "Eleven tools stand in the Processing panel, in the groups "
+        "\"1. Topology\" and \"2. Generalisation\". Cutting a contour in works "
+        "from a button, right in edit mode.",
+    "Исходный слой не изменяется никогда. Автоматика не решает, чья граница верна, она смотрит только на масштаб расхождения.":
+        "The input layer is never changed. The automatic part does not decide "
+        "whose border is right, it looks only at the scale of the discrepancy.",
+    "Лицензия GPL 3. Развивается на задачах реальных предприятий: %s":
+        "Licence GPL 3. Grown on the tasks of real enterprises: %s",
+    "Страница плагина": "Plugin page",
+    "Isoliner, кригинг и изолинии": "Isoliner, kriging and contouring",
+    "Isoliner3D, просмотр поверхностей и тел":
+        "Isoliner3D, viewer for surfaces and bodies",
+
+    # Врезка контуров, 1.08
+    "Врезка контура": "Cutting a contour in",
+    "Слой не выбран.": "No layer is selected.",
+    "Врезка работает только по слою полигонов.":
+        "Cutting in works on a polygon layer only.",
+    "Слой не в режиме редактирования.": "The layer is not in edit mode.",
+    "Контур пуст.": "The contour is empty.",
+    "Контур не даёт ни одного кольца.": "The contour yields no ring at all.",
+    "Контур ничего не изменил.": "The contour changed nothing.",
+    "Покрытие (полигоны)": "Coverage (polygons)",
+    "Врезаемые контуры (полигоны)": "Contours to cut in (polygons)",
+    "Порог площади (в кв. единицах CRS)": "Area threshold (in square CRS units)",
+    "Покрытие с врезкой": "Coverage with the contours cut in",
+    "Объектов %d, контуров %d, порог площади %g":
+        "Objects %d, contours %d, area threshold %g",
+    "Контур %d: соседей затронуто %d, вне покрытия %s":
+        "Contour %d: neighbours touched %d, outside the coverage %s",
+    "Контуров врезано:            %d": "Contours cut in:              %d",
+    "Объектов изменено:           %d": "Objects changed:              %d",
+    "Объектов поглощено целиком:  %d": "Objects absorbed whole:       %d",
+    "Объектов добавлено:          %d": "Objects added:                %d",
+    "Узлов вставлено соседям:     %d": "Nodes inserted for neighbours: %d",
+    "Площадь до/после: %s / %s": "Area before/after: %s / %s",
+    "Легло вне покрытия: %s": "Fell outside the coverage: %s",
+    "Расхождение площади: %s. Врезка обязана площадь только перераспределять.":
+        "Area discrepancy: %s. Cutting in must only redistribute the area.",
     "Порог длины линии (0 - не учитывать)":
         "Line length threshold (0 - ignore)",
     "Искать висячие концы, недоводы и перелёты":

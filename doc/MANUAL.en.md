@@ -2,11 +2,11 @@
 
 [Русская версия](MANUAL.md)
 
-Version 0.12.10
+Version 0.13.0
 
-The plugin adds a **Topoliner** group with ten tools to the Processing panel.
-Its purpose is to bring a polygon coverage into order without the manual
-routine of snapping a layer to itself.
+The plugin adds a **Topoliner** group with eleven tools to the Processing
+panel and a cutting button to the toolbar. Its purpose is to bring a polygon
+coverage into order without the manual routine of snapping a layer to itself.
 
 ---
 
@@ -32,9 +32,9 @@ Names, parameters, help texts, reports and violation names are all translated.
 ## Tools
 
 The tool number sets both the group and the order in the Processing panel:
-group **1. Topology** holds 1.01 to 1.06, group **2. Generalisation** holds 2.01.
-The order within the first group follows the workflow: check, clean, snap
-separately if needed, verify the assembly.
+group **1. Topology** holds 1.01 to 1.08, group **2. Generalisation** holds
+2.01 to 2.03. The order within the first group follows the workflow: check,
+clean, snap separately if needed, verify the assembly.
 
 | Tool | What it does | Modifies the layer |
 |---|---|---|
@@ -45,12 +45,14 @@ separately if needed, verify the assembly.
 | **1.05 Node and vertex snapping** | Only reconciles nodes and vertices | Yes, into a new layer |
 | **1.06 Insertion of missing nodes** | Adds nodes without changing shape or area | Yes, into a new layer |
 | **1.07 Assembly check by attribute** | Checks whether groups assemble into one body. Polygons and lines | No |
+| **1.08 Cutting contours into a coverage** | Cuts a contour in, the cut edge reaches both sides the same | Yes, into a new layer |
 | **2.01 Topology-preserving simplify** | Thins vertices of polygons and lines without tearing shared borders | Yes, into a new layer |
 | **2.02 Polygon borders as lines** | Outputs borders as separate lines, each one once | No |
 | **2.03 Coverage topology model** | Breaks a coverage into nodes and arcs | No |
 
 All tools work in models and in batch mode. The input layer is never modified;
-the result always goes to a new layer.
+the result always goes to a new layer. Cutting in also has a button on the
+toolbar, which edits the open layer in edit mode.
 
 ---
 
@@ -421,6 +423,85 @@ if `note` holds hundreds of metres, these are not assembly defects.
 | Maximum gap within one body | 0 | How far apart parts still count as one body. Zero means the group must be whole |
 | Interior rings are acceptable | no | For data where a cavity is part of the design |
 | Assembly findings | - | Output point layer |
+
+---
+
+## 1.08 Cutting contours into a coverage
+
+Cuts contours into a polygon coverage. The neighbours are trimmed and the
+contour becomes a feature of its own. The result is a new layer.
+
+**Why.** Cutting by hand in the editor takes two independent actions. The new
+feature loses what fell on the neighbours, and every neighbour loses what fell
+under the new feature. The cut edge comes out of two different computations and
+matches only to the eye. The vertices drift apart, and tool 1.01 then reports
+the difference.
+
+Here the edge comes out of a single overlay and reaches both sides the same.
+This is verified by tests through the coverage model. The edge becomes one arc
+with two neighbours, not two arcs side by side.
+
+**Missing nodes.** The cut ends on the border between a neighbour and a third
+feature, and that third feature has no node at the point. The tool adds such
+nodes the way 1.06 does. The node is placed at the projection of the point onto
+the edge, so the shape and the area of the third feature do not change.
+
+**The area threshold.** A remainder of a neighbour smaller than the threshold
+goes to the contour whole, no sliver is created. A piece of a neighbour smaller
+than the threshold does not reach the contour, and the neighbour stays as it
+was.
+
+**Attributes of the new feature.** A field where every neighbour that gave up
+area holds one value receives that value. A field with differing values is left
+empty. A contour that fell on empty ground receives empty attributes throughout.
+The key of the layer is never carried over, or the new feature would repeat the
+key of a neighbour.
+
+**Order.** Contours are applied one by one, in the order of the layer. The
+result of each cut enters the coverage before the next one starts, so two
+overlapping contours do not pile up on each other.
+
+**Z values** are taken from the nearest source edge. A vertex in the middle of
+an edge receives a value computed along that edge. Beyond the edge of the
+coverage there are no source edges, and the value comes from the nearest border.
+
+**Lines** are cut in after a buffer is built. The buffer is built by a separate
+QGIS tool.
+
+**Area.** Cutting in only redistributes the area. The growth of the coverage
+equals the part of the contours that fell beyond its edge. The report prints
+both values and warns when they disagree.
+
+**Parameters**
+
+
+| Parameter | Default | What it sets |
+|---|---|---|
+| Coverage (polygons) | - | The layer is not modified |
+| Contours to cut in (polygons) | - | One contour per feature of the layer |
+| Area threshold (in square CRS units) | 1 | Below this area a remainder goes to the contour and a small piece is not cut off |
+| Deviation of a vertex from an edge | 1e-06 | Insertion of missing nodes. Zero switches it off |
+| Restore Z values | yes | The value is taken from the nearest source edge |
+| Coverage with the contours cut in | - | The output layer |
+
+### The button on the toolbar
+
+Cutting in is also used in edit mode, where the Processing dialog is
+inconvenient. The **Cut a contour in** button starts drawing on the map. The
+left button places a vertex, the right one closes the contour, Backspace
+removes the last vertex, Esc cancels the drawing. A vertex snaps to whatever
+snapping is set to in the project.
+
+The contour is cut into the active layer. That layer has to be a polygon layer
+and has to be in edit mode. The edit goes as a single command, so undo in QGIS
+brings the coverage back whole.
+
+The thresholds come from the **Cutting parameters** window, whose button sits
+next to it. They are the same values as in tool 1.08.
+
+If the layer is single part and the remainder of a neighbour falls apart, the
+first piece stays with the feature and the rest become features of their own
+with the same attributes. This is what splitting features in QGIS does as well.
 
 ---
 

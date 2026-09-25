@@ -33,9 +33,17 @@ and with guarantees.
 | 1.05 Node and vertex snapping | Brings borders to an exact match | Yes, into a new layer |
 | 1.06 Insertion of missing nodes | Adds nodes without changing shape or area | Yes, into a new layer |
 | 1.07 Assembly check by attribute | Checks whether groups assemble into one body | No |
+| 1.08 Cutting contours into a coverage | Cuts a contour in, the cut edge reaches both sides the same | Yes, into a new layer |
 | 2.01 Topology-preserving simplify | Thins vertices without tearing shared borders | Yes, into a new layer |
 | 2.02 Polygon borders as lines | Outputs borders as separate lines, each one once | No |
 | 2.03 Coverage topology model | Breaks a coverage into nodes and arcs | No |
+
+## Cutting from a button
+
+Cutting in works both in the Processing panel and from a button on the toolbar.
+The button is meant for edit mode. The contour is drawn on the map and cut
+into the open layer at once. The edit goes as a single command, so undo in QGIS
+brings the coverage back whole.
 
 ## The main principle
 

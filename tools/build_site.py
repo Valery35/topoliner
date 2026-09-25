@@ -161,6 +161,11 @@ TEXTS = {
                "водотоки.",
                "Whether a group of objects assembles into one body. Blocks, "
                "panels, shafts, watercourses."),
+"t108.h":     ("Врезка контуров в покрытие", "Cutting contours into a coverage"),
+"t108.p":     ("Кромка разреза достаётся обеим сторонам одинаковой. Есть кнопка "
+               "для режима редактирования.",
+               "The cut edge reaches both sides the same. There is a button "
+               "for edit mode."),
 "t201.h":     ("Топологическое упрощение", "Topology-preserving simplification"),
 "t201.p":     ("Общая граница прореживается один раз и остаётся общей. Полигоны "
                "и линии.",
@@ -169,6 +174,10 @@ TEXTS = {
 "t202.h":     ("Границы полигонов линиями", "Polygon borders as lines"),
 "t202.p":     ("Каждая граница один раз, с признаком того, с чем граничит.",
                "Each border once, with a mark of what it borders on."),
+"t203.h":     ("Топологическая модель покрытия", "Coverage topology model"),
+"t203.p":     ("Покрытие раскладывается на узлы и дуги, как в покрытиях ArcInfo.",
+               "A coverage is broken into nodes and arcs, as in ArcInfo "
+               "coverages."),
 
 "cases.eyebrow":("Что это даёт на данных", "What it gives on real data"),
 "cases.h2":   ("Три случая, ради которых инструмент и появился",
@@ -531,9 +540,9 @@ def main():
     rows1 = "".join(tool_row(n, k) for n, k in (
         ("1.01", "t101"), ("1.02", "t102"), ("1.03", "t103"),
         ("1.04", "t104"), ("1.05", "t105"), ("1.06", "t106"),
-        ("1.07", "t107")))
+        ("1.07", "t107"), ("1.08", "t108")))
     rows2 = "".join(tool_row(n, k) for n, k in (
-        ("2.01", "t201"), ("2.02", "t202")))
+        ("2.01", "t201"), ("2.02", "t202"), ("2.03", "t203")))
     page = page.replace("__ROWS1__", rows1)
     page = page.replace("__ROWS2__", rows2)
     page = page.replace("__DICT__", dictionary())

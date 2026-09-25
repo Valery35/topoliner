@@ -169,6 +169,35 @@ topological one gives none.
 
 ---
 
+## 1.08 Cutting contours into a coverage
+
+Cuts a contour in so that the cut edge reaches both sides the same.
+
+### Where the violation comes from
+
+Cutting by hand in the editor takes two independent actions. The new feature
+loses what fell on the neighbours, and every neighbour loses what fell under
+the new feature. The edge comes out of two different computations. The vertices
+drift apart, and the table above then shows it as a discrepancy between
+vertices, and sometimes as a narrow overlap.
+
+### What the tool does
+
+The contour is built into one geometry, and every subtraction and intersection
+runs against it. GEOS nodes both operands of an overlay, so the edge on both
+sides comes out of one noded arc.
+
+The cut ends on the border between a neighbour and a third feature, and that
+third feature has no node at the point. Such a node is added the way 1.06 does
+it. The node is placed at the projection of the point onto the edge, so the
+shape and the area of the third feature do not change.
+
+### What is left to the operator
+
+The attributes of the new feature. A field where every neighbour that gave up
+area holds one value receives that value. A field with differing values is left
+empty, because the tool cannot choose between the neighbours.
+
 ## Structure
 
 ```
@@ -176,10 +205,16 @@ topoliner/
   topo_core.py          snapping core, plain Python, no QGIS dependency
   topo_checks.py        checks and the cleanup pipeline
   topo_simplify.py      arcs and Douglas-Peucker thinning
+  cut.py                cutting a contour into a coverage
+  z_restore.py          Z values returned after an overlay
   geom_backend.py       geometry adapter: QGIS in production, Shapely in tests
   topo_algorithm.py     Processing wrappers for 1.05 and 1.06
   audit_algorithms.py   Processing wrappers for 1.01, 1.03 and 1.07
   simplify_algorithm.py Processing wrapper for 2.01
+  cut_algorithm.py      Processing wrapper for 1.08
+  cut_edit.py           cutting through the edit buffer of a layer
+  cut_tool.py           drawing a contour on the map
+  ui_dialogs.py         the About and Cutting parameters windows
   i18n.py               interface translation
   help_texts.py         tool help in two languages
   provider.py           algorithm registration
