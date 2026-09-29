@@ -161,11 +161,12 @@ TEXTS = {
                "водотоки.",
                "Whether a group of objects assembles into one body. Blocks, "
                "panels, shafts, watercourses."),
-"t108.h":     ("Врезка контуров в покрытие", "Cutting contours into a coverage"),
-"t108.p":     ("Кромка разреза достаётся обеим сторонам одинаковой. Есть кнопка "
-               "для режима редактирования.",
-               "The cut edge reaches both sides the same. There is a button "
-               "for edit mode."),
+"t108.h":     ("Ввод контуров в покрытие", "Contours into a coverage"),
+"t108.p":     ("Три режима наложения, кромка разреза достаётся обеим сторонам "
+               "одинаковой. Контур рисуется и прямо по карте, в режиме "
+               "редактирования.",
+               "Three overlay modes, the cut edge reaches both sides the same. "
+               "A contour is also drawn straight on the map, in edit mode."),
 "t201.h":     ("Топологическое упрощение", "Topology-preserving simplification"),
 "t201.p":     ("Общая граница прореживается один раз и остаётся общей. Полигоны "
                "и линии.",

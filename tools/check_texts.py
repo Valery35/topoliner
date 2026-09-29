@@ -33,6 +33,9 @@ STOP_WORDS = (
     "вперемешку", "крутить параметры", "руками", "кучу", "под рукой",
     "мелочь",
 )
+# Слова, которые ловятся только целиком: у них есть законные
+# родственники (прямой, прямого, напрямую).
+STOP_WHOLE = ("прямо",)
 
 # Двоеточие допустимо перед списком, в ссылках, во времени и в названиях.
 COLON_OK = re.compile(r"(https?:|file:|mailto:|\d:\d|::|:\s*$|:\s*\*\*|:`)")
@@ -139,6 +142,9 @@ def check_prose(where, text, problems, russian=True):
         low = line.lower()
         for word in STOP_WORDS:
             if re.search(r"\b%s" % re.escape(word), low):
+                problems.append((place, word, "стоп-слово"))
+        for word in STOP_WHOLE:
+            if re.search(r"\b%s\b" % re.escape(word), low):
                 problems.append((place, word, "стоп-слово"))
         for match in re.finditer(r"\bчисл[оа]\b", low):
             near = low[max(0, match.start() - 1):match.end() + 1]

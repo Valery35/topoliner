@@ -70,9 +70,12 @@ class TopolinerPlugin:
         if self.provider is not None:
             QgsApplication.processingRegistry().removeProvider(self.provider)
             self.provider = None
+        # Инструмент снимается раньше панели: при выгрузке он обращается
+        # к её кнопке.
         if self.tool is not None:
             if self.iface.mapCanvas().mapTool() is self.tool:
                 self.iface.mapCanvas().unsetMapTool(self.tool)
+            self.tool.panel = None
             self.tool = None
         if self.panel is not None:
             self.iface.removeDockWidget(self.panel)

@@ -21,13 +21,15 @@ from qgis.core import (
     QgsProcessingAlgorithm,
     QgsProcessingException,
     QgsProcessingParameterBoolean,
+    QgsProcessingParameterEnum,
     QgsProcessingParameterFeatureSink,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterNumber,
     QgsWkbTypes,
 )
 
-from .cut import cut_into_coverage
+from .cut import (MODE_CLIP, MODE_INSET, MODE_OVERLAY,
+                  cut_into_coverage)
 from .cut_edit import inherited_values, key_fields
 from .help_texts import help_for
 from .i18n import tr
@@ -108,6 +110,7 @@ class CutIntoCoverageAlgorithm(QgsProcessingAlgorithm):
 
     INPUT = "INPUT"
     CUT = "CUT"
+    MODE = "MODE"
     AREA = "AREA"
     NODE_EPS = "NODE_EPS"
     KEEP_Z = "KEEP_Z"
@@ -117,7 +120,7 @@ class CutIntoCoverageAlgorithm(QgsProcessingAlgorithm):
         return "cutintocoverage"
 
     def displayName(self):
-        return tr("1.08 Врезка контуров в покрытие")
+        return tr("1.08 Ввод контуров в покрытие")
 
     def group(self):
         return tr("1. Топология")
@@ -140,13 +143,25 @@ class CutIntoCoverageAlgorithm(QgsProcessingAlgorithm):
             [QgsProcessing.TypeVectorPolygon]))
 
         p = QgsProcessingParameterFeatureSource(
-            self.CUT, tr("Врезаемые контуры (полигоны)"),
+            self.CUT, tr("Контуры (полигоны)"),
             [QgsProcessing.TypeVectorPolygon])
         p.setHelp(
             "Каждый объект слоя это отдельный контур. Контуры применяются\n"
             "по одному, в порядке слоя, и результат каждого входит в покрытие\n"
             "до начала следующего. Линию перед врезкой превращают в полигон\n"
             "построением буфера."
+        )
+        self.addParameter(p)
+
+        p = QgsProcessingParameterEnum(
+            self.MODE, tr("Режим наложения"),
+            options=[tr("Наложение"), tr("Отсечение"), tr("Врезка")],
+            defaultValue=0)
+        p.setHelp(
+            "Наложение отдаёт новому объекту весь контур, соседи урезаются.\n"
+            "Отсечение оставляет соседям их площадь, а контур ложится только\n"
+            "в свободное место. Врезка отдаёт новому объекту то, что лежит\n"
+            "внутри покрытия, и площадь покрытия при этом не меняется."
         )
         self.addParameter(p)
 
@@ -186,7 +201,7 @@ class CutIntoCoverageAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(p)
 
         self.addParameter(QgsProcessingParameterFeatureSink(
-            self.OUTPUT, tr("Покрытие с врезкой")))
+            self.OUTPUT, tr("Покрытие с контурами")))
 
     def processAlgorithm(self, parameters, context, feedback):
         source = self.parameterAsSource(parameters, self.INPUT, context)
@@ -196,6 +211,8 @@ class CutIntoCoverageAlgorithm(QgsProcessingAlgorithm):
         if cutter is None:
             raise QgsProcessingException("Не удалось прочитать слой контуров.")
 
+        mode = [MODE_OVERLAY, MODE_CLIP, MODE_INSET][
+            self.parameterAsEnum(parameters, self.MODE, context)]
         area = self.parameterAsDouble(parameters, self.AREA, context)
         node_eps = self.parameterAsDouble(parameters, self.NODE_EPS, context)
         keep_z = self.parameterAsBoolean(parameters, self.KEEP_Z, context)
@@ -219,8 +236,11 @@ class CutIntoCoverageAlgorithm(QgsProcessingAlgorithm):
 
         backend = QgisBackend()
         feedback.pushInfo(banner())
+        names = {MODE_OVERLAY: tr("Наложение"), MODE_CLIP: tr("Отсечение"),
+                 MODE_INSET: tr("Врезка")}
         feedback.pushInfo(tr("Объектов %d, контуров %d, порог площади %g")
                           % (len(items), len(cuts), area))
+        feedback.pushInfo(tr("Режим наложения: %s") % names[mode])
 
         # ── Состояние покрытия ────────────────────────────────────────────
         objects = {}
@@ -240,6 +260,7 @@ class CutIntoCoverageAlgorithm(QgsProcessingAlgorithm):
             self.parameterAsVectorLayer(parameters, self.INPUT, context))
         next_key = -1
         outside_total = 0.0
+        dropped_total = 0.0
         added = 0
         swallowed = 0
         changed_count = 0
@@ -253,7 +274,8 @@ class CutIntoCoverageAlgorithm(QgsProcessingAlgorithm):
                     if key in objects and _overlap(objects[key]["bbox"], box)]
             done = cut_into_coverage(
                 backend, [(key, objects[key]["parts"]) for key in near],
-                cut_parts, area_threshold=area, node_eps=node_eps)
+                cut_parts, area_threshold=area, node_eps=node_eps,
+                mode=mode)
 
             # Атрибуты снимаются до правки: поглощённый сосед исчезает.
             rows = []
@@ -291,6 +313,7 @@ class CutIntoCoverageAlgorithm(QgsProcessingAlgorithm):
                 added += 1
 
             outside_total += done["outside"]
+            dropped_total += done["dropped"]
             if len(cuts) <= 20:
                 feedback.pushInfo(
                     tr("Контур %d: соседей затронуто %d, вне покрытия %s")
@@ -350,6 +373,9 @@ class CutIntoCoverageAlgorithm(QgsProcessingAlgorithm):
         feedback.pushInfo(tr("Площадь до/после: %s / %s")
                           % (fmt(area_before), fmt(area_after)))
         feedback.pushInfo(tr("Легло вне покрытия: %s") % fmt(outside_total))
+        if dropped_total:
+            feedback.pushInfo(tr("Отброшено за краем покрытия: %s")
+                              % fmt(dropped_total))
         feedback.pushInfo(tr("Объектов на входе/выходе: %d / %d")
                           % (len(items), written))
 

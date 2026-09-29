@@ -78,7 +78,7 @@ EN = {
     "1.03 Очистка топологии полигонов": "1.03 Polygon topology cleanup",
     "1.05 Сшивка узлов и вершин": "1.05 Node and vertex snapping",
     "1.07 Контроль сборки по атрибуту": "1.07 Assembly check by attribute",
-    "1.08 Врезка контуров в покрытие": "1.08 Cutting contours into a coverage",
+    "1.08 Ввод контуров в покрытие": "1.08 Contours into a coverage",
     "1.06 Вставка недостающих узлов": "1.06 Insertion of missing nodes",
     "2.01 Топологическое упрощение": "2.01 Topology-preserving simplify",
     "Topoliner - топология и обработка геометрии":
@@ -349,6 +349,7 @@ EN = {
     "Таблица классов": "Table of classes",
     "нет таблицы": "no table",
     "Поле": "Field",
+    "Поле класса не выбрано.": "No class field is selected.",
     "Подпись": "Label",
     "Заполняются поля: %s": "Fields filled: %s",
     "Таблица классов не выбрана. Новый объект возьмёт атрибуты у соседей.":
@@ -443,9 +444,9 @@ EN = {
     "Контур не даёт ни одного кольца.": "The contour yields no ring at all.",
     "Контур ничего не изменил.": "The contour changed nothing.",
     "Покрытие (полигоны)": "Coverage (polygons)",
-    "Врезаемые контуры (полигоны)": "Contours to cut in (polygons)",
+    "Контуры (полигоны)": "Contours (polygons)",
     "Порог площади (в кв. единицах CRS)": "Area threshold (in square CRS units)",
-    "Покрытие с врезкой": "Coverage with the contours cut in",
+    "Покрытие с контурами": "Coverage with the contours",
     "Объектов %d, контуров %d, порог площади %g":
         "Objects %d, contours %d, area threshold %g",
     "Контур %d: соседей затронуто %d, вне покрытия %s":
@@ -457,6 +458,8 @@ EN = {
     "Узлов вставлено соседям:     %d": "Nodes inserted for neighbours: %d",
     "Площадь до/после: %s / %s": "Area before/after: %s / %s",
     "Легло вне покрытия: %s": "Fell outside the coverage: %s",
+    "Режим наложения: %s": "Overlay mode: %s",
+    "Отброшено за краем покрытия: %s": "Dropped beyond the coverage edge: %s",
     "Расхождение площади: %s. Врезка обязана площадь только перераспределять.":
         "Area discrepancy: %s. Cutting in must only redistribute the area.",
     "Порог длины линии (0 - не учитывать)":

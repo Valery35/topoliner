@@ -33,17 +33,31 @@ and with guarantees.
 | 1.05 Node and vertex snapping | Brings borders to an exact match | Yes, into a new layer |
 | 1.06 Insertion of missing nodes | Adds nodes without changing shape or area | Yes, into a new layer |
 | 1.07 Assembly check by attribute | Checks whether groups assemble into one body | No |
-| 1.08 Cutting contours into a coverage | Cuts a contour in, the cut edge reaches both sides the same | Yes, into a new layer |
+| 1.08 Contours into a coverage | Three overlay modes, the cut edge reaches both sides the same | Yes, into a new layer |
 | 2.01 Topology-preserving simplify | Thins vertices without tearing shared borders | Yes, into a new layer |
 | 2.02 Polygon borders as lines | Outputs borders as separate lines, each one once | No |
 | 2.03 Coverage topology model | Breaks a coverage into nodes and arcs | No |
 
-## Cutting from a button
+## The Coverage panel
 
-Cutting in works both in the Processing panel and from a button on the toolbar.
-The button is meant for edit mode. The contour is drawn on the map and cut
-into the open layer at once. The edit goes as a single command, so undo in QGIS
-brings the coverage back whole.
+A contour goes in either from the Processing panel or straight from the map in
+edit mode. The second way is what the Coverage panel is for. Clicks give
+straight segments, holding the button draws freehand, the S key switches
+smoothing. The edit goes as a single command, so undo in QGIS brings the
+coverage back whole.
+
+The class of the new feature comes from an ordinary table layer of the project.
+The new feature receives the values of the selected row, and the same values go
+to the selected features. The colour in the list of classes comes from the style
+of the layer.
+
+Three overlay modes answer one question, who gets the area under the contour.
+
+| Mode | The new feature | The neighbours | The area of the coverage |
+|---|---|---|---|
+| Overlay | the whole contour | trimmed | grows by the part beyond the edge |
+| Clipping | free space only | lose no area | grows by the same part |
+| Cutting in | only what lies inside | trimmed | does not change |
 
 ## The main principle
 

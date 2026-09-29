@@ -55,10 +55,16 @@ class CutMapTool(QgsMapTool):
         self.points = []
         self.dragging = False
         self.press_pos = None
-        self.band = QgsRubberBand(canvas, QgsWkbTypes.PolygonGeometry)
-        self.band.setColor(QColor(220, 80, 20, 200))
-        self.band.setFillColor(QColor(220, 80, 20, 40))
-        self.band.setWidth(2)
+        # Два следа. Полигональный след с двумя вершинами не рисует ничего,
+        # и до третьего щелчка человек видел бы пустой экран. Линия видна
+        # с первой вершины.
+        self.fill = QgsRubberBand(canvas, QgsWkbTypes.PolygonGeometry)
+        self.fill.setColor(QColor(220, 80, 20, 0))
+        self.fill.setFillColor(QColor(220, 80, 20, 40))
+        self.fill.setWidth(0)
+        self.line = QgsRubberBand(canvas, QgsWkbTypes.LineGeometry)
+        self.line.setColor(QColor(200, 50, 10, 220))
+        self.line.setWidth(2)
         self.setCursor(CROSS_CURSOR)
 
     # ── Сбор вершин ───────────────────────────────────────────────────────
@@ -91,16 +97,25 @@ class CutMapTool(QgsMapTool):
         return geometry
 
     def _draw(self, extra=None):
-        self.band.reset(QgsWkbTypes.PolygonGeometry)
-        geometry = self.contour(extra)
-        if geometry is not None:
-            self.band.setToGeometry(geometry, None)
-            return
+        self.fill.reset(QgsWkbTypes.PolygonGeometry)
+        self.line.reset(QgsWkbTypes.LineGeometry)
         points = list(self.points)
         if extra is not None:
             points.append(extra)
-        for point in points:
-            self.band.addPoint(point, point is points[-1])
+        if not points:
+            return
+
+        geometry = self.contour(extra)
+        if geometry is not None:
+            self.fill.setToGeometry(geometry, None)
+            outline = geometry.convertToType(QgsWkbTypes.LineGeometry, False)
+            if outline is not None and not outline.isEmpty():
+                self.line.setToGeometry(outline, None)
+                return
+
+        # Меньше трёх вершин либо контур пока не собирается в полигон.
+        for number, point in enumerate(points):
+            self.line.addPoint(point, number == len(points) - 1)
 
     def canvasPressEvent(self, event):
         if event.button() == LEFT_BUTTON:
@@ -149,14 +164,20 @@ class CutMapTool(QgsMapTool):
     def deactivate(self):
         self.reset()
         if self.panel is not None:
-            self.panel.tool_deactivated()
+            try:
+                self.panel.tool_deactivated()
+            except RuntimeError:
+                # Панель удалена раньше карты-инструмента. Так бывает при
+                # выгрузке плагина, и держаться за неё больше незачем.
+                self.panel = None
         QgsMapTool.deactivate(self)
 
     def reset(self):
         self.points = []
         self.dragging = False
         self.press_pos = None
-        self.band.reset(QgsWkbTypes.PolygonGeometry)
+        self.fill.reset(QgsWkbTypes.PolygonGeometry)
+        self.line.reset(QgsWkbTypes.LineGeometry)
 
     # ── Ввод контура ──────────────────────────────────────────────────────
 
@@ -180,7 +201,8 @@ class CutMapTool(QgsMapTool):
             else self.iface.activeLayer()
         problem = can_cut(layer)
         if problem:
-            self.reset()
+            # Нарисованное остаётся на экране. Человек включит правку
+            # и замкнёт контур ещё раз, а не будет рисовать заново.
             self.warn(problem)
             return
 

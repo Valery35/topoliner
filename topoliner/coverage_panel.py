@@ -67,8 +67,14 @@ class CoveragePanel(QgsDockWidget):
         # ── Таблица классов ───────────────────────────────────────────────
         layout.addWidget(QLabel(tr("Таблица классов")))
         self.table_box = QgsMapLayerComboBox(body)
-        self.table_box.setFilters(layer_filter("VectorLayer"))
+        # Таблица классов обычно без геометрии, а фильтр VectorLayer
+        # такие слои не показывает.
+        self.table_box.setFilters(layer_filter("VectorLayer")
+                                  | layer_filter("NoGeometry"))
         self.table_box.setAllowEmptyLayer(True, tr("нет таблицы"))
+        # Пока человек не выбрал таблицу, панель не должна подставлять
+        # первый попавшийся слой проекта.
+        self.table_box.setLayer(None)
         self.table_box.layerChanged.connect(self.table_changed)
         layout.addWidget(self.table_box)
 
@@ -200,9 +206,25 @@ class CoveragePanel(QgsDockWidget):
         self.reload_classes()
 
     def table_changed(self, layer):
-        self.key_box.setLayer(layer)
-        self.label_box.setLayer(layer)
+        self._follow_table(layer)
         self.reload_classes()
+
+    def _follow_table(self, table):
+        """
+        Связывает списки полей с таблицей классов.
+
+        Вызывается и из сигнала, и перед чтением таблицы. Сигнал о смене
+        слоя приходит не при всяком способе выбора, а поля обязаны отвечать
+        выбранной таблице всегда.
+        """
+        for box in (self.key_box, self.label_box):
+            if box.layer() is not table:
+                box.setLayer(table)
+        if table is None:
+            return
+        fields = table.fields()
+        if len(fields) and not self.key_box.currentField():
+            self.key_box.setField(fields[0].name())
 
     def _colors(self):
         """Цвет класса берётся из стиля слоя покрытия, по значению."""
@@ -231,10 +253,14 @@ class CoveragePanel(QgsDockWidget):
         """Перечитывает таблицу классов и показывает, что будет заполнено."""
         self.classes.clear()
         table = self.table_box.currentLayer()
+        self._follow_table(table)
         key = self.key_box.currentField()
-        if table is None or not key:
+        if table is None:
             self.match.setText(tr("Таблица классов не выбрана. Новый объект "
                                   "возьмёт атрибуты у соседей."))
+            return
+        if not key:
+            self.match.setText(tr("Поле класса не выбрано."))
             return
 
         label_field = self.label_box.currentField()
@@ -295,10 +321,15 @@ class CoveragePanel(QgsDockWidget):
         if self.tool is None:
             return
         canvas = self.iface.mapCanvas()
-        if on:
-            canvas.setMapTool(self.tool)
-        elif canvas.mapTool() is self.tool:
-            canvas.unsetMapTool(self.tool)
+        if not on:
+            if canvas.mapTool() is self.tool:
+                canvas.unsetMapTool(self.tool)
+            return
+        canvas.setMapTool(self.tool)
+        # О негодном слое лучше сказать сразу, а не после отрисовки контура.
+        problem = can_cut(self.layer())
+        if problem:
+            self.iface.messageBar().pushWarning(tr("Покрытие"), problem)
 
     def tool_deactivated(self):
         """Карта-инструмент выключили со стороны QGIS."""
