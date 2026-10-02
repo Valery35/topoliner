@@ -387,10 +387,10 @@ EN = {
     "Ввод контура": "Putting a contour in",
     "Нужен слой полигонов.": "A polygon layer is needed.",
     "Отменено.": "Cancelled.",
-    "Одиннадцать инструментов стоят в панели Processing, в группах «1. Топология» и «2. Генерализация». Панель «Покрытие» вводит нарисованный контур прямо в режиме редактирования.":
+    "Одиннадцать инструментов стоят в панели Processing, в группах «1. Топология» и «2. Генерализация». Они работают в моделях и в пакетном режиме.":
         "Eleven tools stand in the Processing panel, in the groups "
-        "\"1. Topology\" and \"2. Generalisation\". The Coverage panel puts "
-        "a drawn contour in right in edit mode.",
+        "\"1. Topology\" and \"2. Generalisation\". They work in models and "
+        "in batch mode.",
 
     # Кнопка врезки и окна плагина
     "Врезка": "Cutting in",

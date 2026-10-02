@@ -432,10 +432,22 @@ class QgisBackend(_BackendBase):
         message = g.lastError()
         if message:
             return message
-        errors = g.validateGeometry()
-        # Валидатор QGIS пользуется другими правилами, чем GEOS, и на
-        # некоторых геометриях не находит ничего. Это обычный случай.
-        return errors[0].what() if errors else "недопустимая геометрия"
+        # Сначала спрашивается GEOS: годность определял он, и причину знает
+        # тоже он. Валидатор QGIS пользуется другими правилами и на части
+        # геометрий не находит ничего.
+        for engine in self._validators():
+            errors = g.validateGeometry(engine)
+            if errors:
+                return errors[0].what()
+        return "недопустимая геометрия"
+
+    def _validators(self):
+        """Движки проверки, GEOS первым. Имена в QGIS 3 и 4 разные."""
+        from qgis.core import Qgis, QgsGeometry
+        group = getattr(Qgis, "GeometryValidationEngine", None)
+        if group is not None:
+            return [group.Geos, group.QgisInternal]
+        return [QgsGeometry.ValidatorGeos, QgsGeometry.ValidatorQgisInternal]
 
     def make_valid(self, g):
         return g.makeValid()

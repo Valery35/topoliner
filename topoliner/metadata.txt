@@ -3,7 +3,7 @@ name=Topoliner
 qgisMinimumVersion=3.16
 qgisMaximumVersion=4.99
 description=Topology check, cleanup and coverage model for polygon and line layers: snapping, missing nodes, dangles and overshoots, assembly check, topology-preserving simplification
-version=0.13.0
+version=0.13.1
 author=ООО «Информ++»
 email=xbbster@gmail.com
 about=Brings polygon coverages into order. Finds topology violations and separates
@@ -15,8 +15,7 @@ about=Brings polygon coverages into order. Finds topology violations and separat
       and simplifies while keeping shared borders shared.
       Replaces the manual routine of snapping a layer to itself followed by
       a dissolve without attributes. All tools live in the Processing panel
-      and work in models and in batch mode. The Coverage panel puts a contour
-      drawn on the map into an open layer right in edit mode. Interface in English and Russian.
+      and work in models and in batch mode. Interface in English and Russian.
       Tested on QGIS 3.16 through 4.0.
       A companion to the Isoliner kriging and contouring toolset
       (plugins.qgis.org/plugins/grid_isolines) and to Isoliner3D, a standalone
@@ -32,10 +31,11 @@ icon=icons/icon.png
 experimental=False
 deprecated=False
 hasProcessingProvider=yes
-changelog=0.13.0 New tool 1.08, putting drawn contours into a coverage, with three
-      overlay modes. The cut edge reaches both sides the same, so no discrepancy
-      is left behind. The Coverage panel draws a contour on the map in edit mode
-      and takes the class of the new feature from a table of the project.
+changelog=0.13.1 Fixed: tools refused to read a layer with invalid geometry when
+      Processing was set to stop on it. Fixed: cleanup now repairs geometry
+      before snapping, so a hole lying on its own shell is repaired without
+      area loss. New tool 1.08 puts drawn contours into a coverage, with three
+      overlay modes and a cut edge shared by both sides.
       0.12.10 Field aliases are now written into the GeoPackage itself, so a layer opened outside the project keeps them.
       0.12.6 The idempotence guarantee now names its one exception:
       simplification with smoothing.

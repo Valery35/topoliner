@@ -38,20 +38,9 @@ and with guarantees.
 | 2.02 Polygon borders as lines | Outputs borders as separate lines, each one once | No |
 | 2.03 Coverage topology model | Breaks a coverage into nodes and arcs | No |
 
-## The Coverage panel
+## Contours into a coverage
 
-A contour goes in either from the Processing panel or straight from the map in
-edit mode. The second way is what the Coverage panel is for. Clicks give
-straight segments, holding the button draws freehand, the S key switches
-smoothing. The edit goes as a single command, so undo in QGIS brings the
-coverage back whole.
-
-The class of the new feature comes from an ordinary table layer of the project.
-The new feature receives the values of the selected row, and the same values go
-to the selected features. The colour in the list of classes comes from the style
-of the layer.
-
-Three overlay modes answer one question, who gets the area under the contour.
+Tool 1.08 puts drawn contours into a coverage. Three overlay modes answer one question, who gets the area under the contour.
 
 | Mode | The new feature | The neighbours | The area of the coverage |
 |---|---|---|---|

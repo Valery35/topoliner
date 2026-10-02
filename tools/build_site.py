@@ -163,10 +163,8 @@ TEXTS = {
                "panels, shafts, watercourses."),
 "t108.h":     ("Ввод контуров в покрытие", "Contours into a coverage"),
 "t108.p":     ("Три режима наложения, кромка разреза достаётся обеим сторонам "
-               "одинаковой. Контур рисуется и прямо по карте, в режиме "
-               "редактирования.",
-               "Three overlay modes, the cut edge reaches both sides the same. "
-               "A contour is also drawn straight on the map, in edit mode."),
+               "одинаковой.",
+               "Three overlay modes, the cut edge reaches both sides the same."),
 "t201.h":     ("Топологическое упрощение", "Topology-preserving simplification"),
 "t201.p":     ("Общая граница прореживается один раз и остаётся общей. Полигоны "
                "и линии.",

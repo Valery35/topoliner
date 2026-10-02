@@ -304,6 +304,9 @@ class TopologyAuditAlgorithm(QgsProcessingAlgorithm):
             self.OUTPUT, tr("Находки"), QgsProcessing.TypeVectorPoint))
 
     def processAlgorithm(self, parameters, context, feedback):
+        # Запрет стоит первой строкой. Источник запоминает настройку проверки
+        # в момент создания, и поставленный позже запрет уже не действует.
+        context.setInvalidGeometryCheck(QgsFeatureRequest.GeometryNoCheck)
         source = self.parameterAsSource(parameters, self.INPUT, context)
         if source is None:
             raise QgsProcessingException("Не удалось прочитать входной слой.")
@@ -563,6 +566,9 @@ class TopologyFixAlgorithm(QgsProcessingAlgorithm):
             optional=True, createByDefault=True))
 
     def processAlgorithm(self, parameters, context, feedback):
+        # Запрет стоит первой строкой. Источник запоминает настройку проверки
+        # в момент создания, и поставленный позже запрет уже не действует.
+        context.setInvalidGeometryCheck(QgsFeatureRequest.GeometryNoCheck)
         source = self.parameterAsSource(parameters, self.INPUT, context)
         if source is None:
             raise QgsProcessingException("Не удалось прочитать входной слой.")
@@ -827,6 +833,9 @@ class AssemblyCheckAlgorithm(QgsProcessingAlgorithm):
             self.OUTPUT, tr("Находки сборки"), QgsProcessing.TypeVectorPoint))
 
     def processAlgorithm(self, parameters, context, feedback):
+        # Запрет стоит первой строкой. Источник запоминает настройку проверки
+        # в момент создания, и поставленный позже запрет уже не действует.
+        context.setInvalidGeometryCheck(QgsFeatureRequest.GeometryNoCheck)
         source = self.parameterAsSource(parameters, self.INPUT, context)
         if source is None:
             raise QgsProcessingException("Не удалось прочитать входной слой.")

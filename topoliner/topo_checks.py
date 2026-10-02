@@ -599,31 +599,29 @@ def fix_items(backend, items, tolerance, area_threshold, options=None, progress=
         backend.area(g) for g in geoms if not backend.is_empty(g))
 
     # ── Шаг 1. Разбор и артефакты вершин ─────────────────────────────────
-    all_parts = []
-    for g in geoms:
-        parts = [] if backend.is_empty(g) else to_parts(backend, g)
-        if opt["clean_vertices"]:
-            new_parts = []
-            for rings in parts:
-                new_rings = []
-                for k, ring in enumerate(rings):
-                    ring, dups = drop_repeated_vertices(ring, True, tolerance=1e-9)
-                    stats["dup_vertices"] += dups
-                    ring, spikes = remove_spikes(ring, True, opt["spike_angle"])
-                    stats["spikes"] += spikes
-                    if len(ring) >= 3:
-                        new_rings.append(ring)
-                    elif k == 0:
-                        new_rings = []
-                        break
-                if new_rings:
-                    new_parts.append(new_rings)
-            parts = new_parts
-        all_parts.append(parts)
-    tick(0.15)
+    def clean_vertices(parts):
+        """Повторы вершин и иглы. Кольцо без трёх вершин выпадает."""
+        if not opt["clean_vertices"]:
+            return parts
+        new_parts = []
+        for rings in parts:
+            new_rings = []
+            for k, ring in enumerate(rings):
+                ring, dups = drop_repeated_vertices(ring, True, tolerance=1e-9)
+                stats["dup_vertices"] += dups
+                ring, spikes = remove_spikes(ring, True, opt["spike_angle"])
+                stats["spikes"] += spikes
+                if len(ring) >= 3:
+                    new_rings.append(ring)
+                elif k == 0:
+                    new_rings = []
+                    break
+            if new_rings:
+                new_parts.append(new_rings)
+        return new_parts
 
-    # ── Шаг 2. Микрочасти и микродыры ────────────────────────────────────
-    for idx, parts in enumerate(all_parts):
+    def drop_tiny(parts):
+        """Микрочасти и микродыры."""
         if opt["drop_tiny_parts"] and len(parts) > 1:
             keep = [r for r in parts if abs(ring_area(r[0])) >= area_threshold]
             if keep and len(keep) < len(parts):
@@ -635,8 +633,46 @@ def fix_items(backend, items, tolerance, area_threshold, options=None, progress=
                 if len(holes) != len(rings) - 1:
                     stats["tiny_holes"] += (len(rings) - 1) - len(holes)
                     rings[1:] = holes
-        all_parts[idx] = parts
+        return parts
+
+    all_parts = []
+    for g in geoms:
+        parts = [] if backend.is_empty(g) else to_parts(backend, g)
+        all_parts.append(clean_vertices(parts))
+    tick(0.15)
+
+    # ── Шаг 2. Микрочасти и микродыры ────────────────────────────────────
+    for idx, parts in enumerate(all_parts):
+        all_parts[idx] = drop_tiny(parts)
     tick(0.2)
+
+    # ── Шаг 2а. Корректность до сшивки ───────────────────────────────────
+    # Некорректный объект исправляется раньше сшивки. Сшивка двигает вершины,
+    # и на кольцах, которые идут друг по другу, она ломает то, что до неё
+    # чинилось без потери площади. Так было с дырой, лежащей на границе
+    # своей же оболочки: исправление после сшивки отменялось, а до сшивки
+    # проходит с точностью до единицы площади. Иглы и повторы вершин к этому
+    # месту уже сняты, поэтому их счётчики остаются верными.
+    if opt["fix_invalid"]:
+        for idx, parts in enumerate(all_parts):
+            if not parts:
+                continue
+            g = from_parts(backend, parts)
+            if g is None or backend.is_empty(g) or backend.is_valid(g):
+                continue
+            before = backend.area(g)
+            fixed = backend.polygonal_only(backend.make_valid(g))
+            if fixed is None or backend.is_empty(fixed):
+                continue
+            after = backend.area(fixed)
+            loss = 0.0 if before <= 0 else abs(before - after) / before
+            if loss <= opt["max_area_loss"]:
+                # Исправление само оставляет иглы и лоскуты на месте бывших
+                # самопересечений. Без повторной чистки их нашёл бы следующий
+                # прогон, а повторный запуск обязан ничего не менять.
+                all_parts[idx] = drop_tiny(
+                    clean_vertices(to_parts(backend, fixed)))
+                stats["made_valid"] += 1
 
     # ── Шаг 3. Сшивка ────────────────────────────────────────────────────
     if opt["snap"]:

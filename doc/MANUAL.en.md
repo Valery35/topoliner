@@ -2,10 +2,10 @@
 
 [Русская версия](MANUAL.md)
 
-Version 0.13.0
+Version 0.13.1
 
 The plugin adds a **Topoliner** group with eleven tools to the Processing
-panel and a cutting button to the toolbar. Its purpose is to bring a polygon
+panel. Its purpose is to bring a polygon
 coverage into order without the manual routine of snapping a layer to itself.
 
 ---
@@ -51,8 +51,7 @@ clean, snap separately if needed, verify the assembly.
 | **2.03 Coverage topology model** | Breaks a coverage into nodes and arcs | No |
 
 All tools work in models and in batch mode. The input layer is never modified;
-the result always goes to a new layer. Beside them stands the Coverage panel,
-which edits the open layer right in edit mode.
+the result always goes to a new layer.
 
 ---
 
@@ -498,47 +497,6 @@ both values and warns when they disagree.
 | Deviation of a vertex from an edge | 1e-06 | Insertion of missing nodes. Zero switches it off |
 | Restore Z values | yes | The value is taken from the nearest source edge |
 | Coverage with the contours | - | The output layer |
-
-### The Coverage panel
-
-A contour also goes in during edit mode, where the Processing dialog is
-inconvenient. The **Coverage** button opens a panel that holds everything the
-drawing needs.
-
-**Drawing.** The **Drawing mode** button starts collecting the contour on the
-map. The left button places a vertex, holding it while moving draws freehand,
-the right button closes the contour. Backspace removes the last vertex, Esc
-cancels the drawing. The S key switches smoothing, and the same switch sits as
-a checkbox in the panel. A vertex snaps to whatever snapping is set to in the
-project.
-
-The contour goes into the coverage layer chosen in the panel. That layer has to
-be a polygon layer and has to be in edit mode. The edit goes as a single
-command, so undo in QGIS brings the coverage back whole, together with the
-trimming of the neighbours and the inserted nodes.
-
-**The class of the new feature.** An ordinary table layer of the project and a
-class field are chosen in the panel. A row of the table is a class. The new
-feature receives its values, and every field whose name is both in the table and
-in the coverage layer is filled. The panel states which fields those are. The
-key of the layer is never carried over.
-
-The colour in the list of classes comes from the style of the coverage layer
-when the layer is categorized by the same field. The list then reads the way the
-map does.
-
-With the **Fill in on creation** box cleared, the usual attribute form of the
-layer opens once the contour is drawn. A refusal in the form cancels the whole
-edit, the trimming of the neighbours included.
-
-**Apply to the selected features** writes the chosen class to the features
-already selected on the map.
-
-**The thresholds** in the panel are the same as in tool 1.08.
-
-If the layer is single part and the remainder of a neighbour falls apart, the
-first piece stays with the feature and the rest become features of their own
-with the same attributes. This is what splitting features in QGIS does as well.
 
 ---
 

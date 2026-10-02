@@ -204,6 +204,9 @@ class CutIntoCoverageAlgorithm(QgsProcessingAlgorithm):
             self.OUTPUT, tr("Покрытие с контурами")))
 
     def processAlgorithm(self, parameters, context, feedback):
+        # Запрет стоит первой строкой. Источник запоминает настройку проверки
+        # в момент создания, и поставленный позже запрет уже не действует.
+        context.setInvalidGeometryCheck(QgsFeatureRequest.GeometryNoCheck)
         source = self.parameterAsSource(parameters, self.INPUT, context)
         if source is None:
             raise QgsProcessingException("Не удалось прочитать покрытие.")
