@@ -140,7 +140,7 @@ def _area_of(backend, parts):
 
 def apply_cut(layer, cut_geometry, area_threshold=1.0, node_eps=1e-6,
               keep_z=True, label=None, mode=MODE_OVERLAY, values=None,
-              confirm=None):
+              confirm=None, row=None):
     """
     Вводит нарисованный контур в слой.
 
@@ -155,6 +155,9 @@ def apply_cut(layer, cut_geometry, area_threshold=1.0, node_eps=1e-6,
     confirm        вызываемый объект feature -> bool. Вызывается до правки,
                    ответ False отменяет её целиком. Через него открывают
                    обычную форму атрибутов слоя
+    row            готовая строка атрибутов нового объекта. Если задана,
+                   берётся как есть, без наследования и без класса. Так
+                   сохраняется то, что человек сам ввёл в форму
 
     Возвращает словарь отчёта. Ключ error непустой, если правка
     не выполнялась.
@@ -232,7 +235,11 @@ def apply_cut(layer, cut_geometry, area_threshold=1.0, node_eps=1e-6,
         geometry = build(done["created"], is_multi)
         if geometry is not None:
             new_feature = QgsFeature(fields)
-            new_feature.setAttributes(attributes_for(fields, rows, keys, values))
+            if row is not None:
+                attrs = [None if i in keys else v for i, v in enumerate(row)]
+            else:
+                attrs = attributes_for(fields, rows, keys, values)
+            new_feature.setAttributes(attrs)
             new_feature.setGeometry(geometry)
 
     if new_feature is not None and confirm is not None:

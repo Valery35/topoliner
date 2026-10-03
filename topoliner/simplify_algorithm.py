@@ -12,7 +12,6 @@ from qgis.core import (
     QgsLineString,
     QgsGeometry,
     QgsFields,
-    QgsField,
     QgsFeatureSink,
     QgsProcessing,
     QgsProcessingAlgorithm,
@@ -27,11 +26,13 @@ from qgis.core import (
 )
 
 from .help_texts import help_for
-from .qgis_helpers import fields_from, set_field_aliases, write_field_aliases
+from .qgis_helpers import (
+    fields_from, make_field, set_field_aliases, write_field_aliases,
+)
 from . import field_aliases
 from .i18n import tr
+from .qgis_helpers import no_warnings
 from .rounding import fmt, nice
-from qgis.PyQt.QtCore import QVariant
 
 from . import boundaries, coverage
 from .branding import banner, help_footer, help_url
@@ -155,6 +156,7 @@ class TopologySimplifyAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUTPUT, tr("Упрощённый слой")))
 
+    @no_warnings
     def processAlgorithm(self, parameters, context, feedback):
         context.setInvalidGeometryCheck(QgsFeatureRequest.GeometryNoCheck)
         source = self.parameterAsSource(parameters, self.INPUT, context)
@@ -395,6 +397,7 @@ class BoundariesAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUTPUT, tr("Границы"), QgsProcessing.TypeVectorLine))
 
+    @no_warnings
     def processAlgorithm(self, parameters, context, feedback):
         context.setInvalidGeometryCheck(QgsFeatureRequest.GeometryNoCheck)
         source = self.parameterAsSource(parameters, self.INPUT, context)
@@ -436,14 +439,14 @@ class BoundariesAlgorithm(QgsProcessingAlgorithm):
         feedback.setProgress(70)
 
         fields = QgsFields()
-        fields.append(QgsField("kind", QVariant.String))
-        fields.append(QgsField("label", QVariant.String))
-        fields.append(QgsField("fid_a", QVariant.LongLong))
-        fields.append(QgsField("fid_b", QVariant.LongLong))
-        fields.append(QgsField("length", QVariant.Double))
+        fields.append(make_field("kind", "string"))
+        fields.append(make_field("label", "string"))
+        fields.append(make_field("fid_a", "long"))
+        fields.append(make_field("fid_b", "long"))
+        fields.append(make_field("length", "double"))
         if field:
-            fields.append(QgsField("val_a", QVariant.String))
-            fields.append(QgsField("val_b", QVariant.String))
+            fields.append(make_field("val_a", "string"))
+            fields.append(make_field("val_b", "string"))
 
         (sink, dest_id) = self.parameterAsSink(
             parameters, self.OUTPUT, context, fields,
@@ -570,6 +573,7 @@ class CoverageAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.ARCS, tr("Дуги"), QgsProcessing.TypeVectorLine))
 
+    @no_warnings
     def processAlgorithm(self, parameters, context, feedback):
         context.setInvalidGeometryCheck(QgsFeatureRequest.GeometryNoCheck)
         source = self.parameterAsSource(parameters, self.INPUT, context)
@@ -606,9 +610,9 @@ class CoverageAlgorithm(QgsProcessingAlgorithm):
 
         # ── Узлы ─────────────────────────────────────────────────────────
         node_fields = QgsFields()
-        node_fields.append(QgsField("node_id", QVariant.Int))
-        node_fields.append(QgsField("degree", QVariant.Int))
-        node_fields.append(QgsField("kind", QVariant.String))
+        node_fields.append(make_field("node_id", "int"))
+        node_fields.append(make_field("degree", "int"))
+        node_fields.append(make_field("kind", "string"))
 
         (node_sink, nodes_id) = self.parameterAsSink(
             parameters, self.NODES, context, node_fields,
@@ -626,12 +630,12 @@ class CoverageAlgorithm(QgsProcessingAlgorithm):
 
         # ── Дуги ─────────────────────────────────────────────────────────
         arc_fields = QgsFields()
-        arc_fields.append(QgsField("arc_id", QVariant.Int))
-        arc_fields.append(QgsField("from_node", QVariant.Int))
-        arc_fields.append(QgsField("to_node", QVariant.Int))
-        arc_fields.append(QgsField("left_fid", QVariant.LongLong))
-        arc_fields.append(QgsField("right_fid", QVariant.LongLong))
-        arc_fields.append(QgsField("length", QVariant.Double))
+        arc_fields.append(make_field("arc_id", "int"))
+        arc_fields.append(make_field("from_node", "int"))
+        arc_fields.append(make_field("to_node", "int"))
+        arc_fields.append(make_field("left_fid", "long"))
+        arc_fields.append(make_field("right_fid", "long"))
+        arc_fields.append(make_field("length", "double"))
 
         (arc_sink, arcs_id) = self.parameterAsSink(
             parameters, self.ARCS, context, arc_fields,

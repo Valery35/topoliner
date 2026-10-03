@@ -377,6 +377,11 @@ EN = {
     "Новый объект получает только то, что лежит внутри покрытия. Площадь покрытия не меняется.":
         "The new feature gets only what lies inside the coverage. The area of "
         "the coverage does not change.",
+    "Включает правку слоя и штатное добавление полигона. Каждый добавленный полигон сразу обрабатывается по выбранному режиму.":
+        "Starts editing the layer and the standard Add Polygon tool. Every "
+        "polygon added is processed at once by the chosen mode.",
+    "В этом режиме контуру не досталось площади, объект убран.":
+        "In this mode the contour got no area, the feature was removed.",
     "Режим рисования: ВКЛ": "Drawing mode: ON",
     "Режим рисования: ВЫКЛ": "Drawing mode: OFF",
     "Сглаживать линии": "Smooth the lines",

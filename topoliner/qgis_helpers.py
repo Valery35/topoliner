@@ -4,8 +4,8 @@ qgis_helpers
 ------------
 Обходы особенностей QGIS, не относящиеся к топологии.
 
-Здесь два обхода. Чтение списка полей из параметра и установка псевдонимов
-полей выходному слою.
+Здесь три обхода. Чтение списка полей из параметра, установка псевдонимов
+полей выходному слою и создание поля без устаревшего вызова.
 
 Метод parameterAsFields в некоторых сборках QGIS выдаёт предупреждение
 Python. Само по себе оно безобидно, но обработчик предупреждений QGIS
@@ -15,6 +15,11 @@ Python. Само по себе оно безобидно, но обработч�
 
 Падает при этом не наш код, а реакция QGIS на него, поэтому чинится
 единственным доступным способом. Предупреждение не порождается.
+
+Третий случай того же рода - QgsField(имя, QVariant.Int). С QGIS 3.38 тип
+поля задаётся через QMetaType, прежний вызов даёт предупреждение. В потоке
+Processing оно уронило QGIS 3.40.12 на проверке топологии, 3 октября
+2026 года. Поля создаёт make_field, тип берётся по версии QGIS.
 
 Псевдоним поля, поставленный приёмнику до записи, QGIS встречает
 предупреждением о несовместимости с временными слоями. Поэтому псевдонимы
@@ -29,7 +34,15 @@ try:  # внутри плагина QGIS
 except ImportError:  # headless-тесты
     QgsProcessingLayerPostProcessorInterface = object
 
-__all__ = ["fields_from", "set_field_aliases", "write_field_aliases"]
+__all__ = ["fields_from", "make_field", "no_warnings", "set_field_aliases",
+           "write_field_aliases"]
+
+# Виды полей выходных слоёв и имена их типов в QMetaType и в QVariant.
+FIELD_KINDS = {"int": ("Int", "Int"), "long": ("LongLong", "LongLong"),
+               "double": ("Double", "Double"),
+               "string": ("QString", "String")}
+# С этой версии QGIS тип поля задаётся через QMetaType.
+META_TYPE_SINCE = 33800
 
 # Обработчик должен пережить вызов processAlgorithm, иначе QGIS получит
 # ссылку на уничтоженный объект. Список держит его до конца сеанса.
@@ -175,6 +188,54 @@ def write_field_aliases(algorithm, feedback=None):
             if feedback is not None:
                 feedback.pushDebugInfo(
                     "Псевдонимы в файл не записаны: %s" % why)
+
+
+def no_warnings(method):
+    """
+    Обёртка processAlgorithm: предупреждения Python на время прогона
+    погашены.
+
+    Прогон идёт в потоке Processing. Любое предупреждение там, своё или
+    из QGIS, GDAL и NumPy, роняет программу через обработчик
+    предупреждений QGIS. Случаев было три, каждый раз новый вызов.
+    Обёртка закрывает весь род, а не очередной вызов.
+    """
+    def run(self, *args, **kwargs):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            return method(self, *args, **kwargs)
+    run.__name__ = method.__name__
+    run.__doc__ = method.__doc__
+    return run
+
+
+def field_type(kind, version, meta, variant):
+    """
+    Тип поля вида kind для QGIS версии version.
+
+    meta и variant - классы QMetaType и QVariant. С QGIS 3.38 тип берётся
+    из QMetaType, в Qt 6 его имена лежат в QMetaType.Type. Раньше - из
+    QVariant.
+    """
+    new, old = FIELD_KINDS[kind]
+    if version >= META_TYPE_SINCE:
+        return getattr(getattr(meta, "Type", meta), new)
+    return getattr(variant, old)
+
+
+def make_field(name, kind):
+    """
+    Поле выходного слоя без предупреждений Python.
+
+    kind - "int", "long", "double" или "string". Предупреждения на время
+    вызова погашены, как у остальных обходов этого файла.
+    """
+    from qgis.core import Qgis, QgsField
+    from qgis.PyQt.QtCore import QMetaType, QVariant
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        return QgsField(name, field_type(kind, Qgis.QGIS_VERSION_INT,
+                                         QMetaType, QVariant))
 
 
 def fields_from(algorithm, parameters, name, context):

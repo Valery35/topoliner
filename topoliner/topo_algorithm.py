@@ -13,7 +13,6 @@ from qgis.core import (
     QgsFeature,
     QgsFeatureRequest,
     QgsFeatureSink,
-    QgsField,
     QgsFields,
     QgsGeometry,
     QgsLineString,
@@ -31,13 +30,13 @@ from qgis.core import (
     QgsProcessingParameterNumber,
     QgsWkbTypes,
 )
-from qgis.PyQt.QtCore import QVariant
 
 from .help_texts import help_for
 from .i18n import tr
+from .qgis_helpers import no_warnings
 from .rounding import fmt, nice
 from . import field_aliases
-from .qgis_helpers import set_field_aliases, write_field_aliases
+from .qgis_helpers import make_field, set_field_aliases, write_field_aliases
 from .branding import banner, help_footer, help_url
 from .topo_core import (
     MODE_BOTH,
@@ -368,6 +367,7 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
         )
 
     # ── Выполнение ────────────────────────────────────────────────────────
+    @no_warnings
     def processAlgorithm(self, parameters, context, feedback):
         # Запрет стоит первой строкой. Источник запоминает настройку проверки
         # в момент создания, и поставленный позже запрет уже не действует.
@@ -588,9 +588,9 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
         want_report = parameters.get(self.REPORT) not in (None, "")
         if want_report:
             fields = QgsFields()
-            fields.append(QgsField("kind", QVariant.String))
-            fields.append(QgsField("dist", QVariant.Double))
-            fields.append(QgsField("ring", QVariant.Int))
+            fields.append(make_field("kind", "string"))
+            fields.append(make_field("dist", "double"))
+            fields.append(make_field("ring", "int"))
             (rsink, report_id) = self.parameterAsSink(
                 parameters, self.REPORT, context, fields,
                 QgsWkbTypes.Point, source.sourceCrs(),
@@ -800,6 +800,7 @@ class InsertNodesAlgorithm(QgsProcessingAlgorithm):
             self.REPORT, tr("Вставленные узлы (необязательно)"),
             QgsProcessing.TypeVectorPoint, optional=True, createByDefault=False))
 
+    @no_warnings
     def processAlgorithm(self, parameters, context, feedback):
         # Запрет стоит первой строкой. Источник запоминает настройку проверки
         # в момент создания, и поставленный позже запрет уже не действует.
@@ -955,8 +956,8 @@ class InsertNodesAlgorithm(QgsProcessingAlgorithm):
         report_id = None
         if parameters.get(self.REPORT) not in (None, ""):
             fields = QgsFields()
-            fields.append(QgsField("kind", QVariant.String))
-            fields.append(QgsField("dist", QVariant.Double))
+            fields.append(make_field("kind", "string"))
+            fields.append(make_field("dist", "double"))
             (rsink, report_id) = self.parameterAsSink(
                 parameters, self.REPORT, context, fields,
                 QgsWkbTypes.Point, source.sourceCrs())

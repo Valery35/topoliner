@@ -33,6 +33,7 @@ from .cut import (MODE_CLIP, MODE_INSET, MODE_OVERLAY,
 from .cut_edit import inherited_values, key_fields
 from .help_texts import help_for
 from .i18n import tr
+from .qgis_helpers import no_warnings
 from .rounding import fmt
 from .branding import banner, help_footer, help_url
 from .geom_backend import QgisBackend
@@ -203,6 +204,7 @@ class CutIntoCoverageAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUTPUT, tr("Покрытие с контурами")))
 
+    @no_warnings
     def processAlgorithm(self, parameters, context, feedback):
         # Запрет стоит первой строкой. Источник запоминает настройку проверки
         # в момент создания, и поставленный позже запрет уже не действует.

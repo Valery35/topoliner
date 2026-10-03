@@ -34,6 +34,7 @@ from .audit_algorithms import finding_fields, write_findings
 from .branding import banner, help_footer, help_url
 from .help_texts import help_for
 from .i18n import tr
+from .qgis_helpers import no_warnings
 from .rounding import fmt
 
 
@@ -201,6 +202,7 @@ class LineAuditAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUTPUT, tr("Находки"), QgsProcessing.TypeVectorPoint))
 
+    @no_warnings
     def processAlgorithm(self, parameters, context, feedback):
         context.setInvalidGeometryCheck(QgsFeatureRequest.GeometryNoCheck)
         source = self.parameterAsSource(parameters, self.INPUT, context)
@@ -359,6 +361,7 @@ class LineFixAlgorithm(QgsProcessingAlgorithm):
             self.REMAINS, tr("Оставшиеся проблемы"), QgsProcessing.TypeVectorPoint,
             optional=True, createByDefault=True))
 
+    @no_warnings
     def processAlgorithm(self, parameters, context, feedback):
         context.setInvalidGeometryCheck(QgsFeatureRequest.GeometryNoCheck)
         source = self.parameterAsSource(parameters, self.INPUT, context)

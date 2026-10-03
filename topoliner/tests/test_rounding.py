@@ -95,7 +95,7 @@ class TestAliases(unittest.TestCase):
 
     def fields_of(self, name):
         """Имена полей выходного слоя, взятые из кода алгоритмов."""
-        pattern = re.compile(r'(?<![\w])%s\.append\(QgsField\("(\w+)"' % name)
+        pattern = re.compile(r'(?<![\w])%s\.append\(make_field\("(\w+)"' % name)
         found = []
         for fname in os.listdir(PLUGIN):
             if not fname.endswith(".py"):

@@ -13,7 +13,6 @@ from qgis.core import (
     QgsFeature,
     QgsFeatureRequest,
     QgsFeatureSink,
-    QgsField,
     QgsFields,
     QgsGeometry,
     QgsPoint,
@@ -29,14 +28,16 @@ from qgis.core import (
     QgsProcessingParameterNumber,
     QgsWkbTypes,
 )
-from qgis.PyQt.QtCore import QVariant
 
 from . import topo_checks as tc
 from .help_texts import help_for
 from .report import build_report
-from .qgis_helpers import fields_from, set_field_aliases, write_field_aliases
+from .qgis_helpers import (
+    fields_from, make_field, set_field_aliases, write_field_aliases,
+)
 from . import field_aliases
 from .i18n import tr
+from .qgis_helpers import no_warnings
 from .rounding import fmt, nice
 from .branding import banner, help_footer, help_url
 from .geom_backend import QgisBackend
@@ -53,15 +54,15 @@ def finding_fields():
     # Сквозной номер идёт первым: по нему находку ищут в отчёте и на карте.
     # Предложение Ивана Иванова: нумерованный список плюс слой с точками,
     # чтобы автор данных нашёл место и в оригинале, и в результате.
-    fields.append(QgsField("num", QVariant.Int))
-    fields.append(QgsField("type", QVariant.String))
-    fields.append(QgsField("label", QVariant.String))
-    fields.append(QgsField("severity", QVariant.String))
-    fields.append(QgsField("fid_a", QVariant.LongLong))
-    fields.append(QgsField("fid_b", QVariant.LongLong))
-    fields.append(QgsField("value", QVariant.Double))
-    fields.append(QgsField("note", QVariant.String))
-    fields.append(QgsField("grp", QVariant.String))
+    fields.append(make_field("num", "int"))
+    fields.append(make_field("type", "string"))
+    fields.append(make_field("label", "string"))
+    fields.append(make_field("severity", "string"))
+    fields.append(make_field("fid_a", "long"))
+    fields.append(make_field("fid_b", "long"))
+    fields.append(make_field("value", "double"))
+    fields.append(make_field("note", "string"))
+    fields.append(make_field("grp", "string"))
     return fields
 
 
@@ -303,6 +304,7 @@ class TopologyAuditAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUTPUT, tr("Находки"), QgsProcessing.TypeVectorPoint))
 
+    @no_warnings
     def processAlgorithm(self, parameters, context, feedback):
         # Запрет стоит первой строкой. Источник запоминает настройку проверки
         # в момент создания, и поставленный позже запрет уже не действует.
@@ -565,6 +567,7 @@ class TopologyFixAlgorithm(QgsProcessingAlgorithm):
             self.REMAINS, tr("Оставшиеся проблемы"), QgsProcessing.TypeVectorPoint,
             optional=True, createByDefault=True))
 
+    @no_warnings
     def processAlgorithm(self, parameters, context, feedback):
         # Запрет стоит первой строкой. Источник запоминает настройку проверки
         # в момент создания, и поставленный позже запрет уже не действует.
@@ -832,6 +835,7 @@ class AssemblyCheckAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterFeatureSink(
             self.OUTPUT, tr("Находки сборки"), QgsProcessing.TypeVectorPoint))
 
+    @no_warnings
     def processAlgorithm(self, parameters, context, feedback):
         # Запрет стоит первой строкой. Источник запоминает настройку проверки
         # в момент создания, и поставленный позже запрет уже не действует.

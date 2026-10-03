@@ -2,7 +2,7 @@
 
 [Русская версия](MANUAL.md)
 
-Version 0.13.1
+Version 0.13.2
 
 The plugin adds a **Topoliner** group with eleven tools to the Processing
 panel. Its purpose is to bring a polygon

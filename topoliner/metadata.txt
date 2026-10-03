@@ -3,7 +3,7 @@ name=Topoliner
 qgisMinimumVersion=3.16
 qgisMaximumVersion=4.99
 description=Topology check, cleanup and coverage model for polygon and line layers: snapping, missing nodes, dangles and overshoots, assembly check, topology-preserving simplification
-version=0.13.1
+version=0.13.2
 author=ООО «Информ++»
 email=xbbster@gmail.com
 about=Brings polygon coverages into order. Finds topology violations and separates
@@ -31,7 +31,11 @@ icon=icons/icon.png
 experimental=False
 deprecated=False
 hasProcessingProvider=yes
-changelog=0.13.1 Fixed: tools refused to read a layer with invalid geometry when
+changelog=0.13.2 Fixed: QGIS 3.38 to 3.44 crashed when a tool started. Output
+      fields were created with a deprecated call, and the warning it raised
+      in the Processing worker thread ended QGIS with an access violation.
+      Python warnings are now silenced for the whole run in every tool.
+      0.13.1 Fixed: tools refused to read a layer with invalid geometry when
       Processing was set to stop on it. Fixed: cleanup now repairs geometry
       before snapping, so a hole lying on its own shell is repaired without
       area loss. New tool 1.08 puts drawn contours into a coverage, with three

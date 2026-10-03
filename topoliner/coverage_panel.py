@@ -14,8 +14,11 @@ coverage_panel
 
 from qgis.core import (
     QgsCategorizedSymbolRenderer,
+    QgsEditFormConfig,
+    QgsGeometry,
     QgsProject,
     QgsSymbolLayerUtils,
+    QgsWkbTypes,
 )
 from qgis.gui import QgsDockWidget, QgsFieldComboBox, QgsMapLayerComboBox
 from qgis.PyQt.QtCore import QSize
@@ -34,13 +37,20 @@ from qgis.PyQt.QtWidgets import (
 )
 
 from .cut import MODE_CLIP, MODE_INSET, MODE_OVERLAY
-from .cut_edit import can_cut, key_fields
+from .cut_edit import apply_cut, can_cut, key_fields
 from .i18n import tr
 from .qt_compat import USER_ROLE, layer_filter
 
 __all__ = ["CoveragePanel"]
 
 ON_STYLE = "background-color: #2e7d32; color: white; font-weight: bold;"
+
+# В QGIS 4 перечисление переехало в Qgis.AttributeFormSuppression.
+try:
+    from qgis.core import Qgis
+    FORM_OFF = Qgis.AttributeFormSuppression.On
+except AttributeError:
+    FORM_OFF = QgsEditFormConfig.SuppressOn
 
 
 class CoveragePanel(QgsDockWidget):
@@ -50,7 +60,10 @@ class CoveragePanel(QgsDockWidget):
         QgsDockWidget.__init__(self, tr("Покрытие"), parent)
         self.setObjectName("TopolinerCoveragePanel")
         self.iface = iface
-        self.tool = None
+        self.watched = None
+        self.busy = False
+        self.pending = []
+        self.form_before = None
 
         body = QWidget(self)
         layout = QVBoxLayout(body)
@@ -134,13 +147,11 @@ class CoveragePanel(QgsDockWidget):
         # ── Рисование ─────────────────────────────────────────────────────
         self.draw_button = QPushButton(tr("Режим рисования: ВЫКЛ"), body)
         self.draw_button.setCheckable(True)
+        self.draw_button.setToolTip(tr(
+            "Включает правку слоя и штатное добавление полигона. Каждый "
+            "добавленный полигон сразу обрабатывается по выбранному режиму."))
         self.draw_button.toggled.connect(self.drawing_toggled)
         layout.addWidget(self.draw_button)
-
-        self.smooth = QCheckBox(tr("Сглаживать линии"), body)
-        self.smooth.setToolTip(tr(
-            "Тот же переключатель стоит на клавише S во время рисования."))
-        layout.addWidget(self.smooth)
 
         # ── Пороги ────────────────────────────────────────────────────────
         row = QHBoxLayout()
@@ -172,9 +183,6 @@ class CoveragePanel(QgsDockWidget):
 
     # ── Состояние ─────────────────────────────────────────────────────────
 
-    def set_tool(self, tool):
-        self.tool = tool
-
     def layer(self):
         return self.layer_box.currentLayer()
 
@@ -190,8 +198,7 @@ class CoveragePanel(QgsDockWidget):
                 "node_eps": self.eps_box.value(),
                 "mode": self.mode(),
                 "values": self.values() if self.autofill.isChecked() else None,
-                "ask_form": not self.autofill.isChecked(),
-                "smooth": self.smooth.isChecked()}
+                "fill": self.autofill.isChecked()}
 
     def values(self):
         """Значения полей выбранного класса, либо пустой словарь."""
@@ -204,6 +211,8 @@ class CoveragePanel(QgsDockWidget):
 
     def layer_changed(self, layer):
         self.reload_classes()
+        if self.draw_button.isChecked():
+            self._watch(layer)
 
     def table_changed(self, layer):
         self._follow_table(layer)
@@ -318,21 +327,108 @@ class CoveragePanel(QgsDockWidget):
         self.draw_button.setText(
             tr("Режим рисования: ВКЛ") if on else tr("Режим рисования: ВЫКЛ"))
         self.draw_button.setStyleSheet(ON_STYLE if on else "")
-        if self.tool is None:
+        if on:
+            self._watch(self.layer())
+        else:
+            self._unwatch()
+
+    def _watch(self, layer):
+        """Начинает следить за слоем и включает штатное рисование."""
+        self._unwatch()
+        if layer is None or layer.geometryType() != QgsWkbTypes.PolygonGeometry:
+            self.iface.messageBar().pushWarning(
+                tr("Покрытие"), tr("Нужен слой полигонов."))
+            self.draw_button.setChecked(False)
             return
-        canvas = self.iface.mapCanvas()
-        if not on:
-            if canvas.mapTool() is self.tool:
-                canvas.unsetMapTool(self.tool)
+        if not layer.isEditable():
+            layer.startEditing()
+        self.watched = layer
+        layer.featureAdded.connect(self.feature_added)
+        layer.editCommandEnded.connect(self.command_ended)
+        self.pending = []
+        self._set_form_hidden(layer, self.autofill.isChecked())
+        self.iface.setActiveLayer(layer)
+        self.iface.actionAddFeature().trigger()
+
+    def _unwatch(self):
+        layer = self.watched
+        self.watched = None
+        if layer is None:
             return
-        canvas.setMapTool(self.tool)
-        # О негодном слое лучше сказать сразу, а не после отрисовки контура.
-        problem = can_cut(self.layer())
-        if problem:
-            self.iface.messageBar().pushWarning(tr("Покрытие"), problem)
+        try:
+            layer.featureAdded.disconnect(self.feature_added)
+            layer.editCommandEnded.disconnect(self.command_ended)
+            self._set_form_hidden(layer, None)
+        except (RuntimeError, TypeError):
+            # Слой уже удалён из проекта либо подключения не было.
+            self.form_before = None
+
+    def _set_form_hidden(self, layer, hidden):
+        """
+        Прячет форму атрибутов на время автозаполнения.
+
+        Значение None возвращает слою настройку, которая была до панели.
+        """
+        config = layer.editFormConfig()
+        if hidden is None:
+            if self.form_before is None:
+                return
+            config.setSuppress(self.form_before)
+            self.form_before = None
+        else:
+            if self.form_before is None:
+                self.form_before = config.suppress()
+            config.setSuppress(FORM_OFF if hidden else self.form_before)
+        layer.setEditFormConfig(config)
+
+    def feature_added(self, fid):
+        """
+        Полигон добавлен штатным инструментом. Запоминает его до конца команды.
+
+        Править слой прямо отсюда нельзя. Сигнал приходит изнутри команды
+        правки QGIS, и вложенные в неё изменения ломают стек отмены: отмена
+        такого шага роняет программу с нарушением доступа.
+        """
+        layer = self.watched
+        if self.busy or layer is None:
+            return
+        feature = layer.getFeature(fid)
+        self.pending.append((QgsGeometry(feature.geometry()),
+                             feature.attributes()))
+
+    def command_ended(self):
+        """
+        Команда QGIS закончилась. Заменяет её одной своей.
+
+        Добавление полигона отменяется, и тот же контур вводится заново уже
+        вместе с обрезкой соседей. В стеке отмены остаётся один шаг.
+        """
+        layer = self.watched
+        if self.busy or layer is None or not self.pending:
+            return
+        pending, self.pending = self.pending, []
+        if len(pending) != 1:
+            # Вставка из буфера и подобное. Это не рисование, не трогаем.
+            return
+        geometry, row = pending[0]
+        self.busy = True
+        try:
+            layer.undoStack().undo()
+            fill = self.autofill.isChecked()
+            report = apply_cut(
+                layer, geometry,
+                area_threshold=self.area_box.value(),
+                node_eps=self.eps_box.value(), mode=self.mode(),
+                values=self.values() if fill else None,
+                row=None if fill else row)
+        finally:
+            self.busy = False
+        layer.triggerRepaint()
+        if report["error"]:
+            self.iface.messageBar().pushWarning(tr("Покрытие"), report["error"])
 
     def tool_deactivated(self):
-        """Карта-инструмент выключили со стороны QGIS."""
+        """Оставлено для совместимости со старым инструментом рисования."""
         if self.draw_button.isChecked():
             self.draw_button.setChecked(False)
 
