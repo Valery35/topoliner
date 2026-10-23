@@ -15,7 +15,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-PAIRS = [("README.md", "README.en.md"),
+PAIRS = [("README.ru.md", "README.md"),
          ("doc/MANUAL.md", "doc/MANUAL.en.md"),
          ("doc/DETAILS.md", "doc/DETAILS.en.md")]
 

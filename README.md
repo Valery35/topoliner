@@ -1,122 +1,118 @@
 # Topoliner
 
-[English](README.en.md) · **Русский**
+[Русская версия](README.ru.md) · **English**
 
-[![Установить в QGIS](https://img.shields.io/badge/%D0%A3%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%B8%D1%82%D1%8C%20%D0%B2%20QGIS-blue.svg)](https://plugins.qgis.org/plugins/topoliner/)
-[![Страница плагина](https://img.shields.io/badge/%D0%A1%D1%82%D1%80%D0%B0%D0%BD%D0%B8%D1%86%D0%B0%20%D0%BF%D0%BB%D0%B0%D0%B3%D0%B8%D0%BD%D0%B0-0f766e.svg)](https://www.informpp.ru/%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F-%D1%81%D1%82%D1%80%D0%B0%D0%BD%D0%B8%D1%86%D0%B0/qgis-topoliner)
+[![Install in QGIS](https://img.shields.io/badge/Install%20in%20QGIS-blue.svg)](https://plugins.qgis.org/plugins/topoliner/)
+[![Plugin page](https://img.shields.io/badge/Plugin%20page-0f766e.svg)](https://www.informpp.ru/%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F-%D1%81%D1%82%D1%80%D0%B0%D0%BD%D0%B8%D1%86%D0%B0/qgis-topoliner)
 
-Плагин QGIS для приведения полигональных покрытий в порядок: проверка топологии,
-автоматическая очистка, сшивка границ и контроль сборки по атрибуту.
+A QGIS plugin for bringing polygon coverages into order: topology check,
+automatic cleanup, border snapping, insertion of missing nodes, assembly check
+by attribute and simplification that keeps shared borders shared.
 
-Инструменты доступны в панели Processing, работают в моделях и в пакетном режиме.
-Исходный слой не изменяется никогда.
+All tools live in the Processing panel and work in models and in batch mode.
+The input layer is never modified: every result goes to a new layer.
 
-## Зачем
+Interface in English and Russian, chosen by the QGIS locale.
 
-Типовая ручная процедура выглядит так: прилипание слоя к самому себе
-с допуском, затем объединение без атрибутов, затем осмотр результата в поиске
-расхождений. Она известная, повторяемая и каждый раз выполняется вручную. Плагин делает
-то же самое воспроизводимо, с числовым отчётом и с гарантиями.
+## Why
 
-## Инструменты
+The usual manual routine looks like this: snap a layer to itself with some
+tolerance, then dissolve without attributes, then inspect the result for
+discrepancies. It is well known, repeatable and done by hand every time.
+The plugin does the same thing reproducibly, with a numeric report
+and with guarantees.
 
-| Инструмент | Что делает | Меняет слой |
+## Tools
+
+| Tool | What it does | Modifies the layer |
 |---|---|---|
-| 1.01 Проверка топологии полигонов | Ищет нарушения, выдаёт слой точек и сводку | Нет |
-| 1.02 Проверка топологии линий | Недоводы, перелёты, висячие концы | Нет |
-| 1.03 Очистка топологии полигонов | Чинит то, что является техническим мусором | Да, в новый слой |
-| 1.04 Очистка топологии линий | Чинит то, что является следом оцифровки | Да, в новый слой |
-| 1.05 Сшивка узлов и вершин | Согласование узлов и вершин | Да, в новый слой |
-| 1.06 Вставка недостающих узлов | Достраивает узлы, не меняя формы и площади | Да, в новый слой |
-| 1.07 Контроль сборки по атрибуту | Проверяет, собираются ли группы в целое тело | Нет |
-| 1.08 Ввод контуров в покрытие | Три режима наложения, кромка разреза достаётся обеим сторонам одинаковой | Да, в новый слой |
-| 2.01 Топологическое упрощение | Прореживает вершины, не разрывая общих границ | Да, в новый слой |
-| 2.02 Границы полигонов линиями | Выдаёт границы отдельными линиями, каждую по разу | Нет |
-| 2.03 Топологическая модель покрытия | Раскладывает покрытие на узлы и дуги | Нет |
+| 1.01 Polygon topology check | Finds violations, produces a point layer and a summary | No |
+| 1.02 Line topology check | Undershoots, overshoots, dangles | No |
+| 1.03 Polygon topology cleanup | Fixes what is technical debris | Yes, into a new layer |
+| 1.04 Line topology cleanup | Fixes what is a digitising trace | Yes, into a new layer |
+| 1.05 Node and vertex snapping | Brings borders to an exact match | Yes, into a new layer |
+| 1.06 Insertion of missing nodes | Adds nodes without changing shape or area | Yes, into a new layer |
+| 1.07 Assembly check by attribute | Checks whether groups assemble into one body | No |
+| 1.08 Contours into a coverage | Three overlay modes, the cut edge reaches both sides the same | Yes, into a new layer |
+| 2.01 Topology-preserving simplify | Thins vertices without tearing shared borders | Yes, into a new layer |
+| 2.02 Polygon borders as lines | Outputs borders as separate lines, each one once | No |
+| 2.03 Coverage topology model | Breaks a coverage into nodes and arcs | No |
 
-## Ввод контуров в покрытие
+## Contours into a coverage
 
-Инструмент 1.08 вводит нарисованные контуры в покрытие. Три режима наложения отвечают на вопрос, кому достаётся площадь под контуром.
+Tool 1.08 puts drawn contours into a coverage. Three overlay modes answer one question, who gets the area under the contour.
 
-| Режим | Новый объект | Соседи | Площадь покрытия |
+| Mode | The new feature | The neighbours | The area of the coverage |
 |---|---|---|---|
-| Наложение | весь контур | урезаются | растёт на часть за краем |
-| Отсечение | только свободное место | не теряют площади | растёт на ту же часть |
-| Врезка | только то, что внутри покрытия | урезаются | не меняется |
+| Overlay | the whole contour | trimmed | grows by the part beyond the edge |
+| Clipping | free space only | lose no area | grows by the same part |
+| Cutting in | only what lies inside | trimmed | does not change |
 
-## Главный принцип
+## The main principle
 
-Автоматика не знает, какая из двух спорящих границ верна. Она различает только
-масштаб. Сантиметровый нахлёст является погрешностью оцифровки, гектарный
-является разногласием между источниками. Поэтому поведение задают два порога,
-допуск в единицах длины и порог площади, а всё, что крупнее порогов, остаётся
-человеку и не исправляется ни при каких настройках.
+Automation cannot know which of two disputed borders is correct. What it can
+tell is scale: a centimetre overlap is a digitising error, a hectare one is
+a disagreement between sources. Behaviour is therefore set by two thresholds,
+a tolerance in length units and an area threshold. Anything above them is left
+to the operator and is never fixed automatically under any settings.
 
-## Гарантии
+## Guarantees
 
-- Вершина не смещается дальше допуска.
-- Правка, отнимающая у объекта больше четверти площади, отменяется.
-- Повторный запуск по результату ничего не меняет. Исключение одно:
-  упрощение со сглаживанием, там каждый проход срезает углы заново.
-- Атрибуты сохраняются, объекты не удаляются без явного разрешения.
+- No vertex moves further than the tolerance.
+- An edit that takes more than a quarter of an object's area is cancelled.
+- Objects narrower than the tolerance are left untouched and serve as anchors.
+- A repeat run over the result changes nothing. There is one exception:
+  simplification with smoothing, where every pass cuts the corners again.
+- Attributes are preserved; objects are never deleted without explicit permission.
+- Insertion of missing nodes does not change the area at all.
 
-## Язык
+## Companions
 
-Интерфейс двуязычный, русский и английский. Язык берётся из локали QGIS.
+Three plugins solve neighbouring tasks and work together.
 
-## Спутники
+- **[Isoliner](https://plugins.qgis.org/plugins/grid_isolines/)** - kriging,
+  contour lines and polygons, terrain hydrology, borehole sections.
+  [Source](https://github.com/Valery35/qgis-isoliner)
+- **[Isoliner3D](https://plugins.qgis.org/plugins/isoliner3d/)** - a standalone
+  3D viewer for surfaces, bed bodies, boreholes and polyhedra, with reserve
+  calculation from a block model.
+  [Source](https://github.com/Valery35/qgis-isoliner3d)
 
-Три плагина решают соседние задачи и работают вместе.
+Contours and borders built in Isoliner are put in order by Topoliner, and the
+result is viewed in Isoliner3D.
 
-- **[Isoliner](https://plugins.qgis.org/plugins/grid_isolines/)** - кригинг,
-  изолинии и контурные полигоны, гидрология рельефа, разрезы по скважинам.
-  [Исходники](https://github.com/Valery35/qgis-isoliner)
-- **[Isoliner3D](https://plugins.qgis.org/plugins/isoliner3d/)** - автономный
-  трёхмерный просмотр поверхностей, тел пластов, скважин и полиэдров, подсчёт
-  запасов по блочной модели.
-  [Исходники](https://github.com/Valery35/qgis-isoliner3d)
+## Installation
 
-Изолинии и границы, построенные в Isoliner, приводятся в порядок Topoliner,
-а результат смотрится в Isoliner3D.
+From the QGIS plugin repository, or from a ZIP file:
+**Plugins - Manage and Install Plugins - Install from ZIP**.
+Restarting QGIS is not required.
 
-## Страница для сайта
+## Documentation
 
-В папке `site/` лежит самодостаточная страница `topoliner_landing.html`.
-Схемы встроены в файл, внешних запросов нет. Собирается скриптом
-`tools/build_site.py`.
+The manual in PDF ships with the plugin: `topoliner/doc/Topoliner_en.pdf`.
+The **Help** button in a tool dialog opens it in the interface language.
 
-## Установка
+Sources: [doc/MANUAL.en.md](doc/MANUAL.en.md), design notes and the
+classification of violations - [doc/DETAILS.en.md](doc/DETAILS.en.md).
 
-Из каталога QGIS либо из ZIP: **Модули - Управление модулями - Установить из ZIP**.
-Перезапуск QGIS не нужен.
-
-## Документация
-
-Руководство в PDF идёт в комплекте плагина: `topoliner/doc/Topoliner.pdf`
-(RU) и `Topoliner_en.pdf` (EN). Кнопка **Справка** в диалоге инструмента
-открывает его на языке интерфейса.
-
-Исходники: [doc/MANUAL.md](doc/MANUAL.md), устройство и классификация
-нарушений - [doc/DETAILS.md](doc/DETAILS.md).
-
-## Разработка
+## Development
 
 ```
 cd topoliner
 python -m unittest discover -s tests -v
 ```
 
-QGIS для тестов не нужен. Геометрическая логика вынесена из QGIS в отдельные
-модули. Ядро работает со списками координат, а операции пересечения идут через
-адаптер, у которого есть реализация на Shapely. Shapely использует тот же GEOS,
-что и QGIS, поэтому поведение совпадает с рабочим.
+QGIS is not needed for the tests. The geometric logic is kept out of QGIS:
+the core works with plain coordinate lists, and intersection operations go
+through an adapter that has a Shapely implementation. Shapely uses the same
+GEOS as QGIS, so the behaviour matches production.
 
-Сборка архивов:
+Building the archives:
 
 ```
 python tools/build_zip.py
 ```
 
-## Лицензия
+## License
 
-GNU GPL версии 3 или новее, см. [LICENSE](LICENSE).
+GNU GPL version 3 or later, see [LICENSE](LICENSE).
