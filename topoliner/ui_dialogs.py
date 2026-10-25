@@ -23,7 +23,7 @@ from qgis.PyQt.QtWidgets import (
 )
 
 from .branding import (COMPANY_URL, ISOLINER3D_URL, ISOLINER_URL, PLUGIN_NAME,
-                       PRODUCT_URL, manual_path, plugin_version)
+                       PRODUCT_URL, SUPPORT_URL, manual_path, plugin_version)
 from .i18n import tr
 from .qt_compat import BUTTON_CLOSE, ROLE_ACTION
 
@@ -64,7 +64,7 @@ class AboutDialog(QDialog):
     def body(self):
         link = '<a href="%s">%s</a>'
         return (
-            "<p>%s</p><p>%s</p><p>%s</p><p>%s<br>%s<br>%s</p><p>%s</p>"
+            "<p>%s</p><p>%s</p><p>%s</p><p>%s<br>%s<br>%s<br>%s</p><p>%s</p>"
             % (tr("Топология полигональных и линейных покрытий. Инструменты "
                   "находят нарушения и отделяют технический мусор от того, "
                   "что может нести смысл. Мусор исправляется в новый слой."),
@@ -78,6 +78,7 @@ class AboutDialog(QDialog):
                link % (ISOLINER_URL, tr("Isoliner, кригинг и изолинии")),
                link % (ISOLINER3D_URL,
                        tr("Isoliner3D, просмотр поверхностей и тел")),
+               link % (SUPPORT_URL, tr("Поддержать разработку")),
                tr("Лицензия GPL 3. Развивается на задачах реальных "
                   "предприятий: %s") % (link % (COMPANY_URL, COMPANY_URL)))
         )

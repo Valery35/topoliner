@@ -438,6 +438,7 @@ EN = {
     "Isoliner, кригинг и изолинии": "Isoliner, kriging and contouring",
     "Isoliner3D, просмотр поверхностей и тел":
         "Isoliner3D, viewer for surfaces and bodies",
+    "Поддержать разработку": "Support development",
 
     # Врезка контуров, 1.08
     "Врезка контура": "Cutting a contour in",

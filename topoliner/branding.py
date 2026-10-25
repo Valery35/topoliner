@@ -19,6 +19,11 @@ PRODUCT_URL = "https://www.informpp.ru/главная-страница/qgis-topo
 ISOLINER_URL = "https://plugins.qgis.org/plugins/grid_isolines/"
 ISOLINER3D_URL = "https://plugins.qgis.org/plugins/isoliner3d/"
 
+# Раздел «Поддержать разработку» в профиле автора на GitHub.
+SUPPORT_URL = ("https://github.com/Valery35#"
+               "%D0%BF%D0%BE%D0%B4%D0%B4%D0%B5%D1%80%D0%B6%D0%B0%D1%82%D1%8C-"
+               "%D1%80%D0%B0%D0%B7%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D0%BA%D1%83")
+
 _version = None
 
 
@@ -94,7 +99,9 @@ def help_footer():
             "%s<br><br>"
             "%s развивается на задачах реальных предприятий. Если вашему "
             "производству не хватает функции, напишите нам: %s"
-            % (title, PRODUCT_URL, companions, PLUGIN_NAME, COMPANY_URL)
+            "<br><br><a href=\"%s\">Поддержать разработку</a>"
+            % (title, PRODUCT_URL, companions, PLUGIN_NAME, COMPANY_URL,
+               SUPPORT_URL)
         )
 
     companions = (
@@ -108,5 +115,7 @@ def help_footer():
         "%s<br><br>"
         "%s grows on the tasks of real enterprises. If your operation "
         "is missing a feature, write to us: %s"
-        % (title, PRODUCT_URL, companions, PLUGIN_NAME, COMPANY_URL)
+        "<br><br><a href=\"%s\">Support development</a>"
+        % (title, PRODUCT_URL, companions, PLUGIN_NAME, COMPANY_URL,
+           SUPPORT_URL)
     )
