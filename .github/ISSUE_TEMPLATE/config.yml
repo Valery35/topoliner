@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Вопрос по работе модуля / Question
+    url: https://t.me/qgis_isolines
+    about: Вопросы и обсуждение в Telegram-канале модулей. Questions and discussion in the Telegram channel.
+  - name: Руководство / Manual
+    url: https://github.com/Valery35/topoliner/blob/main/doc/MANUAL.md
+    about: Описание инструментов, параметров и выходных полей. Tools, parameters and output fields.
