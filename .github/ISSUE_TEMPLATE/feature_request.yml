@@ -1,0 +1,46 @@
+name: Пожелание / Feature request
+description: Новый инструмент, параметр или изменение поведения. A new tool, parameter or change of behaviour.
+title: "[Пожелание] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Опишите задачу, а не только решение. Так проще найти способ, который подойдёт и другим.
+        Можно писать по-русски или по-английски.
+
+        Describe the task, not only the solution. You can write in Russian or in English.
+  - type: textarea
+    id: task
+    attributes:
+      label: Задача / Task
+      description: Что вы делаете с данными и где сейчас неудобно. What you do with your data and what is inconvenient now.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Как это могло бы работать / How it could work
+      description: Новый инструмент, параметр или изменение существующего. A new tool, a parameter or a change to an existing one.
+  - type: dropdown
+    id: tool
+    attributes:
+      label: Инструмент / Tool
+      options:
+        - Новый инструмент / New tool
+        - 1.01 Проверка топологии полигонов / Polygon topology check
+        - 1.02 Проверка топологии линий / Line topology check
+        - 1.03 Очистка топологии полигонов / Polygon topology cleanup
+        - 1.04 Очистка топологии линий / Line topology cleanup
+        - 1.05 Сшивка узлов и вершин / Node and vertex snapping
+        - 1.06 Вставка недостающих узлов / Missing node insertion
+        - 1.07 Контроль сборки по атрибуту / Assembly check by attribute
+        - 1.08 Ввод контуров в покрытие / Contour input into a coverage
+        - 2.01 Топологическое упрощение / Topological simplification
+        - 2.02 Границы полигонов линиями / Polygon boundaries as lines
+        - 2.03 Топологическая модель покрытия / Coverage topology model
+  - type: textarea
+    id: data
+    attributes:
+      label: Пример данных / Sample data
+      description: Тип слоя, объём, система координат. Небольшой фрагмент можно приложить архивом ZIP. Layer type, size, coordinate system. A small sample can be attached as a ZIP.
