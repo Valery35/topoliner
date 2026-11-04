@@ -1,0 +1,86 @@
+name: Ошибка / Bug report
+description: Инструмент упал, выдал неверный результат или не запускается. A tool crashed, gave a wrong result or does not start.
+title: "[Ошибка] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Спасибо за сообщение. Чем точнее описание, тем быстрее исправление.
+        Можно писать по-русски или по-английски.
+
+        Thank you for the report. You can write in Russian or in English.
+  - type: input
+    id: qgis
+    attributes:
+      label: Версия QGIS / QGIS version
+      description: Справка - О программе, например 3.40.12. Help - About, for example 3.40.12.
+      placeholder: "3.40.12"
+    validations:
+      required: true
+  - type: input
+    id: topoliner
+    attributes:
+      label: Версия Topoliner / Topoliner version
+      description: Модули - Управление модулями, или окно «О модуле». Plugins - Manage plugins, or the About window.
+      placeholder: "0.13.3"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Система / Operating system
+      options:
+        - Windows
+        - Linux
+        - macOS
+    validations:
+      required: true
+  - type: dropdown
+    id: tool
+    attributes:
+      label: Инструмент / Tool
+      options:
+        - 1.01 Проверка топологии полигонов / Polygon topology check
+        - 1.02 Проверка топологии линий / Line topology check
+        - 1.03 Очистка топологии полигонов / Polygon topology cleanup
+        - 1.04 Очистка топологии линий / Line topology cleanup
+        - 1.05 Сшивка узлов и вершин / Node and vertex snapping
+        - 1.06 Вставка недостающих узлов / Missing node insertion
+        - 1.07 Контроль сборки по атрибуту / Assembly check by attribute
+        - 1.08 Ввод контуров в покрытие / Contour input into a coverage
+        - 2.01 Топологическое упрощение / Topological simplification
+        - 2.02 Границы полигонов линиями / Polygon boundaries as lines
+        - 2.03 Топологическая модель покрытия / Coverage topology model
+        - Другое / Other
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: Что произошло / What happened
+      description: Что сделал инструмент и чего вы ждали. What the tool did and what you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Как повторить / Steps to reproduce
+      description: Параметры инструмента и порядок действий. Tool parameters and steps.
+      placeholder: |
+        1. Слой ...
+        2. Допуск ...
+        3. ...
+  - type: textarea
+    id: log
+    attributes:
+      label: Сообщение об ошибке / Error message
+      description: Текст из журнала Processing или окна аварийного завершения QGIS. Text from the Processing log or the QGIS crash window.
+      render: text
+  - type: markdown
+    attributes:
+      value: |
+        **Данные.** Ошибку быстрее всего исправить на слое, где она видна. Небольшой фрагмент
+        можно приложить архивом ZIP в поле выше или в комментарии.
+
+        **Data.** A small part of the layer where the error shows up helps most. Attach it as a ZIP.
