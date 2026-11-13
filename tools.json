@@ -825,6 +825,14 @@
     {
      "ru": "перекрытие шире допуска, это спор за площадь",
      "en": "the overlap is wider than the tolerance, a dispute over area"
+    },
+    {
+     "ru": "объект мельче порога, удаление не выполнялось",
+     "en": "the object is smaller than the threshold, no deletion was performed"
+    },
+    {
+     "ru": "объект исчез при исправлении",
+     "en": "the object disappeared during repair"
     }
    ]
   },

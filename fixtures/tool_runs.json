@@ -13,13 +13,13 @@
   },
   {
    "tool": "topologyclean",
-   "case": "reference",
-   "why": "Слой-эталон REFERENCE не прогонялся, случаев с ним нет."
+   "case": "z_mode",
+   "why": "Z_MODE и KEEP_Z требуют входа с Z, входы образцов плоские."
   },
   {
-   "tool": "insertnodes",
-   "case": "reference",
-   "why": "Слой-эталон REFERENCE не прогонялся, случаев с ним нет."
+   "tool": "topologysimplify",
+   "case": "fields_min_points",
+   "why": "FIELDS и MIN_POINTS на паре с извилистой границей дают тот же результат, что и без них. Нужна фигура, где они меняют выход."
   }
  ],
  "runs": [
@@ -12575,6 +12575,3981 @@
     [
      "info",
      "Висячих узлов: 0, псевдоузлов: 2"
+    ]
+   ],
+   "tolerance": {
+    "xy": 1e-09,
+    "fields": 1e-09
+   }
+  },
+  {
+   "tool": "topologyclean",
+   "case": "reference_snap",
+   "about": "Эталон в 0.5 от края входа, вершины входа тянутся к эталону.",
+   "values": {
+    "@INPUT": {
+     "name": "input",
+     "geometry": "polygon",
+     "hasz": false,
+     "fields": [
+      "id",
+      "name"
+     ],
+     "numeric": [
+      "id"
+     ]
+    },
+    "TOLERANCE": 2.0,
+    "MODE": 0,
+    "@REFERENCE": {
+     "name": "reference",
+     "geometry": "polygon",
+     "hasz": false,
+     "fields": [
+      "id",
+      "name"
+     ],
+     "numeric": [
+      "id"
+     ]
+    },
+    "PRIORITY": 1,
+    "Z_MODE": 0,
+    "CROSSINGS": true,
+    "PROTECT": true,
+    "REPAIR": 0,
+    "VALIDATE": true,
+    "REPORT": true
+   },
+   "input": {
+    "INPUT": [
+     {
+      "id": 1,
+      "attrs": {
+       "id": 1,
+       "name": "f1"
+      },
+      "parts": [
+       [
+        [
+         0.0,
+         0.0,
+         null
+        ],
+        [
+         10.0,
+         0.0,
+         null
+        ],
+        [
+         10.0,
+         10.0,
+         null
+        ],
+        [
+         0.0,
+         10.0,
+         null
+        ],
+        [
+         0.0,
+         0.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))"
+     }
+    ],
+    "REFERENCE": [
+     {
+      "id": 1,
+      "attrs": {
+       "id": 1,
+       "name": "f1"
+      },
+      "parts": [
+       [
+        [
+         10.5,
+         0.0,
+         null
+        ],
+        [
+         20.0,
+         0.0,
+         null
+        ],
+        [
+         20.0,
+         10.0,
+         null
+        ],
+        [
+         10.5,
+         10.0,
+         null
+        ],
+        [
+         10.5,
+         5.0,
+         null
+        ],
+        [
+         10.5,
+         0.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((10.5 0, 20 0, 20 10, 10.5 10, 10.5 5, 10.5 0))"
+     }
+    ]
+   },
+   "output": {
+    "OUTPUT": {
+     "geometry": "polygon",
+     "multi": true,
+     "hasz": false,
+     "fields": [
+      [
+       "id",
+       "int"
+      ],
+      [
+       "name",
+       "string"
+      ]
+     ],
+     "features": [
+      {
+       "values": [
+        1,
+        "f1"
+       ],
+       "geometry": {
+        "parts": [
+         [
+          [
+           0.0,
+           0.0,
+           null
+          ],
+          [
+           10.5,
+           0.0,
+           null
+          ],
+          [
+           10.5,
+           5.0,
+           null
+          ],
+          [
+           10.5,
+           10.0,
+           null
+          ],
+          [
+           0.0,
+           10.0,
+           null
+          ],
+          [
+           0.0,
+           0.0,
+           null
+          ]
+         ]
+        ],
+        "wkt": "Polygon ((0 0, 10.5 0, 10.5 5, 10.5 10, 0 10, 0 0))"
+       }
+      }
+     ]
+    },
+    "REPORT": {
+     "geometry": "point",
+     "multi": false,
+     "hasz": false,
+     "fields": [
+      [
+       "kind",
+       "string"
+      ],
+      [
+       "dist",
+       "double"
+      ],
+      [
+       "ring",
+       "int"
+      ]
+     ],
+     "features": [
+      {
+       "values": [
+        "move",
+        0.5,
+        0
+       ],
+       "geometry": {
+        "xyz": [
+         10.5,
+         0.0,
+         null
+        ]
+       }
+      },
+      {
+       "values": [
+        "move",
+        0.5,
+        0
+       ],
+       "geometry": {
+        "xyz": [
+         10.5,
+         10.0,
+         null
+        ]
+       }
+      },
+      {
+       "values": [
+        "insert",
+        0.0,
+        0
+       ],
+       "geometry": {
+        "xyz": [
+         10.5,
+         5.0,
+         null
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "report": [
+    [
+     "info",
+     "Topoliner 0.13.4"
+    ],
+    [
+     "info",
+     "Чтение слоя..."
+    ],
+    [
+     "info",
+     "Эталон: колец 1"
+    ],
+    [
+     "info",
+     "Сшивка: колец 1, вершин 5, допуск 2"
+    ],
+    [
+     "info",
+     "Длина ребра: медиана 10, пятый процентиль 10 (рёбер 4)"
+    ],
+    [
+     "info",
+     "Ширина колец: минимум 5, медиана 5"
+    ],
+    [
+     "info",
+     ""
+    ],
+    [
+     "info",
+     "── Результат ──"
+    ],
+    [
+     "info",
+     "Вершин сдвинуто:      2"
+    ],
+    [
+     "info",
+     "Смещение макс/сред:   0.5 / 0.5"
+    ],
+    [
+     "info",
+     "Узлов вставлено:      1 (из них в пересечениях рёбер: 0)"
+    ],
+    [
+     "info",
+     "Вершин было/стало:    4 / 6"
+    ],
+    [
+     "info",
+     "Площадь до/после:     100 / 105 (5, +5.000 %)"
+    ],
+    [
+     "info",
+     "Некорректных геометрий до/после: 0 / 0"
+    ],
+    [
+     "info",
+     "Объектов записано:    1"
+    ]
+   ],
+   "tolerance": {
+    "xy": 1e-09,
+    "fields": 1e-09
+   }
+  },
+  {
+   "tool": "topologyclean",
+   "case": "reference_insert",
+   "about": "Только вставка узлов, вершина эталона лежит на ребре входа.",
+   "values": {
+    "@INPUT": {
+     "name": "input",
+     "geometry": "polygon",
+     "hasz": false,
+     "fields": [
+      "id",
+      "name"
+     ],
+     "numeric": [
+      "id"
+     ]
+    },
+    "TOLERANCE": 2.0,
+    "MODE": 1,
+    "@REFERENCE": {
+     "name": "reference",
+     "geometry": "polygon",
+     "hasz": false,
+     "fields": [
+      "id",
+      "name"
+     ],
+     "numeric": [
+      "id"
+     ]
+    },
+    "PRIORITY": 1,
+    "Z_MODE": 0,
+    "CROSSINGS": true,
+    "PROTECT": true,
+    "REPAIR": 0,
+    "VALIDATE": true,
+    "REPORT": true
+   },
+   "input": {
+    "INPUT": [
+     {
+      "id": 1,
+      "attrs": {
+       "id": 1,
+       "name": "f1"
+      },
+      "parts": [
+       [
+        [
+         0.0,
+         0.0,
+         null
+        ],
+        [
+         10.0,
+         0.0,
+         null
+        ],
+        [
+         10.0,
+         10.0,
+         null
+        ],
+        [
+         0.0,
+         10.0,
+         null
+        ],
+        [
+         0.0,
+         0.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))"
+     }
+    ],
+    "REFERENCE": [
+     {
+      "id": 1,
+      "attrs": {
+       "id": 1,
+       "name": "f1"
+      },
+      "parts": [
+       [
+        [
+         10.0,
+         0.0,
+         null
+        ],
+        [
+         20.0,
+         0.0,
+         null
+        ],
+        [
+         20.0,
+         10.0,
+         null
+        ],
+        [
+         10.0,
+         10.0,
+         null
+        ],
+        [
+         10.0,
+         5.0,
+         null
+        ],
+        [
+         10.0,
+         0.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((10 0, 20 0, 20 10, 10 10, 10 5, 10 0))"
+     }
+    ]
+   },
+   "output": {
+    "OUTPUT": {
+     "geometry": "polygon",
+     "multi": true,
+     "hasz": false,
+     "fields": [
+      [
+       "id",
+       "int"
+      ],
+      [
+       "name",
+       "string"
+      ]
+     ],
+     "features": [
+      {
+       "values": [
+        1,
+        "f1"
+       ],
+       "geometry": {
+        "parts": [
+         [
+          [
+           0.0,
+           0.0,
+           null
+          ],
+          [
+           10.0,
+           0.0,
+           null
+          ],
+          [
+           10.0,
+           5.0,
+           null
+          ],
+          [
+           10.0,
+           10.0,
+           null
+          ],
+          [
+           0.0,
+           10.0,
+           null
+          ],
+          [
+           0.0,
+           0.0,
+           null
+          ]
+         ]
+        ],
+        "wkt": "Polygon ((0 0, 10 0, 10 5, 10 10, 0 10, 0 0))"
+       }
+      }
+     ]
+    },
+    "REPORT": {
+     "geometry": "point",
+     "multi": false,
+     "hasz": false,
+     "fields": [
+      [
+       "kind",
+       "string"
+      ],
+      [
+       "dist",
+       "double"
+      ],
+      [
+       "ring",
+       "int"
+      ]
+     ],
+     "features": [
+      {
+       "values": [
+        "insert",
+        0.0,
+        0
+       ],
+       "geometry": {
+        "xyz": [
+         10.0,
+         5.0,
+         null
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "report": [
+    [
+     "info",
+     "Topoliner 0.13.4"
+    ],
+    [
+     "info",
+     "Чтение слоя..."
+    ],
+    [
+     "info",
+     "Эталон: колец 1"
+    ],
+    [
+     "info",
+     "Сшивка: колец 1, вершин 5, допуск 2"
+    ],
+    [
+     "info",
+     "Длина ребра: медиана 10, пятый процентиль 10 (рёбер 4)"
+    ],
+    [
+     "info",
+     "Ширина колец: минимум 5, медиана 5"
+    ],
+    [
+     "info",
+     ""
+    ],
+    [
+     "info",
+     "── Результат ──"
+    ],
+    [
+     "info",
+     "Вершин сдвинуто:      0"
+    ],
+    [
+     "info",
+     "Смещение макс/сред:   0 / 0"
+    ],
+    [
+     "info",
+     "Узлов вставлено:      1 (из них в пересечениях рёбер: 0)"
+    ],
+    [
+     "info",
+     "Вершин было/стало:    4 / 6"
+    ],
+    [
+     "info",
+     "Площадь до/после:     100 / 100 (0, +0.000 %)"
+    ],
+    [
+     "info",
+     "Некорректных геометрий до/после: 0 / 0"
+    ],
+    [
+     "info",
+     "Объектов записано:    1"
+    ]
+   ],
+   "tolerance": {
+    "xy": 1e-09,
+    "fields": 1e-09
+   }
+  },
+  {
+   "tool": "topologyclean",
+   "case": "priority_order",
+   "about": "Слияние по порядку объектов в слое, а не по размеру.",
+   "values": {
+    "@INPUT": {
+     "name": "input",
+     "geometry": "polygon",
+     "hasz": false,
+     "fields": [
+      "id",
+      "name"
+     ],
+     "numeric": [
+      "id"
+     ]
+    },
+    "TOLERANCE": 2.0,
+    "MODE": 2,
+    "REFERENCE": null,
+    "PRIORITY": 0,
+    "Z_MODE": 0,
+    "CROSSINGS": true,
+    "PROTECT": true,
+    "REPAIR": 0,
+    "VALIDATE": true,
+    "REPORT": true
+   },
+   "input": {
+    "INPUT": [
+     {
+      "id": 1,
+      "attrs": {
+       "id": 1,
+       "name": "f1"
+      },
+      "parts": [
+       [
+        [
+         10.5,
+         0.0,
+         null
+        ],
+        [
+         20.0,
+         0.0,
+         null
+        ],
+        [
+         20.0,
+         10.0,
+         null
+        ],
+        [
+         10.5,
+         10.0,
+         null
+        ],
+        [
+         10.5,
+         5.0,
+         null
+        ],
+        [
+         10.5,
+         0.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((10.5 0, 20 0, 20 10, 10.5 10, 10.5 5, 10.5 0))"
+     },
+     {
+      "id": 2,
+      "attrs": {
+       "id": 2,
+       "name": "f2"
+      },
+      "parts": [
+       [
+        [
+         0.0,
+         0.0,
+         null
+        ],
+        [
+         10.0,
+         0.0,
+         null
+        ],
+        [
+         10.0,
+         10.0,
+         null
+        ],
+        [
+         0.0,
+         10.0,
+         null
+        ],
+        [
+         0.0,
+         0.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))"
+     }
+    ]
+   },
+   "output": {
+    "OUTPUT": {
+     "geometry": "polygon",
+     "multi": true,
+     "hasz": false,
+     "fields": [
+      [
+       "id",
+       "int"
+      ],
+      [
+       "name",
+       "string"
+      ]
+     ],
+     "features": [
+      {
+       "values": [
+        1,
+        "f1"
+       ],
+       "geometry": {
+        "parts": [
+         [
+          [
+           10.5,
+           0.0,
+           null
+          ],
+          [
+           20.0,
+           0.0,
+           null
+          ],
+          [
+           20.0,
+           10.0,
+           null
+          ],
+          [
+           10.5,
+           10.0,
+           null
+          ],
+          [
+           10.5,
+           5.0,
+           null
+          ],
+          [
+           10.5,
+           0.0,
+           null
+          ]
+         ]
+        ],
+        "wkt": "Polygon ((10.5 0, 20 0, 20 10, 10.5 10, 10.5 5, 10.5 0))"
+       }
+      },
+      {
+       "values": [
+        2,
+        "f2"
+       ],
+       "geometry": {
+        "parts": [
+         [
+          [
+           0.0,
+           0.0,
+           null
+          ],
+          [
+           10.5,
+           0.0,
+           null
+          ],
+          [
+           10.5,
+           10.0,
+           null
+          ],
+          [
+           0.0,
+           10.0,
+           null
+          ],
+          [
+           0.0,
+           0.0,
+           null
+          ]
+         ]
+        ],
+        "wkt": "Polygon ((0 0, 10.5 0, 10.5 10, 0 10, 0 0))"
+       }
+      }
+     ]
+    },
+    "REPORT": {
+     "geometry": "point",
+     "multi": false,
+     "hasz": false,
+     "fields": [
+      [
+       "kind",
+       "string"
+      ],
+      [
+       "dist",
+       "double"
+      ],
+      [
+       "ring",
+       "int"
+      ]
+     ],
+     "features": [
+      {
+       "values": [
+        "move",
+        0.5,
+        1
+       ],
+       "geometry": {
+        "xyz": [
+         10.5,
+         0.0,
+         null
+        ]
+       }
+      },
+      {
+       "values": [
+        "move",
+        0.5,
+        1
+       ],
+       "geometry": {
+        "xyz": [
+         10.5,
+         10.0,
+         null
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "report": [
+    [
+     "info",
+     "Topoliner 0.13.4"
+    ],
+    [
+     "info",
+     "Чтение слоя..."
+    ],
+    [
+     "info",
+     "Сшивка: колец 2, вершин 11, допуск 2"
+    ],
+    [
+     "info",
+     "Длина ребра: медиана 10, пятый процентиль 5 (рёбер 9)"
+    ],
+    [
+     "info",
+     "Ширина колец: минимум 4.872, медиана 5"
+    ],
+    [
+     "info",
+     ""
+    ],
+    [
+     "info",
+     "── Результат ──"
+    ],
+    [
+     "info",
+     "Вершин сдвинуто:      2"
+    ],
+    [
+     "info",
+     "Смещение макс/сред:   0.5 / 0.5"
+    ],
+    [
+     "info",
+     "Узлов вставлено:      0 (из них в пересечениях рёбер: 0)"
+    ],
+    [
+     "info",
+     "Вершин было/стало:    9 / 11"
+    ],
+    [
+     "info",
+     "Площадь до/после:     195 / 200 (5, +2.564 %)"
+    ],
+    [
+     "info",
+     "Некорректных геометрий до/после: 0 / 0"
+    ],
+    [
+     "info",
+     "Объектов записано:    2"
+    ]
+   ],
+   "tolerance": {
+    "xy": 1e-09,
+    "fields": 1e-09
+   }
+  },
+  {
+   "tool": "insertnodes",
+   "case": "reference",
+   "about": "Вершина эталона лежит на ребре входа, узел вставляется во вход.",
+   "values": {
+    "@INPUT": {
+     "name": "input",
+     "geometry": "polygon",
+     "hasz": false,
+     "fields": [
+      "id",
+      "name"
+     ],
+     "numeric": [
+      "id"
+     ]
+    },
+    "@REFERENCE": {
+     "name": "reference",
+     "geometry": "polygon",
+     "hasz": false,
+     "fields": [
+      "id",
+      "name"
+     ],
+     "numeric": [
+      "id"
+     ]
+    },
+    "EPS": 1e-06,
+    "CROSSINGS": true,
+    "MAX_PASSES": 10,
+    "REPORT": true
+   },
+   "input": {
+    "INPUT": [
+     {
+      "id": 1,
+      "attrs": {
+       "id": 1,
+       "name": "f1"
+      },
+      "parts": [
+       [
+        [
+         0.0,
+         0.0,
+         null
+        ],
+        [
+         10.0,
+         0.0,
+         null
+        ],
+        [
+         10.0,
+         10.0,
+         null
+        ],
+        [
+         0.0,
+         10.0,
+         null
+        ],
+        [
+         0.0,
+         0.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))"
+     }
+    ],
+    "REFERENCE": [
+     {
+      "id": 1,
+      "attrs": {
+       "id": 1,
+       "name": "f1"
+      },
+      "parts": [
+       [
+        [
+         10.0,
+         0.0,
+         null
+        ],
+        [
+         20.0,
+         0.0,
+         null
+        ],
+        [
+         20.0,
+         10.0,
+         null
+        ],
+        [
+         10.0,
+         10.0,
+         null
+        ],
+        [
+         10.0,
+         5.0,
+         null
+        ],
+        [
+         10.0,
+         0.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((10 0, 20 0, 20 10, 10 10, 10 5, 10 0))"
+     }
+    ]
+   },
+   "output": {
+    "OUTPUT": {
+     "geometry": "polygon",
+     "multi": false,
+     "hasz": false,
+     "fields": [
+      [
+       "id",
+       "int"
+      ],
+      [
+       "name",
+       "string"
+      ]
+     ],
+     "features": [
+      {
+       "values": [
+        1,
+        "f1"
+       ],
+       "geometry": {
+        "parts": [
+         [
+          [
+           0.0,
+           0.0,
+           null
+          ],
+          [
+           10.0,
+           0.0,
+           null
+          ],
+          [
+           10.0,
+           5.0,
+           null
+          ],
+          [
+           10.0,
+           10.0,
+           null
+          ],
+          [
+           0.0,
+           10.0,
+           null
+          ],
+          [
+           0.0,
+           0.0,
+           null
+          ]
+         ]
+        ],
+        "wkt": "Polygon ((0 0, 10 0, 10 5, 10 10, 0 10, 0 0))"
+       }
+      }
+     ]
+    },
+    "REPORT": {
+     "geometry": "point",
+     "multi": false,
+     "hasz": false,
+     "fields": [
+      [
+       "kind",
+       "string"
+      ],
+      [
+       "dist",
+       "double"
+      ]
+     ],
+     "features": [
+      {
+       "values": [
+        "insert",
+        0.0
+       ],
+       "geometry": {
+        "xyz": [
+         10.0,
+         5.0,
+         null
+        ]
+       }
+      }
+     ]
+    }
+   },
+   "report": [
+    [
+     "info",
+     "Topoliner 0.13.4"
+    ],
+    [
+     "info",
+     "Чтение слоя..."
+    ],
+    [
+     "info",
+     "Опорный слой: колец 1"
+    ],
+    [
+     "info",
+     "Колец 1, вершин 5, отклонение 1e-06"
+    ],
+    [
+     "info",
+     "Проход 1: узлов 1"
+    ],
+    [
+     "info",
+     ""
+    ],
+    [
+     "info",
+     "── Результат ──"
+    ],
+    [
+     "info",
+     "Узлов вставлено всего: 1"
+    ],
+    [
+     "info",
+     "  на рёбрах соседей:   1"
+    ],
+    [
+     "info",
+     "  в пересечениях рёбер: 0"
+    ],
+    [
+     "info",
+     "Проходов: 2"
+    ],
+    [
+     "info",
+     "Объектов изменено:    1"
+    ],
+    [
+     "info",
+     "Вершин было/стало:    5 / 6"
+    ],
+    [
+     "info",
+     "Площадь до/после:     100.000000 / 100.000000"
+    ],
+    [
+     "info",
+     "Площадь не изменилась ни на единицу."
+    ],
+    [
+     "info",
+     "Объектов на входе/выходе: 1 / 1"
+    ]
+   ],
+   "tolerance": {
+    "xy": 1e-09,
+    "fields": 1e-09
+   }
+  },
+  {
+   "tool": "insertnodes",
+   "case": "lines_no_crossings",
+   "about": "Пересечение линий без узла при выключенной вставке в пересечения.",
+   "values": {
+    "@INPUT": {
+     "name": "input",
+     "geometry": "line",
+     "hasz": false,
+     "fields": [
+      "id",
+      "name"
+     ],
+     "numeric": [
+      "id"
+     ]
+    },
+    "REFERENCE": null,
+    "EPS": 1e-06,
+    "CROSSINGS": false,
+    "MAX_PASSES": 10,
+    "REPORT": true
+   },
+   "input": {
+    "INPUT": [
+     {
+      "id": 1,
+      "attrs": {
+       "id": 1,
+       "name": "f1"
+      },
+      "parts": [
+       [
+        [
+         0.0,
+         0.0,
+         null
+        ],
+        [
+         100.0,
+         0.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "LINESTRING(0 0, 100 0)"
+     },
+     {
+      "id": 2,
+      "attrs": {
+       "id": 2,
+       "name": "f2"
+      },
+      "parts": [
+       [
+        [
+         10.0,
+         -10.0,
+         null
+        ],
+        [
+         10.0,
+         10.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "LINESTRING(10 -10, 10 10)"
+     }
+    ]
+   },
+   "output": {
+    "OUTPUT": {
+     "geometry": "line",
+     "multi": false,
+     "hasz": false,
+     "fields": [
+      [
+       "id",
+       "int"
+      ],
+      [
+       "name",
+       "string"
+      ]
+     ],
+     "features": [
+      {
+       "values": [
+        1,
+        "f1"
+       ],
+       "geometry": {
+        "points": [
+         [
+          0.0,
+          0.0,
+          null
+         ],
+         [
+          100.0,
+          0.0,
+          null
+         ]
+        ]
+       }
+      },
+      {
+       "values": [
+        2,
+        "f2"
+       ],
+       "geometry": {
+        "points": [
+         [
+          10.0,
+          -10.0,
+          null
+         ],
+         [
+          10.0,
+          10.0,
+          null
+         ]
+        ]
+       }
+      }
+     ]
+    },
+    "REPORT": {
+     "geometry": "point",
+     "multi": false,
+     "hasz": false,
+     "fields": [
+      [
+       "kind",
+       "string"
+      ],
+      [
+       "dist",
+       "double"
+      ]
+     ],
+     "features": []
+    }
+   },
+   "report": [
+    [
+     "info",
+     "Topoliner 0.13.4"
+    ],
+    [
+     "info",
+     "Чтение слоя..."
+    ],
+    [
+     "info",
+     "Колец 2, вершин 4, отклонение 1e-06"
+    ],
+    [
+     "info",
+     ""
+    ],
+    [
+     "info",
+     "── Результат ──"
+    ],
+    [
+     "info",
+     "Узлов вставлено всего: 0"
+    ],
+    [
+     "info",
+     "  на рёбрах соседей:   0"
+    ],
+    [
+     "info",
+     "  в пересечениях рёбер: 0"
+    ],
+    [
+     "info",
+     "Проходов: 1"
+    ],
+    [
+     "info",
+     "Объектов изменено:    0"
+    ],
+    [
+     "info",
+     "Вершин было/стало:    4 / 4"
+    ],
+    [
+     "info",
+     "Объектов на входе/выходе: 2 / 2"
+    ]
+   ],
+   "tolerance": {
+    "xy": 1e-09,
+    "fields": 1e-09
+   }
+  },
+  {
+   "tool": "topologyfix",
+   "case": "winner_smaller_id",
+   "about": "Мелкое перекрытие, площадь сохраняет объект с меньшим номером.",
+   "values": {
+    "@INPUT": {
+     "name": "input",
+     "geometry": "polygon",
+     "hasz": false,
+     "fields": [
+      "id",
+      "name"
+     ],
+     "numeric": [
+      "id"
+     ]
+    },
+    "TOLERANCE": 0.05,
+    "AREA": 10.0,
+    "FIELDS": null,
+    "DO_SNAP": true,
+    "DO_VALID": true,
+    "DO_OVERLAPS": true,
+    "DO_GAPS": true,
+    "WINNER": 1,
+    "DROP_TINY": false,
+    "CAVITY": 0.0,
+    "SPIKE": 1.0,
+    "KEEP_Z": true,
+    "REMAINS": true
+   },
+   "input": {
+    "INPUT": [
+     {
+      "id": 1,
+      "attrs": {
+       "id": 1,
+       "name": "f1"
+      },
+      "parts": [
+       [
+        [
+         9.9,
+         0.0,
+         null
+        ],
+        [
+         20.0,
+         0.0,
+         null
+        ],
+        [
+         20.0,
+         10.0,
+         null
+        ],
+        [
+         9.9,
+         10.0,
+         null
+        ],
+        [
+         9.9,
+         0.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((9.9 0, 20 0, 20 10, 9.9 10, 9.9 0))"
+     },
+     {
+      "id": 2,
+      "attrs": {
+       "id": 2,
+       "name": "f2"
+      },
+      "parts": [
+       [
+        [
+         0.0,
+         0.0,
+         null
+        ],
+        [
+         10.0,
+         0.0,
+         null
+        ],
+        [
+         10.0,
+         10.0,
+         null
+        ],
+        [
+         0.0,
+         10.0,
+         null
+        ],
+        [
+         0.0,
+         0.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))"
+     }
+    ]
+   },
+   "output": {
+    "OUTPUT": {
+     "geometry": "polygon",
+     "multi": true,
+     "hasz": false,
+     "fields": [
+      [
+       "id",
+       "int"
+      ],
+      [
+       "name",
+       "string"
+      ]
+     ],
+     "features": [
+      {
+       "values": [
+        1,
+        "f1"
+       ],
+       "geometry": {
+        "parts": [
+         [
+          [
+           9.9,
+           0.0,
+           null
+          ],
+          [
+           10.0,
+           0.0,
+           null
+          ],
+          [
+           20.0,
+           0.0,
+           null
+          ],
+          [
+           20.0,
+           10.0,
+           null
+          ],
+          [
+           10.0,
+           10.0,
+           null
+          ],
+          [
+           9.9,
+           10.0,
+           null
+          ],
+          [
+           9.9,
+           0.0,
+           null
+          ]
+         ]
+        ],
+        "wkt": "Polygon ((9.90000000000000036 0, 10 0, 20 0, 20 10, 10 10, 9.90000000000000036 10, 9.90000000000000036 0))"
+       }
+      },
+      {
+       "values": [
+        2,
+        "f2"
+       ],
+       "geometry": {
+        "parts": [
+         [
+          [
+           9.9,
+           0.0,
+           null
+          ],
+          [
+           0.0,
+           0.0,
+           null
+          ],
+          [
+           0.0,
+           10.0,
+           null
+          ],
+          [
+           9.9,
+           10.0,
+           null
+          ],
+          [
+           9.9,
+           0.0,
+           null
+          ]
+         ]
+        ],
+        "wkt": "Polygon ((9.90000000000000036 0, 0 0, 0 10, 9.90000000000000036 10, 9.90000000000000036 0))"
+       }
+      }
+     ]
+    },
+    "REMAINS": {
+     "geometry": "point",
+     "multi": false,
+     "hasz": false,
+     "fields": [
+      [
+       "num",
+       "int"
+      ],
+      [
+       "type",
+       "string"
+      ],
+      [
+       "label",
+       "string"
+      ],
+      [
+       "severity",
+       "string"
+      ],
+      [
+       "fid_a",
+       "long"
+      ],
+      [
+       "fid_b",
+       "long"
+      ],
+      [
+       "value",
+       "double"
+      ],
+      [
+       "note",
+       "string"
+      ],
+      [
+       "grp",
+       "string"
+      ]
+     ],
+     "features": []
+    }
+   },
+   "report": [
+    [
+     "info",
+     "Topoliner 0.13.4"
+    ],
+    [
+     "info",
+     "Объектов: 2, допуск 0.05, порог площади 10"
+    ],
+    [
+     "info",
+     ""
+    ],
+    [
+     "info",
+     "── Исправлено молча ──"
+    ],
+    [
+     "info",
+     "Повторяющихся вершин снято:  0"
+    ],
+    [
+     "info",
+     "Игл снято:                   0"
+    ],
+    [
+     "info",
+     "Вершин сведено:              0 (макс. смещение 0)"
+    ],
+    [
+     "info",
+     "Узлов вставлено:             4"
+    ],
+    [
+     "info",
+     "Микрочастей удалено:         0"
+    ],
+    [
+     "info",
+     "Микродыр залито:             0"
+    ],
+    [
+     "info",
+     "Геометрий исправлено:        0"
+    ],
+    [
+     "info",
+     "Перекрытий убрано:           1"
+    ],
+    [
+     "info",
+     "Щелей заполнено:             0"
+    ],
+    [
+     "info",
+     ""
+    ],
+    [
+     "info",
+     "── Оставлено человеку ──"
+    ],
+    [
+     "info",
+     "Нарушений не найдено."
+    ],
+    [
+     "info",
+     ""
+    ],
+    [
+     "info",
+     "Площадь до/после: 201 / 200 (-0.498 %)"
+    ],
+    [
+     "info",
+     "Объектов на входе/выходе: 2 / 2"
+    ]
+   ],
+   "tolerance": {
+    "xy": 1e-09,
+    "fields": 1e-09
+   }
+  },
+  {
+   "tool": "topologyfix",
+   "case": "tiny_kept",
+   "about": "Объект мельче порога площади остаётся и попадает в оставшиеся проблемы.",
+   "values": {
+    "@INPUT": {
+     "name": "input",
+     "geometry": "polygon",
+     "hasz": false,
+     "fields": [
+      "id",
+      "name"
+     ],
+     "numeric": [
+      "id"
+     ]
+    },
+    "TOLERANCE": 0.05,
+    "AREA": 1.0,
+    "FIELDS": null,
+    "DO_SNAP": true,
+    "DO_VALID": true,
+    "DO_OVERLAPS": true,
+    "DO_GAPS": true,
+    "WINNER": 0,
+    "DROP_TINY": false,
+    "CAVITY": 0.0,
+    "SPIKE": 1.0,
+    "KEEP_Z": true,
+    "REMAINS": true
+   },
+   "input": {
+    "INPUT": [
+     {
+      "id": 1,
+      "attrs": {
+       "id": 1,
+       "name": "f1"
+      },
+      "parts": [
+       [
+        [
+         0.0,
+         0.0,
+         null
+        ],
+        [
+         10.0,
+         0.0,
+         null
+        ],
+        [
+         10.0,
+         10.0,
+         null
+        ],
+        [
+         0.0,
+         10.0,
+         null
+        ],
+        [
+         0.0,
+         0.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))"
+     },
+     {
+      "id": 2,
+      "attrs": {
+       "id": 2,
+       "name": "f2"
+      },
+      "parts": [
+       [
+        [
+         50.0,
+         50.0,
+         null
+        ],
+        [
+         50.5,
+         50.0,
+         null
+        ],
+        [
+         50.5,
+         50.5,
+         null
+        ],
+        [
+         50.0,
+         50.5,
+         null
+        ],
+        [
+         50.0,
+         50.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((50 50, 50.5 50, 50.5 50.5, 50 50.5, 50 50))"
+     }
+    ]
+   },
+   "output": {
+    "OUTPUT": {
+     "geometry": "polygon",
+     "multi": true,
+     "hasz": false,
+     "fields": [
+      [
+       "id",
+       "int"
+      ],
+      [
+       "name",
+       "string"
+      ]
+     ],
+     "features": [
+      {
+       "values": [
+        1,
+        "f1"
+       ],
+       "geometry": {
+        "parts": [
+         [
+          [
+           0.0,
+           0.0,
+           null
+          ],
+          [
+           10.0,
+           0.0,
+           null
+          ],
+          [
+           10.0,
+           10.0,
+           null
+          ],
+          [
+           0.0,
+           10.0,
+           null
+          ],
+          [
+           0.0,
+           0.0,
+           null
+          ]
+         ]
+        ],
+        "wkt": "Polygon ((0 0, 10 0, 10 10, 0 10, 0 0))"
+       }
+      },
+      {
+       "values": [
+        2,
+        "f2"
+       ],
+       "geometry": {
+        "parts": [
+         [
+          [
+           50.0,
+           50.0,
+           null
+          ],
+          [
+           50.5,
+           50.0,
+           null
+          ],
+          [
+           50.5,
+           50.5,
+           null
+          ],
+          [
+           50.0,
+           50.5,
+           null
+          ],
+          [
+           50.0,
+           50.0,
+           null
+          ]
+         ]
+        ],
+        "wkt": "Polygon ((50 50, 50.5 50, 50.5 50.5, 50 50.5, 50 50))"
+       }
+      }
+     ]
+    },
+    "REMAINS": {
+     "geometry": "point",
+     "multi": false,
+     "hasz": false,
+     "fields": [
+      [
+       "num",
+       "int"
+      ],
+      [
+       "type",
+       "string"
+      ],
+      [
+       "label",
+       "string"
+      ],
+      [
+       "severity",
+       "string"
+      ],
+      [
+       "fid_a",
+       "long"
+      ],
+      [
+       "fid_b",
+       "long"
+      ],
+      [
+       "value",
+       "double"
+      ],
+      [
+       "note",
+       "string"
+      ],
+      [
+       "grp",
+       "string"
+      ]
+     ],
+     "features": [
+      {
+       "values": [
+        1,
+        "tiny_feature",
+        "tiny object",
+        "review",
+        2,
+        -1,
+        0.25,
+        "объект мельче порога, удаление не выполнялось",
+        ""
+       ],
+       "geometry": {
+        "xyz": [
+         50.25,
+         50.25,
+         null
+        ]
+       },
+       "values_en": {
+        "note": "the object is smaller than the threshold, no deletion was performed"
+       }
+      }
+     ]
+    }
+   },
+   "report": [
+    [
+     "info",
+     "Topoliner 0.13.4"
+    ],
+    [
+     "info",
+     "Объектов: 2, допуск 0.05, порог площади 1"
+    ],
+    [
+     "info",
+     ""
+    ],
+    [
+     "info",
+     "── Исправлено молча ──"
+    ],
+    [
+     "info",
+     "Повторяющихся вершин снято:  0"
+    ],
+    [
+     "info",
+     "Игл снято:                   0"
+    ],
+    [
+     "info",
+     "Вершин сведено:              0 (макс. смещение 0)"
+    ],
+    [
+     "info",
+     "Узлов вставлено:             0"
+    ],
+    [
+     "info",
+     "Микрочастей удалено:         0"
+    ],
+    [
+     "info",
+     "Микродыр залито:             0"
+    ],
+    [
+     "info",
+     "Геометрий исправлено:        0"
+    ],
+    [
+     "info",
+     "Перекрытий убрано:           0"
+    ],
+    [
+     "info",
+     "Щелей заполнено:             0"
+    ],
+    [
+     "info",
+     ""
+    ],
+    [
+     "info",
+     "── Оставлено человеку ──"
+    ],
+    [
+     "info",
+     "нарушение                                 чинится   решать      медиана     максимум"
+    ],
+    [
+     "info",
+     "tiny object                                     0        1       0.2500       0.2500"
+    ],
+    [
+     "info",
+     ""
+    ],
+    [
+     "info",
+     "Площадь до/после: 100.2 / 100.2 (+0.000 %)"
+    ],
+    [
+     "info",
+     "Объектов на входе/выходе: 2 / 2"
+    ]
+   ],
+   "tolerance": {
+    "xy": 1e-09,
+    "fields": 1e-09
+   }
+  },
+  {
+   "tool": "topologyfix",
+   "case": "tiny_dropped",
+   "about": "Тот же объект удаляется по разрешению DROP_TINY.",
+   "values": {
+    "@INPUT": {
+     "name": "input",
+     "geometry": "polygon",
+     "hasz": false,
+     "fields": [
+      "id",
+      "name"
+     ],
+     "numeric": [
+      "id"
+     ]
+    },
+    "TOLERANCE": 0.05,
+    "AREA": 1.0,
+    "FIELDS": null,
+    "DO_SNAP": true,
+    "DO_VALID": true,
+    "DO_OVERLAPS": true,
+    "DO_GAPS": true,
+    "WINNER": 0,
+    "DROP_TINY": true,
+    "CAVITY": 0.0,
+    "SPIKE": 1.0,
+    "KEEP_Z": true,
+    "REMAINS": true
+   },
+   "input": {
+    "INPUT": [
+     {
+      "id": 1,
+      "attrs": {
+       "id": 1,
+       "name": "f1"
+      },
+      "parts": [
+       [
+        [
+         0.0,
+         0.0,
+         null
+        ],
+        [
+         10.0,
+         0.0,
+         null
+        ],
+        [
+         10.0,
+         10.0,
+         null
+        ],
+        [
+         0.0,
+         10.0,
+         null
+        ],
+        [
+         0.0,
+         0.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))"
+     },
+     {
+      "id": 2,
+      "attrs": {
+       "id": 2,
+       "name": "f2"
+      },
+      "parts": [
+       [
+        [
+         50.0,
+         50.0,
+         null
+        ],
+        [
+         50.5,
+         50.0,
+         null
+        ],
+        [
+         50.5,
+         50.5,
+         null
+        ],
+        [
+         50.0,
+         50.5,
+         null
+        ],
+        [
+         50.0,
+         50.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((50 50, 50.5 50, 50.5 50.5, 50 50.5, 50 50))"
+     }
+    ]
+   },
+   "output": {
+    "OUTPUT": {
+     "geometry": "polygon",
+     "multi": true,
+     "hasz": false,
+     "fields": [
+      [
+       "id",
+       "int"
+      ],
+      [
+       "name",
+       "string"
+      ]
+     ],
+     "features": [
+      {
+       "values": [
+        1,
+        "f1"
+       ],
+       "geometry": {
+        "parts": [
+         [
+          [
+           0.0,
+           0.0,
+           null
+          ],
+          [
+           10.0,
+           0.0,
+           null
+          ],
+          [
+           10.0,
+           10.0,
+           null
+          ],
+          [
+           0.0,
+           10.0,
+           null
+          ],
+          [
+           0.0,
+           0.0,
+           null
+          ]
+         ]
+        ],
+        "wkt": "Polygon ((0 0, 10 0, 10 10, 0 10, 0 0))"
+       }
+      }
+     ]
+    },
+    "REMAINS": {
+     "geometry": "point",
+     "multi": false,
+     "hasz": false,
+     "fields": [
+      [
+       "num",
+       "int"
+      ],
+      [
+       "type",
+       "string"
+      ],
+      [
+       "label",
+       "string"
+      ],
+      [
+       "severity",
+       "string"
+      ],
+      [
+       "fid_a",
+       "long"
+      ],
+      [
+       "fid_b",
+       "long"
+      ],
+      [
+       "value",
+       "double"
+      ],
+      [
+       "note",
+       "string"
+      ],
+      [
+       "grp",
+       "string"
+      ]
+     ],
+     "features": [
+      {
+       "values": [
+        1,
+        "lost",
+        "object lost during repair",
+        "review",
+        2,
+        -1,
+        0.0,
+        "объект исчез при исправлении",
+        ""
+       ],
+       "geometry": {
+        "xyz": [
+         50.25,
+         50.25,
+         null
+        ]
+       },
+       "values_en": {
+        "note": "the object disappeared during repair"
+       }
+      }
+     ]
+    }
+   },
+   "report": [
+    [
+     "info",
+     "Topoliner 0.13.4"
+    ],
+    [
+     "info",
+     "Объектов: 2, допуск 0.05, порог площади 1"
+    ],
+    [
+     "info",
+     ""
+    ],
+    [
+     "info",
+     "── Исправлено молча ──"
+    ],
+    [
+     "info",
+     "Повторяющихся вершин снято:  0"
+    ],
+    [
+     "info",
+     "Игл снято:                   0"
+    ],
+    [
+     "info",
+     "Вершин сведено:              0 (макс. смещение 0)"
+    ],
+    [
+     "info",
+     "Узлов вставлено:             0"
+    ],
+    [
+     "info",
+     "Микрочастей удалено:         0"
+    ],
+    [
+     "info",
+     "Микродыр залито:             0"
+    ],
+    [
+     "info",
+     "Геометрий исправлено:        0"
+    ],
+    [
+     "info",
+     "Перекрытий убрано:           0"
+    ],
+    [
+     "info",
+     "Щелей заполнено:             0"
+    ],
+    [
+     "info",
+     "Микрообъектов удалено:       1"
+    ],
+    [
+     "info",
+     ""
+    ],
+    [
+     "info",
+     "── Оставлено человеку ──"
+    ],
+    [
+     "info",
+     "нарушение                                 чинится   решать      медиана     максимум"
+    ],
+    [
+     "info",
+     "object lost during repair                       0        1       0.0000       0.0000"
+    ],
+    [
+     "info",
+     ""
+    ],
+    [
+     "info",
+     "Площадь до/после: 100.2 / 100 (-0.249 %)"
+    ],
+    [
+     "info",
+     "Объектов на входе/выходе: 2 / 1"
+    ],
+    [
+     "warn",
+     "Объектов исчезло: 1, см. слой оставшихся проблем"
+    ]
+   ],
+   "tolerance": {
+    "xy": 1e-09,
+    "fields": 1e-09
+   }
+  },
+  {
+   "tool": "topologyfix",
+   "case": "cavity",
+   "about": "Щель площадью 1 при пороге 10 и пороге полости 0.5 не заполняется.",
+   "values": {
+    "@INPUT": {
+     "name": "input",
+     "geometry": "polygon",
+     "hasz": false,
+     "fields": [
+      "id",
+      "name"
+     ],
+     "numeric": [
+      "id"
+     ]
+    },
+    "TOLERANCE": 0.05,
+    "AREA": 10.0,
+    "FIELDS": null,
+    "DO_SNAP": true,
+    "DO_VALID": true,
+    "DO_OVERLAPS": true,
+    "DO_GAPS": true,
+    "WINNER": 0,
+    "DROP_TINY": false,
+    "CAVITY": 0.5,
+    "SPIKE": 1.0,
+    "KEEP_Z": true,
+    "REMAINS": true
+   },
+   "input": {
+    "INPUT": [
+     {
+      "id": 1,
+      "attrs": {
+       "id": 1,
+       "name": "f1"
+      },
+      "parts": [
+       [
+        [
+         0.0,
+         0.0,
+         null
+        ],
+        [
+         10.0,
+         0.0,
+         null
+        ],
+        [
+         10.0,
+         10.0,
+         null
+        ],
+        [
+         0.0,
+         10.0,
+         null
+        ],
+        [
+         0.0,
+         0.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))"
+     },
+     {
+      "id": 2,
+      "attrs": {
+       "id": 2,
+       "name": "f2"
+      },
+      "parts": [
+       [
+        [
+         10.1,
+         0.0,
+         null
+        ],
+        [
+         20.0,
+         0.0,
+         null
+        ],
+        [
+         20.0,
+         10.0,
+         null
+        ],
+        [
+         10.1,
+         10.0,
+         null
+        ],
+        [
+         10.1,
+         0.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((10.1 0, 20 0, 20 10, 10.1 10, 10.1 0))"
+     },
+     {
+      "id": 3,
+      "attrs": {
+       "id": 3,
+       "name": "f3"
+      },
+      "parts": [
+       [
+        [
+         0.0,
+         10.0,
+         null
+        ],
+        [
+         20.1,
+         10.0,
+         null
+        ],
+        [
+         20.1,
+         20.0,
+         null
+        ],
+        [
+         0.0,
+         20.0,
+         null
+        ],
+        [
+         0.0,
+         10.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((0 10, 20.1 10, 20.1 20, 0 20, 0 10))"
+     },
+     {
+      "id": 4,
+      "attrs": {
+       "id": 4,
+       "name": "f4"
+      },
+      "parts": [
+       [
+        [
+         0.0,
+         -10.0,
+         null
+        ],
+        [
+         20.1,
+         -10.0,
+         null
+        ],
+        [
+         20.1,
+         0.0,
+         null
+        ],
+        [
+         0.0,
+         0.0,
+         null
+        ],
+        [
+         0.0,
+         -10.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((0 -10, 20.1 -10, 20.1 0, 0 0, 0 -10))"
+     }
+    ]
+   },
+   "output": {
+    "OUTPUT": {
+     "geometry": "polygon",
+     "multi": true,
+     "hasz": false,
+     "fields": [
+      [
+       "id",
+       "int"
+      ],
+      [
+       "name",
+       "string"
+      ]
+     ],
+     "features": [
+      {
+       "values": [
+        1,
+        "f1"
+       ],
+       "geometry": {
+        "parts": [
+         [
+          [
+           0.0,
+           0.0,
+           null
+          ],
+          [
+           10.0,
+           0.0,
+           null
+          ],
+          [
+           10.0,
+           10.0,
+           null
+          ],
+          [
+           0.0,
+           10.0,
+           null
+          ],
+          [
+           0.0,
+           0.0,
+           null
+          ]
+         ]
+        ],
+        "wkt": "Polygon ((0 0, 10 0, 10 10, 0 10, 0 0))"
+       }
+      },
+      {
+       "values": [
+        2,
+        "f2"
+       ],
+       "geometry": {
+        "parts": [
+         [
+          [
+           10.1,
+           0.0,
+           null
+          ],
+          [
+           20.0,
+           0.0,
+           null
+          ],
+          [
+           20.0,
+           10.0,
+           null
+          ],
+          [
+           10.1,
+           10.0,
+           null
+          ],
+          [
+           10.1,
+           0.0,
+           null
+          ]
+         ]
+        ],
+        "wkt": "Polygon ((10.09999999999999964 0, 20 0, 20 10, 10.09999999999999964 10, 10.09999999999999964 0))"
+       }
+      },
+      {
+       "values": [
+        3,
+        "f3"
+       ],
+       "geometry": {
+        "parts": [
+         [
+          [
+           0.0,
+           10.0,
+           null
+          ],
+          [
+           10.0,
+           10.0,
+           null
+          ],
+          [
+           10.1,
+           10.0,
+           null
+          ],
+          [
+           20.0,
+           10.0,
+           null
+          ],
+          [
+           20.1,
+           10.0,
+           null
+          ],
+          [
+           20.1,
+           20.0,
+           null
+          ],
+          [
+           0.0,
+           20.0,
+           null
+          ],
+          [
+           0.0,
+           10.0,
+           null
+          ]
+         ]
+        ],
+        "wkt": "Polygon ((0 10, 10 10, 10.09999999999999964 10, 20 10, 20.10000000000000142 10, 20.10000000000000142 20, 0 20, 0 10))"
+       }
+      },
+      {
+       "values": [
+        4,
+        "f4"
+       ],
+       "geometry": {
+        "parts": [
+         [
+          [
+           0.0,
+           -10.0,
+           null
+          ],
+          [
+           20.1,
+           -10.0,
+           null
+          ],
+          [
+           20.1,
+           0.0,
+           null
+          ],
+          [
+           20.0,
+           0.0,
+           null
+          ],
+          [
+           10.1,
+           0.0,
+           null
+          ],
+          [
+           10.0,
+           0.0,
+           null
+          ],
+          [
+           0.0,
+           0.0,
+           null
+          ],
+          [
+           0.0,
+           -10.0,
+           null
+          ]
+         ]
+        ],
+        "wkt": "Polygon ((0 -10, 20.10000000000000142 -10, 20.10000000000000142 0, 20 0, 10.09999999999999964 0, 10 0, 0 0, 0 -10))"
+       }
+      }
+     ]
+    },
+    "REMAINS": {
+     "geometry": "point",
+     "multi": false,
+     "hasz": false,
+     "fields": [
+      [
+       "num",
+       "int"
+      ],
+      [
+       "type",
+       "string"
+      ],
+      [
+       "label",
+       "string"
+      ],
+      [
+       "severity",
+       "string"
+      ],
+      [
+       "fid_a",
+       "long"
+      ],
+      [
+       "fid_b",
+       "long"
+      ],
+      [
+       "value",
+       "double"
+      ],
+      [
+       "note",
+       "string"
+      ],
+      [
+       "grp",
+       "string"
+      ]
+     ],
+     "features": []
+    }
+   },
+   "report": [
+    [
+     "info",
+     "Topoliner 0.13.4"
+    ],
+    [
+     "info",
+     "Объектов: 4, допуск 0.05, порог площади 10"
+    ],
+    [
+     "info",
+     ""
+    ],
+    [
+     "info",
+     "── Исправлено молча ──"
+    ],
+    [
+     "info",
+     "Повторяющихся вершин снято:  0"
+    ],
+    [
+     "info",
+     "Игл снято:                   0"
+    ],
+    [
+     "info",
+     "Вершин сведено:              0 (макс. смещение 0)"
+    ],
+    [
+     "info",
+     "Узлов вставлено:             6"
+    ],
+    [
+     "info",
+     "Микрочастей удалено:         0"
+    ],
+    [
+     "info",
+     "Микродыр залито:             0"
+    ],
+    [
+     "info",
+     "Геометрий исправлено:        0"
+    ],
+    [
+     "info",
+     "Перекрытий убрано:           0"
+    ],
+    [
+     "info",
+     "Щелей заполнено:             0"
+    ],
+    [
+     "info",
+     ""
+    ],
+    [
+     "info",
+     "── Оставлено человеку ──"
+    ],
+    [
+     "info",
+     "Нарушений не найдено."
+    ],
+    [
+     "info",
+     ""
+    ],
+    [
+     "info",
+     "Площадь до/после: 601 / 601 (+0.000 %)"
+    ],
+    [
+     "info",
+     "Объектов на входе/выходе: 4 / 4"
+    ]
+   ],
+   "tolerance": {
+    "xy": 1e-09,
+    "fields": 1e-09
+   }
+  },
+  {
+   "tool": "linefix",
+   "case": "drop_short",
+   "about": "Линия короче порога длины удаляется по разрешению DROP_SHORT.",
+   "values": {
+    "@INPUT": {
+     "name": "input",
+     "geometry": "line",
+     "hasz": false,
+     "fields": [
+      "id",
+      "name"
+     ],
+     "numeric": [
+      "id"
+     ]
+    },
+    "TOLERANCE": 2.0,
+    "MIN_LENGTH": 1.0,
+    "DO_TRIM": true,
+    "DO_CLOSE": true,
+    "DO_SNAP": true,
+    "DROP_SHORT": true,
+    "SPIKE": 1.0,
+    "REMAINS": true
+   },
+   "input": {
+    "INPUT": [
+     {
+      "id": 1,
+      "attrs": {
+       "id": 1,
+       "name": "f1"
+      },
+      "parts": [
+       [
+        [
+         0.0,
+         0.0,
+         null
+        ],
+        [
+         100.0,
+         0.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "LINESTRING(0 0, 100 0)"
+     },
+     {
+      "id": 2,
+      "attrs": {
+       "id": 2,
+       "name": "f2"
+      },
+      "parts": [
+       [
+        [
+         200.0,
+         0.0,
+         null
+        ],
+        [
+         200.4,
+         0.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "LINESTRING(200 0, 200.4 0)"
+     }
+    ]
+   },
+   "output": {
+    "OUTPUT": {
+     "geometry": "line",
+     "multi": true,
+     "hasz": false,
+     "fields": [
+      [
+       "id",
+       "int"
+      ],
+      [
+       "name",
+       "string"
+      ]
+     ],
+     "features": [
+      {
+       "values": [
+        1,
+        "f1"
+       ],
+       "geometry": {
+        "parts": [
+         [
+          [
+           0.0,
+           0.0,
+           null
+          ],
+          [
+           100.0,
+           0.0,
+           null
+          ]
+         ]
+        ],
+        "wkt": "MultiLineString ((0 0, 100 0))"
+       }
+      }
+     ]
+    },
+    "REMAINS": {
+     "geometry": "point",
+     "multi": false,
+     "hasz": false,
+     "fields": [
+      [
+       "num",
+       "int"
+      ],
+      [
+       "type",
+       "string"
+      ],
+      [
+       "label",
+       "string"
+      ],
+      [
+       "severity",
+       "string"
+      ],
+      [
+       "fid_a",
+       "long"
+      ],
+      [
+       "fid_b",
+       "long"
+      ],
+      [
+       "value",
+       "double"
+      ],
+      [
+       "note",
+       "string"
+      ],
+      [
+       "grp",
+       "string"
+      ]
+     ],
+     "features": []
+    }
+   },
+   "report": [
+    [
+     "info",
+     "Topoliner 0.13.4"
+    ],
+    [
+     "info",
+     "Линий: 2, допуск 2"
+    ],
+    [
+     "info",
+     ""
+    ],
+    [
+     "info",
+     "── Исправлено молча ──"
+    ],
+    [
+     "info",
+     "Повторяющихся вершин снято:  0"
+    ],
+    [
+     "info",
+     "Игл снято:                   0"
+    ],
+    [
+     "info",
+     "Перелётов обрезано:          0"
+    ],
+    [
+     "info",
+     "Недоводов закрыто:           0 (макс. смещение 0)"
+    ],
+    [
+     "info",
+     "Узлов вставлено:             0"
+    ],
+    [
+     "info",
+     "Коротких линий удалено:      1"
+    ],
+    [
+     "info",
+     ""
+    ],
+    [
+     "info",
+     "Длина до/после: 100.4 / 100 (-0.398 %)"
+    ],
+    [
+     "info",
+     "Объектов на входе/выходе: 2 / 1"
+    ],
+    [
+     "warn",
+     "Объектов потеряно: 1"
+    ]
+   ],
+   "tolerance": {
+    "xy": 1e-09,
+    "fields": 1e-09
+   }
+  },
+  {
+   "tool": "topologyaudit",
+   "case": "grouping",
+   "about": "Перекрытие объектов разных групп находкой не считается.",
+   "values": {
+    "@INPUT": {
+     "name": "input",
+     "geometry": "polygon",
+     "hasz": false,
+     "fields": [
+      "id",
+      "name",
+      "grp"
+     ],
+     "numeric": [
+      "id"
+     ]
+    },
+    "TOLERANCE": 2.0,
+    "AREA": 10.0,
+    "FIELDS": [
+     "grp"
+    ],
+    "CAVITY": 0.0,
+    "DO_OVERLAPS": true,
+    "DO_GAPS": true,
+    "DO_NODES": true
+   },
+   "input": {
+    "INPUT": [
+     {
+      "id": 1,
+      "attrs": {
+       "id": 1,
+       "name": "f1",
+       "grp": "g1"
+      },
+      "parts": [
+       [
+        [
+         0.0,
+         0.0,
+         null
+        ],
+        [
+         10.0,
+         0.0,
+         null
+        ],
+        [
+         10.0,
+         10.0,
+         null
+        ],
+        [
+         0.0,
+         10.0,
+         null
+        ],
+        [
+         0.0,
+         0.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))"
+     },
+     {
+      "id": 2,
+      "attrs": {
+       "id": 2,
+       "name": "f2",
+       "grp": "g2"
+      },
+      "parts": [
+       [
+        [
+         5.0,
+         0.0,
+         null
+        ],
+        [
+         20.0,
+         0.0,
+         null
+        ],
+        [
+         20.0,
+         10.0,
+         null
+        ],
+        [
+         5.0,
+         10.0,
+         null
+        ],
+        [
+         5.0,
+         0.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((5 0, 20 0, 20 10, 5 10, 5 0))"
+     }
+    ]
+   },
+   "output": {
+    "OUTPUT": {
+     "geometry": "point",
+     "multi": false,
+     "hasz": false,
+     "fields": [
+      [
+       "num",
+       "int"
+      ],
+      [
+       "type",
+       "string"
+      ],
+      [
+       "label",
+       "string"
+      ],
+      [
+       "severity",
+       "string"
+      ],
+      [
+       "fid_a",
+       "long"
+      ],
+      [
+       "fid_b",
+       "long"
+      ],
+      [
+       "value",
+       "double"
+      ],
+      [
+       "note",
+       "string"
+      ],
+      [
+       "grp",
+       "string"
+      ]
+     ],
+     "features": []
+    }
+   },
+   "report": [
+    [
+     "info",
+     "Topoliner 0.13.4"
+    ],
+    [
+     "info",
+     "Объектов: 2, допуск 2, порог площади 10"
+    ],
+    [
+     "info",
+     "Группировка по grp: групп 2"
+    ],
+    [
+     "info",
+     ""
+    ],
+    [
+     "info",
+     "── Топология ──"
+    ],
+    [
+     "info",
+     "Нарушений не найдено."
+    ],
+    [
+     "info",
+     ""
+    ],
+    [
+     "info",
+     "Всего находок: 0, из них чинится автоматически: 0, решать человеку: 0"
+    ]
+   ],
+   "tolerance": {
+    "xy": 1e-09,
+    "fields": 1e-09
+   }
+  },
+  {
+   "tool": "topologyaudit",
+   "case": "cavity",
+   "about": "Щель площадью 1 при пороге полости 0.5 находкой не считается.",
+   "values": {
+    "@INPUT": {
+     "name": "input",
+     "geometry": "polygon",
+     "hasz": false,
+     "fields": [
+      "id",
+      "name"
+     ],
+     "numeric": [
+      "id"
+     ]
+    },
+    "TOLERANCE": 2.0,
+    "AREA": 10.0,
+    "FIELDS": null,
+    "CAVITY": 0.5,
+    "DO_OVERLAPS": true,
+    "DO_GAPS": true,
+    "DO_NODES": true
+   },
+   "input": {
+    "INPUT": [
+     {
+      "id": 1,
+      "attrs": {
+       "id": 1,
+       "name": "f1"
+      },
+      "parts": [
+       [
+        [
+         0.0,
+         0.0,
+         null
+        ],
+        [
+         10.0,
+         0.0,
+         null
+        ],
+        [
+         10.0,
+         10.0,
+         null
+        ],
+        [
+         0.0,
+         10.0,
+         null
+        ],
+        [
+         0.0,
+         0.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))"
+     },
+     {
+      "id": 2,
+      "attrs": {
+       "id": 2,
+       "name": "f2"
+      },
+      "parts": [
+       [
+        [
+         10.1,
+         0.0,
+         null
+        ],
+        [
+         20.0,
+         0.0,
+         null
+        ],
+        [
+         20.0,
+         10.0,
+         null
+        ],
+        [
+         10.1,
+         10.0,
+         null
+        ],
+        [
+         10.1,
+         0.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((10.1 0, 20 0, 20 10, 10.1 10, 10.1 0))"
+     },
+     {
+      "id": 3,
+      "attrs": {
+       "id": 3,
+       "name": "f3"
+      },
+      "parts": [
+       [
+        [
+         0.0,
+         10.0,
+         null
+        ],
+        [
+         20.1,
+         10.0,
+         null
+        ],
+        [
+         20.1,
+         20.0,
+         null
+        ],
+        [
+         0.0,
+         20.0,
+         null
+        ],
+        [
+         0.0,
+         10.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((0 10, 20.1 10, 20.1 20, 0 20, 0 10))"
+     },
+     {
+      "id": 4,
+      "attrs": {
+       "id": 4,
+       "name": "f4"
+      },
+      "parts": [
+       [
+        [
+         0.0,
+         -10.0,
+         null
+        ],
+        [
+         20.1,
+         -10.0,
+         null
+        ],
+        [
+         20.1,
+         0.0,
+         null
+        ],
+        [
+         0.0,
+         0.0,
+         null
+        ],
+        [
+         0.0,
+         -10.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((0 -10, 20.1 -10, 20.1 0, 0 0, 0 -10))"
+     }
+    ]
+   },
+   "output": {
+    "OUTPUT": {
+     "geometry": "point",
+     "multi": false,
+     "hasz": false,
+     "fields": [
+      [
+       "num",
+       "int"
+      ],
+      [
+       "type",
+       "string"
+      ],
+      [
+       "label",
+       "string"
+      ],
+      [
+       "severity",
+       "string"
+      ],
+      [
+       "fid_a",
+       "long"
+      ],
+      [
+       "fid_b",
+       "long"
+      ],
+      [
+       "value",
+       "double"
+      ],
+      [
+       "note",
+       "string"
+      ],
+      [
+       "grp",
+       "string"
+      ]
+     ],
+     "features": [
+      {
+       "values": [
+        1,
+        "on_edge",
+        "vertex lies on a neighbour edge without a node",
+        "auto",
+        4,
+        -1,
+        0.0,
+        "границы совпадают геометрически, узла нет",
+        ""
+       ],
+       "geometry": {
+        "xyz": [
+         10.1,
+         0.0,
+         null
+        ]
+       },
+       "values_en": {
+        "note": "the borders coincide geometrically, there is no node"
+       }
+      },
+      {
+       "values": [
+        2,
+        "on_edge",
+        "vertex lies on a neighbour edge without a node",
+        "auto",
+        4,
+        -1,
+        0.0,
+        "границы совпадают геометрически, узла нет",
+        ""
+       ],
+       "geometry": {
+        "xyz": [
+         10.0,
+         0.0,
+         null
+        ]
+       },
+       "values_en": {
+        "note": "the borders coincide geometrically, there is no node"
+       }
+      },
+      {
+       "values": [
+        3,
+        "on_edge",
+        "vertex lies on a neighbour edge without a node",
+        "auto",
+        3,
+        -1,
+        0.0,
+        "границы совпадают геометрически, узла нет",
+        ""
+       ],
+       "geometry": {
+        "xyz": [
+         10.0,
+         10.0,
+         null
+        ]
+       },
+       "values_en": {
+        "note": "the borders coincide geometrically, there is no node"
+       }
+      },
+      {
+       "values": [
+        4,
+        "on_edge",
+        "vertex lies on a neighbour edge without a node",
+        "auto",
+        3,
+        -1,
+        0.0,
+        "границы совпадают геометрически, узла нет",
+        ""
+       ],
+       "geometry": {
+        "xyz": [
+         10.1,
+         10.0,
+         null
+        ]
+       },
+       "values_en": {
+        "note": "the borders coincide geometrically, there is no node"
+       }
+      }
+     ]
+    }
+   },
+   "report": [
+    [
+     "info",
+     "Topoliner 0.13.4"
+    ],
+    [
+     "info",
+     "Объектов: 4, допуск 2, порог площади 10"
+    ],
+    [
+     "info",
+     ""
+    ],
+    [
+     "info",
+     "── Топология ──"
+    ],
+    [
+     "info",
+     "нарушение                                 чинится   решать      медиана     максимум"
+    ],
+    [
+     "info",
+     "vertex lies on a neighbour edge without a node        4        0       0.0000       0.0000"
+    ],
+    [
+     "info",
+     ""
+    ],
+    [
+     "info",
+     "Всего находок: 4, из них чинится автоматически: 4, решать человеку: 0"
+    ]
+   ],
+   "tolerance": {
+    "xy": 1e-09,
+    "fields": 1e-09
+   }
+  },
+  {
+   "tool": "assemblycheck",
+   "case": "ignore_holes",
+   "about": "Дыра внутри группы при IGNORE_HOLES находкой не считается.",
+   "values": {
+    "@INPUT": {
+     "name": "input",
+     "geometry": "polygon",
+     "hasz": false,
+     "fields": [
+      "id",
+      "name",
+      "unit"
+     ],
+     "numeric": [
+      "id"
+     ]
+    },
+    "FIELDS": [
+     "unit"
+    ],
+    "AREA": 1.0,
+    "MAX_GAP": 0.0,
+    "IGNORE_HOLES": true
+   },
+   "input": {
+    "INPUT": [
+     {
+      "id": 1,
+      "attrs": {
+       "id": 1,
+       "name": "f1",
+       "unit": "B1"
+      },
+      "parts": [
+       [
+        [
+         0.0,
+         0.0,
+         null
+        ],
+        [
+         10.0,
+         0.0,
+         null
+        ],
+        [
+         10.0,
+         20.0,
+         null
+        ],
+        [
+         0.0,
+         20.0,
+         null
+        ],
+        [
+         0.0,
+         0.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((0 0, 10 0, 10 20, 0 20, 0 0))"
+     },
+     {
+      "id": 2,
+      "attrs": {
+       "id": 2,
+       "name": "f2",
+       "unit": "B1"
+      },
+      "parts": [
+       [
+        [
+         10.0,
+         0.0,
+         null
+        ],
+        [
+         20.0,
+         0.0,
+         null
+        ],
+        [
+         20.0,
+         9.0,
+         null
+        ],
+        [
+         10.0,
+         9.0,
+         null
+        ],
+        [
+         10.0,
+         0.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((10 0, 20 0, 20 9, 10 9, 10 0))"
+     },
+     {
+      "id": 3,
+      "attrs": {
+       "id": 3,
+       "name": "f3",
+       "unit": "B1"
+      },
+      "parts": [
+       [
+        [
+         10.0,
+         11.0,
+         null
+        ],
+        [
+         20.0,
+         11.0,
+         null
+        ],
+        [
+         20.0,
+         20.0,
+         null
+        ],
+        [
+         10.0,
+         20.0,
+         null
+        ],
+        [
+         10.0,
+         11.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((10 11, 20 11, 20 20, 10 20, 10 11))"
+     },
+     {
+      "id": 4,
+      "attrs": {
+       "id": 4,
+       "name": "f4",
+       "unit": "B1"
+      },
+      "parts": [
+       [
+        [
+         20.0,
+         0.0,
+         null
+        ],
+        [
+         30.0,
+         0.0,
+         null
+        ],
+        [
+         30.0,
+         20.0,
+         null
+        ],
+        [
+         20.0,
+         20.0,
+         null
+        ],
+        [
+         20.0,
+         0.0,
+         null
+        ]
+       ]
+      ],
+      "wkt": "POLYGON((20 0, 30 0, 30 20, 20 20, 20 0))"
+     }
+    ]
+   },
+   "output": {
+    "OUTPUT": {
+     "geometry": "point",
+     "multi": false,
+     "hasz": false,
+     "fields": [
+      [
+       "num",
+       "int"
+      ],
+      [
+       "type",
+       "string"
+      ],
+      [
+       "label",
+       "string"
+      ],
+      [
+       "severity",
+       "string"
+      ],
+      [
+       "fid_a",
+       "long"
+      ],
+      [
+       "fid_b",
+       "long"
+      ],
+      [
+       "value",
+       "double"
+      ],
+      [
+       "note",
+       "string"
+      ],
+      [
+       "grp",
+       "string"
+      ]
+     ],
+     "features": []
+    }
+   },
+   "report": [
+    [
+     "info",
+     "Topoliner 0.13.4"
+    ],
+    [
+     "info",
+     ""
+    ],
+    [
+     "info",
+     "── Сборка по unit ──"
+    ],
+    [
+     "info",
+     "Групп: 1, без дефектов сборки: 1"
+    ],
+    [
+     "info",
+     "Дефектов сборки не найдено."
     ]
    ],
    "tolerance": {
