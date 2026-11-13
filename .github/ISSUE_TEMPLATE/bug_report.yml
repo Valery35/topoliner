@@ -23,7 +23,7 @@ body:
     attributes:
       label: Версия Topoliner / Topoliner version
       description: Модули - Управление модулями, или окно «О модуле». Plugins - Manage plugins, or the About window.
-      placeholder: "0.13.3"
+      placeholder: "0.13.4"
     validations:
       required: true
   - type: dropdown

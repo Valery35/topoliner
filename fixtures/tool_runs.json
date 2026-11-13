@@ -1,7 +1,7 @@
 {
  "format": 1,
  "module": "topoliner",
- "version": "0.13.3",
+ "version": "0.13.4",
  "crs": "EPSG:32637",
  "language": "ru",
  "about": "Прогоны алгоритмов Processing модуля QGIS без окна, QGIS 4. Координаты - метры системы EPSG:32637. Строки на русском, английские строки, которые отличаются, лежат в values_en. Величина value округлена до четырёх значащих цифр. Полигоны на входе и на выходе лежат кольцами в parts, рядом WKT.",
@@ -199,7 +199,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -503,7 +503,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -885,7 +885,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -1198,7 +1198,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -1419,7 +1419,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -1827,7 +1827,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -2031,7 +2031,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -2412,7 +2412,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -2759,7 +2759,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -3084,7 +3084,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -3435,7 +3435,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -3740,7 +3740,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -4115,7 +4115,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -4610,7 +4610,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -4941,7 +4941,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -5367,7 +5367,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -5737,7 +5737,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -6010,7 +6010,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -6344,7 +6344,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -6658,7 +6658,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -6981,7 +6981,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -7219,7 +7219,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -7515,7 +7515,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -7765,7 +7765,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -8003,7 +8003,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -8293,7 +8293,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -8545,7 +8545,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -8907,7 +8907,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -9273,7 +9273,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -9654,7 +9654,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -9993,7 +9993,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -10374,7 +10374,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -10725,7 +10725,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -10954,7 +10954,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -11364,7 +11364,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -11646,7 +11646,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -12214,7 +12214,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
@@ -12546,7 +12546,7 @@
    "report": [
     [
      "info",
-     "Topoliner 0.13.3"
+     "Topoliner 0.13.4"
     ],
     [
      "info",
