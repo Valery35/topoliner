@@ -30,7 +30,13 @@
   прогон 1.01 через мост без предупреждений Python
 - Сайт informpp.ru - лендинг на GitHub Pages отдаёт 0.13.4
 - Telegram - бот прислал автору кнопку «Подготовить пост», пост за автором
-- Соцсети - по вопросу автору, тексты в `site/posts_0.13.4_social.md`
+- ВК - https://vk.ru/wall-241229428_75
+- Mastodon - https://en.osm.town/@Vaery35/117609600714774161
+- X - https://x.com/Valery35/status/2121248934504857939
+- LinkedIn - https://www.linkedin.com/feed/update/urn:li:activity:7527014848216567809/
+- Facebook - https://www.facebook.com/valery35/posts/pfbid0e4uZ8qLNv48PmWZHveTxiSVeF9AE2dScPZtkiULfKiTT5XXMJkg1GX3oD8WYKzxQl
+- Тексты постов - `site/posts_0.13.4_social.md`. Площадки группы «иногда»
+  не публиковались
 
 ### Topoliner 0.13.3, 5 ноября 2026 года
 
