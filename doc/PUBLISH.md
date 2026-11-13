@@ -33,7 +33,7 @@
 - ВК - https://vk.ru/wall-241229428_75
 - Mastodon - https://en.osm.town/@Vaery35/117609600714774161
 - X - https://x.com/Valery35/status/2121248934504857939
-- LinkedIn - https://www.linkedin.com/feed/update/urn:li:activity:7527014848216567809/
+- LinkedIn - <https://www.linkedin.com/feed/update/urn:li:activity:7527014848216567809/>
 - Facebook - https://www.facebook.com/valery35/posts/pfbid0e4uZ8qLNv48PmWZHveTxiSVeF9AE2dScPZtkiULfKiTT5XXMJkg1GX3oD8WYKzxQl
 - Тексты постов - `site/posts_0.13.4_social.md`. Площадки группы «иногда»
   не публиковались
