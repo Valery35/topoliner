@@ -47,6 +47,7 @@ Isoliner3D считает объём. Общего кода с ними нет, 
 | `topoliner/help_texts.py` | Справки инструментов в окне Processing | пользователь |
 | `topoliner/metadata.txt` | Описание для каталога, номер версии | каталог |
 | `site/` | Страница проекта | посетитель |
+| `tools.json`, `fixtures/` | Описание инструментов и прогоны для крейта rustgis-kit | тот, кто переносит расчёты на Rust |
 | `AGENTS.md` | Этот файл | тот, кто правит репозиторий |
 
 Подсказки полей живут не в комплекте, а в коде диалогов, в вызовах `setHelp`.
@@ -335,6 +336,15 @@ python tools/preflight.py     готовность к каталогу
 python tools/check_docs.py    согласованность документации
 python tools/build_zip.py     сборка архивов
 cd topoliner && python -m unittest discover -s tests
+```
+
+Описание инструментов и прогоны для крейта собираются Python'ом QGIS
+с его окружением, через `python-qgis.bat`. Ключ `--check` сверяет файлы
+с кодом и краснеет при расхождении. Формат задаёт крейт rustgis-kit,
+порядок сверки описан в `fixtures/README.md`.
+
+```
+python-qgis.bat tools/export_tools.py --check
 ```
 
 Тесты идут без QGIS. Прогон в самом QGIS обязателен для всего, что касается

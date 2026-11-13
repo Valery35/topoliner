@@ -1,0 +1,2611 @@
+{
+ "format": 1,
+ "module": "topoliner",
+ "version": "0.13.3",
+ "generated_by": "tools/export_tools.py",
+ "omitted": [
+  {
+   "tool": "topologyaudit",
+   "key": "REPORT_FILE",
+   "why": "У крейта нет вида поля для файла. Текстовый отчёт строится по слою находок."
+  }
+ ],
+ "tools": [
+  {
+   "code": "1.01",
+   "name": "topologyaudit",
+   "title": {
+    "ru": "Проверка топологии полигонов",
+    "en": "Polygon topology check"
+   },
+   "group": "1",
+   "help": {
+    "ru": "<b>1.01 Проверка топологии полигонов</b><br><br>Слой не изменяется. Результат это слой точек с найденными нарушениями и сводка в панели Processing.<br><br><b>Что проверяется</b><br><ul><li>некорректная геометрия и самокасания колец.</li><li>повторяющиеся вершины и иглы.</li><li>вершины, лежащие на ребре соседа без узла, и отдельно вершины, лишь проходящие рядом с ребром.</li><li>микродыры, микрочасти, микрообъекты, волосяные полигоны.</li><li>перекрытия, дубликаты, вложенные объекты.</li><li>щели в покрытии.</li></ul><b>Два уровня</b>. Нарушения делятся по полю <b>severity</b>. Метка <b>auto</b> означает заведомый мусор, который инструмент очистки исправит сам. Метка <b>review</b> означает возможный смысл, такое не исправляется автоматически ни при каких настройках.<br><br>Границу проводят два порога - допуск в единицах длины и порог площади.<br><br><b>Два похожих нарушения стоит различать</b>. <b>Вершина лежит на ребре соседа</b> означает расстояние ноль. Границы совпадают геометрически, но вершинность у соседей разная. Это дефект при любом допуске. <b>Вершина рядом с ребром</b> означает лишь близость, и количество таких находок целиком задаётся допуском. Если в сводке медиана близка к допуску, а не к нулю, вы смотрите на соседние объекты, а не на дефекты. Первое лечится инструментом <b>1.06</b>, который не трогает ни форму, ни площадь.<br><br><b>Подсказка по допуску</b>. После проверки печатается, как расхождения распределены в этом слое. Печатаются количество, медиана, девяносто пятый процентиль и максимум. Если в распределении есть разрыв, он называется. До него погрешность оцифровки, за ним разногласие между источниками. Если разрыва нет, значение не выдумывается. Отдельно печатается потолок, выше которого допуск схлопнет короткие рёбра и узкие объекты.<br><br><b>Поле группировки</b> нужно, когда слой не является единым покрытием, например когда зоны нескольких пластов лежат в одном слое. Объекты разных групп накладываются друг на друга по замыслу.<br><br><b>Порог площади полости</b> отделяет целик, озеро или незакартированный участок от дефекта покрытия. Мелкая дыра это ошибка, очень крупная почти всегда часть замысла.<br><br><b>Ограничение</b>. Щели определяются как дыры в объединении покрытия, поэтому зазор, выходящий на внешний край покрытия, дырой не считается. Такие зазоры закрывает сшивка вершин, если их ширина меньше допуска.",
+    "en": "<b>1.01 Polygon topology check</b><br><br>The layer is not modified. The result is a point layer with the violations found, plus a summary in the Processing panel.<br><br><b>What is checked</b><br><ul><li>invalid geometry and ring self-touches.</li><li>repeated vertices and spikes.</li><li>vertices lying on a neighbour edge without a node, and separately vertices that merely pass close to an edge.</li><li>tiny holes, tiny parts, tiny objects, sliver polygons.</li><li>overlaps, duplicates, nested objects.</li><li>gaps in the coverage.</li></ul><b>Two levels</b>. Violations are split by the <b>severity</b> field. The <b>auto</b> label means certain debris that the cleanup tool will fix by itself. The <b>review</b> label means possible meaning, and such cases are never fixed automatically under any settings.<br><br>The boundary is drawn by two thresholds - a tolerance in length units and an area threshold.<br><br><b>Two similar violations are worth telling apart</b>. <b>A vertex lies on a neighbour edge</b> means the distance is zero. The borders coincide geometrically, but the neighbours have different vertices. This is a defect under any tolerance. <b>A vertex near an edge</b> means mere proximity, and the number of such findings is set entirely by the tolerance. If the median in the summary is close to the tolerance rather than to zero, you are looking at neighbouring objects, not at defects. The first case is fixed by tool <b>1.06</b>, which changes neither shape nor area.<br><br><b>A tolerance hint</b>. After the check the tool prints how the discrepancies are distributed in this layer. It prints how many there are, the median, the 95th percentile and the maximum. If the distribution has a break, it is named. Below it lies digitising error, above it a disagreement between sources. If there is no break, no number is invented. A ceiling is printed separately, above which the tolerance would collapse short edges and narrow objects.<br><br><b>The grouping field</b> is needed when the layer is not a single coverage, for example when zones of several seams share one layer. Objects of different groups overlap each other by design.<br><br><b>The cavity area threshold</b> separates a pillar, a lake or an unmapped area from a coverage defect. A small hole is an error, a very large one is almost always part of the design.<br><br><b>Limitation</b>. Gaps are found as holes in the union of the coverage, so a gap that reaches the outer edge is not a hole. Such gaps are closed by vertex snapping when their width is below the tolerance."
+   },
+   "params": [
+    {
+     "key": "INPUT",
+     "kind": "features",
+     "label": {
+      "ru": "Проверяемый слой (полигоны)",
+      "en": "Layer to check (polygons)"
+     },
+     "hint": {
+      "ru": "Полигональный слой, который проверяется.\nСлой не изменяется, находки пишутся в отдельный слой точек.",
+      "en": "The polygon layer to check. The layer is not modified, findings go\nto a separate point layer."
+     },
+     "geometry": [
+      "polygon"
+     ]
+    },
+    {
+     "key": "TOLERANCE",
+     "kind": "number",
+     "label": {
+      "ru": "Допуск (в единицах CRS слоя)",
+      "en": "Tolerance (in layer CRS units)"
+     },
+     "hint": {
+      "ru": "Расстояние, ниже которого расхождение считается технической погрешностью.",
+      "en": "The distance below which a discrepancy counts as a technical error."
+     },
+     "minimum": 1e-09,
+     "default": 2.0
+    },
+    {
+     "key": "AREA",
+     "kind": "number",
+     "label": {
+      "ru": "Порог площади мусора (в кв. единицах CRS)",
+      "en": "Debris area threshold (in square CRS units)"
+     },
+     "hint": {
+      "ru": "Площадь, ниже которой фрагмент считается техническим мусором.\nРазумная точка отсчёта это квадрат допуска.",
+      "en": "The area below which a fragment counts as technical debris. A\nreasonable starting point is the square of the tolerance."
+     },
+     "minimum": 0.0,
+     "default": 1.0
+    },
+    {
+     "key": "FIELDS",
+     "kind": "field",
+     "label": {
+      "ru": "Поле или поля группировки (необязательно)",
+      "en": "Grouping field or fields (optional)"
+     },
+     "hint": {
+      "ru": "Нужно, когда слой не является единым покрытием, например когда\nзоны нескольких пластов лежат в одном слое. Объекты разных групп\nнакладываются друг на друга по замыслу, и без группировки каждое\nтакое наложение попадает в перекрытия, дубликаты и вложения.",
+      "en": "Needed when the layer is not a single coverage, for example when\nzones of several seams lie in one layer. Features of different\ngroups overlap by design, and without grouping each such overlap\ngoes into overlaps, duplicates and nesting."
+     },
+     "parent": "INPUT",
+     "multiple": true,
+     "optional": true
+    },
+    {
+     "key": "CAVITY",
+     "kind": "number",
+     "label": {
+      "ru": "Полость крупнее этой площади щелью не считается (0 - не учитывать)",
+      "en": "Cavity larger than this area is not counted as a gap (0 - ignore)"
+     },
+     "hint": {
+      "ru": "Полость крупнее этой площади считается частью замысла и находкой\nне является. Это целик, озеро, незакартированный участок.\nМелкая дыра в покрытии это дефект, очень крупная почти всегда нет.",
+      "en": "A cavity larger than this area is taken as part of the design and is\nnot a finding. This is a pillar, a lake, an unmapped area. A small\nhole in a coverage is a defect, a very large one almost never is."
+     },
+     "minimum": 0.0,
+     "default": 0.0
+    },
+    {
+     "key": "DO_OVERLAPS",
+     "kind": "bool",
+     "label": {
+      "ru": "Искать перекрытия, дубликаты и вложения",
+      "en": "Find overlaps, duplicates and nested objects"
+     },
+     "hint": {
+      "ru": "Попарное сравнение объектов. На больших слоях это самая долгая часть\nпроверки, и её можно отключить, если интересуют только вершины и щели.",
+      "en": "Pairwise comparison of features. On large layers this is the longest\npart of the check, and it can be switched off when only vertices and\ngaps are of interest."
+     },
+     "default": true
+    },
+    {
+     "key": "DO_GAPS",
+     "kind": "bool",
+     "label": {
+      "ru": "Искать щели в покрытии",
+      "en": "Find gaps in the coverage"
+     },
+     "hint": {
+      "ru": "Щель это дыра в объединении покрытия. Зазор, выходящий на внешний край,\nдырой не является и здесь не находится. Его закрывает сшивка вершин.",
+      "en": "A gap is a hole in the union of the coverage. A gap that opens onto\nthe outer edge is not a hole and is not found here. Vertex snapping\ncloses it."
+     },
+     "default": true
+    },
+    {
+     "key": "DO_NODES",
+     "kind": "bool",
+     "label": {
+      "ru": "Искать вершины без узла на соседнем ребре",
+      "en": "Find vertices without a node on a neighbour edge"
+     },
+     "hint": {
+      "ru": "Вершина одного объекта лежит на ребре соседа или рядом с ним,\nа у соседа в этой точке узла нет. Такие места мешают сшивке\nи построению модели покрытия.",
+      "en": "A vertex of one feature lies on or near a neighbour's edge, and the\nneighbour has no node at that point. Such places hinder snapping and\nbuilding the coverage model."
+     },
+     "default": true
+    },
+    {
+     "key": "OUTPUT",
+     "kind": "sink",
+     "label": {
+      "ru": "Находки",
+      "en": "Findings"
+     },
+     "hint": {
+      "ru": "Слой точек, по одной на каждую находку.\nПоле severity делит находки на auto и review.",
+      "en": "A point layer with one point per finding. The severity field splits\nfindings into auto and review."
+     },
+     "geometry": "point",
+     "fields": [
+      [
+       "num",
+       "int"
+      ],
+      [
+       "type",
+       "string"
+      ],
+      [
+       "label",
+       "string"
+      ],
+      [
+       "severity",
+       "string"
+      ],
+      [
+       "fid_a",
+       "long"
+      ],
+      [
+       "fid_b",
+       "long"
+      ],
+      [
+       "value",
+       "double"
+      ],
+      [
+       "note",
+       "string"
+      ],
+      [
+       "grp",
+       "string"
+      ]
+     ]
+    }
+   ],
+   "messages": [
+    {
+     "ru": "── Топология ──",
+     "en": "-- Topology --"
+    },
+    {
+     "ru": "Объектов: %d, допуск %g, порог площади %g",
+     "en": "Objects: %d, tolerance %g, area threshold %g"
+    },
+    {
+     "ru": "Всего находок: %d, из них чинится автоматически: %d, решать человеку: %d",
+     "en": "Findings in total: %d, auto-fixed: %d, left to the operator: %d"
+    },
+    {
+     "ru": "Группировка по %s: групп %d",
+     "en": "Grouped by %s: %d groups"
+    },
+    {
+     "ru": "Отчёт записан: %s",
+     "en": "Report written: %s"
+    },
+    {
+     "ru": "Topoliner. Проверка топологии слоя %s",
+     "en": "Topoliner. Topology check of layer %s"
+    },
+    {
+     "ru": "полоса шириной меньше допуска",
+     "en": "a strip narrower than the tolerance"
+    },
+    {
+     "ru": "перекрытие шире допуска, спор за площадь",
+     "en": "the overlap is wider than the tolerance, a dispute over area"
+    },
+    {
+     "ru": "границы совпадают геометрически, узла нет",
+     "en": "the borders coincide geometrically, there is no node"
+    },
+    {
+     "ru": "дыра в объединении покрытия площадью 1",
+     "en": "a hole in the union of the coverage, area 1"
+    },
+    {
+     "ru": "геометрии совпадают, атрибуты могут различаться",
+     "en": "the geometries coincide, the attributes may differ"
+    },
+    {
+     "ru": "один объект целиком внутри другого",
+     "en": "one object entirely inside another"
+    },
+    {
+     "ru": "вершина в 0.5 от ребра соседа",
+     "en": "vertex 0.5 away from a neighbour edge"
+    },
+    {
+     "ru": "эффективная ширина меньше допуска",
+     "en": "the effective width is below the tolerance"
+    },
+    {
+     "ru": "дыра площадью 1 при пороге 10",
+     "en": "a hole of area 1 against the threshold 10"
+    },
+    {
+     "ru": "разворотов границы назад: 2",
+     "en": "border turns back on itself: 2"
+    },
+    {
+     "ru": "кольцо проходит через точку дважды",
+     "en": "the ring passes through the point twice"
+    }
+   ]
+  },
+  {
+   "code": "1.02",
+   "name": "lineaudit",
+   "title": {
+    "ru": "Проверка топологии линий",
+    "en": "Line topology check"
+   },
+   "group": "1",
+   "help": {
+    "ru": "<b>1.02 Проверка топологии линий</b><br><br>Слой не изменяется. Результат это слой точек с находками и сводка в панели Processing.<br><br><b>У линий свой набор нарушений</b>. Щели, перекрытия, вложения и волосяные полигоны к ним не применимы, зато появляются недоводы, перелёты, висячие концы и псевдоузлы.<br><br><b>Три случая на конце линии стоит различать</b><br><ul><li><b>Недовод</b>. Конец не доходит до соседней линии, расстояние меньше допуска. Это след оцифровки, чинится.</li><li><b>Перелёт</b>. Линия пересекла соседнюю и продолжилась дальше коротким хвостом. Тоже след оцифровки, обрезается.</li><li><b>Висячий конец</b>. Конец ни с чем не соединён и соседей рядом нет. У гидросети или сети выработок это устье или тупик, поэтому решение остаётся человеку.</li></ul>Порядок проверки существенен. У хвоста, торчащего за узлом, конец тоже отстоит от соседней линии, поэтому перелёт ищется раньше недовода.<br><br><b>Псевдоузел</b> это стык двух линий концами, где больше ничего нет. Такие линии можно объединить в одну. По умолчанию проверка выключена, потому что во многих слоях разбиение на участки сделано намеренно.",
+    "en": "<b>1.02 Line topology check</b><br><br>The layer is not modified. The result is a point layer with the findings and a summary in the Processing panel.<br><br><b>Lines have their own set of violations</b>. Gaps, overlaps, nested objects and slivers do not apply to them, while undershoots, overshoots, dangles and pseudo nodes appear.<br><br><b>Three cases at a line end are worth telling apart</b><br><ul><li><b>Undershoot</b>. The end does not reach a neighbouring line, the distance being below the tolerance. A digitising trace, it is fixed.</li><li><b>Overshoot</b>. The line crossed a neighbour and continued with a short tail. Also a digitising trace, it is trimmed.</li><li><b>Dangle</b>. The end is connected to nothing and no neighbour is near. In a stream network or a set of mine workings this is an outlet or a dead end, so the decision is left to the operator.</li></ul>The order of checks matters. The end of a tail sticking out past a node is also away from the neighbouring line, so overshoots are looked for before undershoots.<br><br><b>A pseudo node</b> is a joint of two lines end to end with nothing else there. Such lines can be merged into one. The check is off by default, because in many layers the splitting into segments is deliberate."
+   },
+   "params": [
+    {
+     "key": "INPUT",
+     "kind": "lines",
+     "label": {
+      "ru": "Проверяемый слой (линии)",
+      "en": "Layer to check (lines)"
+     },
+     "hint": {
+      "ru": "Линейный слой, который проверяется.\nСлой не изменяется, находки пишутся в отдельный слой точек.",
+      "en": "The line layer to check. The layer is not modified, findings go to a\nseparate point layer."
+     },
+     "geometry": [
+      "line"
+     ]
+    },
+    {
+     "key": "TOLERANCE",
+     "kind": "number",
+     "label": {
+      "ru": "Допуск (в единицах CRS слоя)",
+      "en": "Tolerance (in layer CRS units)"
+     },
+     "hint": {
+      "ru": "Расстояние, ниже которого расхождение считается погрешностью.\nНедовод и перелёт короче допуска относятся к мусору.",
+      "en": "The distance below which a discrepancy counts as an error. An\nundershoot or overshoot shorter than the tolerance counts as debris."
+     },
+     "minimum": 1e-09,
+     "default": 2.0
+    },
+    {
+     "key": "MIN_LENGTH",
+     "kind": "number",
+     "label": {
+      "ru": "Порог длины линии (0 - не учитывать)",
+      "en": "Line length threshold (0 - ignore)"
+     },
+     "hint": {
+      "ru": "Линии короче этой длины попадают в находки.",
+      "en": "Lines shorter than this length go to the findings."
+     },
+     "minimum": 0.0,
+     "default": 0.0
+    },
+    {
+     "key": "DO_DANGLES",
+     "kind": "bool",
+     "label": {
+      "ru": "Искать висячие концы, недоводы и перелёты",
+      "en": "Find dangles, undershoots and overshoots"
+     },
+     "hint": {
+      "ru": "Три разных случая на конце линии. Недовод и перелёт короче допуска\nотносятся к мусору, висячий конец остаётся человеку. У гидросети\nили сети выработок это устье либо тупик.",
+      "en": "Three different cases at the end of a line. An undershoot or\novershoot shorter than the tolerance counts as debris, a dangle is\nleft to the operator. In a river network or a network of workings it\nis a mouth or a dead end."
+     },
+     "default": true
+    },
+    {
+     "key": "DO_CROSSINGS",
+     "kind": "bool",
+     "label": {
+      "ru": "Искать пересечения без узла",
+      "en": "Find crossings without a node"
+     },
+     "hint": {
+      "ru": "Линии пересекаются, а вершины в точке пересечения нет ни у одной.",
+      "en": "Lines cross, and neither of them has a vertex at the crossing point."
+     },
+     "default": true
+    },
+    {
+     "key": "DO_PSEUDO",
+     "kind": "bool",
+     "label": {
+      "ru": "Искать псевдоузлы",
+      "en": "Find pseudo nodes"
+     },
+     "hint": {
+      "ru": "Две линии сходятся концами, и больше в этой точке ничего нет. Их можно\nобъединить. Выключено намеренно, во многих слоях разбиение на участки\nсделано специально.",
+      "en": "Two lines meet at their ends, and nothing else is at that point.\nThey can be merged. Off on purpose, many layers are split into\nsegments deliberately."
+     },
+     "default": false
+    },
+    {
+     "key": "OUTPUT",
+     "kind": "sink",
+     "label": {
+      "ru": "Находки",
+      "en": "Findings"
+     },
+     "hint": {
+      "ru": "Слой точек, по одной на каждую находку.\nПоле severity делит находки на auto и review.",
+      "en": "A point layer with one point per finding. The severity field splits\nfindings into auto and review."
+     },
+     "geometry": "point",
+     "fields": [
+      [
+       "num",
+       "int"
+      ],
+      [
+       "type",
+       "string"
+      ],
+      [
+       "label",
+       "string"
+      ],
+      [
+       "severity",
+       "string"
+      ],
+      [
+       "fid_a",
+       "long"
+      ],
+      [
+       "fid_b",
+       "long"
+      ],
+      [
+       "value",
+       "double"
+      ],
+      [
+       "note",
+       "string"
+      ],
+      [
+       "grp",
+       "string"
+      ]
+     ]
+    }
+   ],
+   "messages": [
+    {
+     "ru": "── Топология линий ──",
+     "en": "-- Line topology --"
+    },
+    {
+     "ru": "Линий: %d, допуск %g",
+     "en": "Lines: %d, tolerance %g"
+    },
+    {
+     "ru": "Всего находок: %d, из них чинится автоматически: %d, решать человеку: %d",
+     "en": "Findings in total: %d, auto-fixed: %d, left to the operator: %d"
+    },
+    {
+     "ru": "конец ни с чем не соединён, соседей ближе допуска нет",
+     "en": "the end is connected to nothing, no neighbour within the tolerance"
+    },
+    {
+     "ru": "не доходит до соседней линии на 0.5",
+     "en": "falls short of the neighbouring line by 0.5"
+    },
+    {
+     "ru": "хвост за узлом длиной 1.5",
+     "en": "a tail past a node, length 1.5"
+    },
+    {
+     "ru": "вершины совпадают, атрибуты могут различаться",
+     "en": "the vertices coincide, the attributes may differ"
+    },
+    {
+     "ru": "линии пересекаются, узла в точке нет",
+     "en": "the lines cross, there is no node at the point"
+    },
+    {
+     "ru": "длина 0.4 при пороге 1",
+     "en": "length 0.4 against the threshold 1"
+    },
+    {
+     "ru": "две линии можно объединить в одну",
+     "en": "the two lines can be merged into one"
+    },
+    {
+     "ru": "вершин подряд в одной точке: 1",
+     "en": "vertices in a row at the same point: 1"
+    },
+    {
+     "ru": "разворотов линии назад: 1",
+     "en": "line turns back on itself: 1"
+    },
+    {
+     "ru": "разворотов линии назад: 2",
+     "en": "line turns back on itself: 2"
+    }
+   ]
+  },
+  {
+   "code": "1.03",
+   "name": "topologyfix",
+   "title": {
+    "ru": "Очистка топологии полигонов",
+    "en": "Polygon topology cleanup"
+   },
+   "group": "1",
+   "help": {
+    "ru": "<b>1.03 Очистка топологии полигонов</b><br><br>Исправляет всё, что заведомо является техническим мусором, и не трогает то, что может нести смысл. Второе попадает в слой оставшихся проблем.<br><br><b>Порядок шагов</b> (он существенен)<br><ol><li>снятие повторяющихся вершин и игл.</li><li>удаление микрочастей и заливка микродыр.</li><li>сшивка, то есть слияние близких вершин и вставка недостающих узлов.</li><li>исправление некорректной геометрии с контролем потери площади.</li><li>вычитание узких перекрытий по правилу приоритета.</li><li>передача мелких щелей соседу с самой длинной общей границей.</li></ol><b>Чего инструмент не делает никогда</b>. Он не удаляет объекты с широкими перекрытиями, не заполняет крупные щели, не разрешает дубликаты и вложения, не удаляет микрообъекты без явного разрешения.<br><br><b>Перекрытие оценивается шириной, а не площадью</b>. Полоса шириной с допуск и длиной в десятки метров набирает сотню квадратных единиц, оставаясь следствием смещения вершин, а не спором за площадь.<br><br><b>Гарантии</b>. Вершина не смещается дальше допуска. Правка, отнимающая у объекта больше четверти площади, отменяется. Повторный запуск по результату ничего не меняет.<br><br><b>Отметки Z</b> восстанавливаются по ближайшей исходной вершине, поскольку операции пересечения работают в плане.<br><br>Выходной слой всегда составного типа. Исправление может разделить объект на несколько частей.<br><br>Перед запуском стоит выполнить <b>1.01</b> и посмотреть, сколько нарушений попадает в разряд решаемых человеком.",
+    "en": "<b>1.03 Polygon topology cleanup</b><br><br>Fixes everything that is certainly technical debris and leaves alone anything that may carry meaning. The latter goes into the layer of remaining problems.<br><br><b>Order of steps</b> (it matters)<br><ol><li>removal of repeated vertices and spikes.</li><li>removal of tiny parts and filling of tiny holes.</li><li>snapping, that is merging close vertices and inserting missing nodes.</li><li>repair of invalid geometry with area loss control.</li><li>subtraction of narrow overlaps by the priority rule.</li><li>handing small gaps to the neighbour with the longest shared border.</li></ol><b>What the tool never does</b>. It does not delete objects with wide overlaps, does not fill large gaps, does not resolve duplicates and nested objects, and does not delete tiny objects without explicit permission.<br><br><b>An overlap is judged by width, not by area</b>. A strip as wide as the tolerance and tens of metres long collects a hundred square units while remaining a consequence of vertex movement rather than a dispute over area.<br><br><b>Guarantees</b>. No vertex moves further than the tolerance. An edit that takes more than a quarter of an object's area is cancelled. A repeat run over the result changes nothing.<br><br><b>Z values</b> are restored from the nearest original vertex, because intersection operations work in plan.<br><br>The output layer is always of multi type. A repair may split an object into several parts.<br><br>Before running it, it is worth running <b>1.01</b> and seeing how many violations fall into the category left to the operator."
+   },
+   "params": [
+    {
+     "key": "INPUT",
+     "kind": "features",
+     "label": {
+      "ru": "Входной слой (полигоны)",
+      "en": "Input layer (polygons)"
+     },
+     "hint": {
+      "ru": "Полигональный слой, который очищается.\nСлой не изменяется, результат пишется в новый слой.",
+      "en": "The polygon layer to clean. The layer is not modified, the result\ngoes to a new layer."
+     },
+     "geometry": [
+      "polygon"
+     ]
+    },
+    {
+     "key": "TOLERANCE",
+     "kind": "number",
+     "label": {
+      "ru": "Допуск (в единицах CRS слоя)",
+      "en": "Tolerance (in layer CRS units)"
+     },
+     "hint": {
+      "ru": "Предельное смещение вершины и радиус поиска соседних рёбер.",
+      "en": "The maximum displacement of a vertex and the search radius for\nneighbouring edges."
+     },
+     "minimum": 1e-09,
+     "default": 2.0
+    },
+    {
+     "key": "AREA",
+     "kind": "number",
+     "label": {
+      "ru": "Порог площади мусора (в кв. единицах CRS)",
+      "en": "Debris area threshold (in square CRS units)"
+     },
+     "hint": {
+      "ru": "Фрагменты мельче этого порога считаются мусором и убираются молча.\nПерекрытия и щели крупнее порога не изменяются.",
+      "en": "Fragments smaller than this threshold count as debris and are\nremoved silently. Overlaps and gaps larger than the threshold are\nnot modified."
+     },
+     "minimum": 0.0,
+     "default": 1.0
+    },
+    {
+     "key": "FIELDS",
+     "kind": "field",
+     "label": {
+      "ru": "Поле или поля группировки (необязательно)",
+      "en": "Grouping field or fields (optional)"
+     },
+     "hint": {
+      "ru": "Объекты разных групп не сшиваются между собой и не спорят\nза площадь. Нужно, когда в одном слое лежат несколько покрытий,\nнапример зоны разных пластов.",
+      "en": "Features of different groups are not snapped to each other and do\nnot compete for area. Needed when several coverages lie in one\nlayer, for example zones of different seams."
+     },
+     "parent": "INPUT",
+     "multiple": true,
+     "optional": true
+    },
+    {
+     "key": "DO_SNAP",
+     "kind": "bool",
+     "label": {
+      "ru": "Сшивать вершины и узлы",
+      "en": "Snap vertices and nodes"
+     },
+     "hint": {
+      "ru": "Слияние близких вершин и вставка недостающих узлов. Без этого шага\nостальные работают по несогласованному покрытию.",
+      "en": "Merging of close vertices and insertion of missing nodes. Without\nthis step the other steps work on an inconsistent coverage."
+     },
+     "default": true
+    },
+    {
+     "key": "DO_VALID",
+     "kind": "bool",
+     "label": {
+      "ru": "Исправлять некорректную геометрию",
+      "en": "Repair invalid geometry"
+     },
+     "hint": {
+      "ru": "Самопересечения и вывернутые кольца. Правка, отнимающая больше четверти\nплощади объекта, отменяется, и объект попадает в оставшиеся проблемы.",
+      "en": "Self-intersections and inverted rings. An edit that takes more than\na quarter of a feature's area is cancelled, and the feature goes to\nthe remaining problems."
+     },
+     "default": true
+    },
+    {
+     "key": "DO_OVERLAPS",
+     "kind": "bool",
+     "label": {
+      "ru": "Убирать мелкие перекрытия",
+      "en": "Remove small overlaps"
+     },
+     "hint": {
+      "ru": "Вычитается только узкая полоса, шириной меньше допуска. Широкое\nперекрытие это спор за площадь, и оно остаётся человеку.",
+      "en": "Only a narrow strip, narrower than the tolerance, is subtracted. A\nwide overlap is a dispute over area, and it is left to the operator."
+     },
+     "default": true
+    },
+    {
+     "key": "DO_GAPS",
+     "kind": "bool",
+     "label": {
+      "ru": "Заполнять мелкие щели",
+      "en": "Fill small gaps"
+     },
+     "hint": {
+      "ru": "Щель мельче порога площади отходит соседу с наибольшей общей\nграницей. Щель крупнее порога не заполняется и попадает\nв оставшиеся проблемы.",
+      "en": "A gap smaller than the area threshold goes to the neighbour with the\nlongest shared border. A gap larger than the threshold is not filled\nand goes to the remaining problems."
+     },
+     "default": true
+    },
+    {
+     "key": "WINNER",
+     "kind": "enum",
+     "label": {
+      "ru": "При перекрытии площадь сохраняет",
+      "en": "On overlap the area is kept by"
+     },
+     "hint": {
+      "ru": "Проигравший объект отдаёт полосу перекрытия.",
+      "en": "The losing feature gives up the overlap strip."
+     },
+     "options": [
+      {
+       "ru": "Более крупный объект",
+       "en": "The larger object"
+      },
+      {
+       "ru": "Объект с меньшим идентификатором",
+       "en": "The object with the smaller identifier"
+      }
+     ],
+     "default": 0
+    },
+    {
+     "key": "DROP_TINY",
+     "kind": "bool",
+     "label": {
+      "ru": "Удалять объекты мельче порога площади",
+      "en": "Delete objects smaller than the area threshold"
+     },
+     "hint": {
+      "ru": "По умолчанию выключено. Удаление объекта уничтожает и его атрибуты.\nБез этой галочки такие объекты только попадают в слой оставшихся проблем.",
+      "en": "Off by default. Deleting a feature destroys its attributes as well.\nWithout this checkbox such features only go to the remaining\nproblems layer."
+     },
+     "default": false
+    },
+    {
+     "key": "CAVITY",
+     "kind": "number",
+     "label": {
+      "ru": "Полость крупнее этой площади щелью не считается (0 - не учитывать)",
+      "en": "Cavity larger than this area is not counted as a gap (0 - ignore)"
+     },
+     "hint": {
+      "ru": "Полость крупнее этой площади считается частью замысла и находкой\nне является. Это целик, озеро, незакартированный участок.\nМелкая дыра в покрытии это дефект, очень крупная почти всегда нет.",
+      "en": "A cavity larger than this area is taken as part of the design and is\nnot a finding. This is a pillar, a lake, an unmapped area. A small\nhole in a coverage is a defect, a very large one almost never is."
+     },
+     "minimum": 0.0,
+     "default": 0.0
+    },
+    {
+     "key": "SPIKE",
+     "kind": "number",
+     "label": {
+      "ru": "Порог угла иглы, градусы",
+      "en": "Spike angle threshold, degrees"
+     },
+     "hint": {
+      "ru": "Вершина снимается, если линия разворачивается в ней назад\nс углом меньше указанного. Значение около одного градуса\nубирает только явные артефакты оцифровки.",
+      "en": "A vertex is removed when the line turns back at it with an angle\nsmaller than this value. A value of about one degree removes only\nobvious digitising artefacts."
+     },
+     "minimum": 0.0,
+     "maximum": 45.0,
+     "default": 1.0
+    },
+    {
+     "key": "KEEP_Z",
+     "kind": "bool",
+     "label": {
+      "ru": "Восстанавливать отметки Z",
+      "en": "Restore Z values"
+     },
+     "hint": {
+      "ru": "Операции пересечения работают в плане, поэтому Z берётся у ближайшей\nисходной вершины. Для покрытий это верно, для слоёв с резким перепадом\nвысоты вдоль границы результат стоит проверить.",
+      "en": "Intersection operations work in plan, so Z is taken from the nearest\noriginal vertex. For coverages this is correct. For layers with a\nsharp change in height along a border, check the result."
+     },
+     "default": true
+    },
+    {
+     "key": "OUTPUT",
+     "kind": "sink",
+     "label": {
+      "ru": "Очищенный слой",
+      "en": "Cleaned layer"
+     },
+     "hint": {
+      "ru": "Новый слой с исправленной геометрией и атрибутами исходного.",
+      "en": "A new layer with the fixed geometry and the attributes of the\nsource."
+     },
+     "geometry": "any",
+     "fields": [
+      [
+       "id",
+       "int"
+      ],
+      [
+       "name",
+       "string"
+      ]
+     ]
+    },
+    {
+     "key": "REMAINS",
+     "kind": "sink",
+     "label": {
+      "ru": "Оставшиеся проблемы",
+      "en": "Remaining problems"
+     },
+     "hint": {
+      "ru": "Точки на месте того, что исправить нельзя или не разрешено.\nПоля те же, что у слоя находок инструмента 1.01.",
+      "en": "Points where something cannot be fixed or is not allowed to be\nfixed. The fields are the same as in the findings layer of tool\n1.01."
+     },
+     "geometry": "point",
+     "optional": true,
+     "fields": [
+      [
+       "num",
+       "int"
+      ],
+      [
+       "type",
+       "string"
+      ],
+      [
+       "label",
+       "string"
+      ],
+      [
+       "severity",
+       "string"
+      ],
+      [
+       "fid_a",
+       "long"
+      ],
+      [
+       "fid_b",
+       "long"
+      ],
+      [
+       "value",
+       "double"
+      ],
+      [
+       "note",
+       "string"
+      ],
+      [
+       "grp",
+       "string"
+      ]
+     ]
+    }
+   ],
+   "messages": [
+    {
+     "ru": "── Исправлено молча ──",
+     "en": "-- Fixed silently --"
+    },
+    {
+     "ru": "── Оставлено человеку ──",
+     "en": "-- Left to the operator --"
+    },
+    {
+     "ru": "Объектов: %d, допуск %g, порог площади %g",
+     "en": "Objects: %d, tolerance %g, area threshold %g"
+    },
+    {
+     "ru": "Повторяющихся вершин снято:  %d",
+     "en": "Repeated vertices removed:   %d"
+    },
+    {
+     "ru": "Игл снято:                   %d",
+     "en": "Spikes removed:              %d"
+    },
+    {
+     "ru": "Вершин сведено:              %d (макс. смещение %s)",
+     "en": "Vertices merged:             %d (max shift %s)"
+    },
+    {
+     "ru": "Узлов вставлено:             %d",
+     "en": "Nodes inserted:              %d"
+    },
+    {
+     "ru": "Микрочастей удалено:         %d",
+     "en": "Tiny parts removed:          %d"
+    },
+    {
+     "ru": "Микродыр залито:             %d",
+     "en": "Tiny holes filled:           %d"
+    },
+    {
+     "ru": "Геометрий исправлено:        %d",
+     "en": "Geometries repaired:         %d"
+    },
+    {
+     "ru": "Перекрытий убрано:           %d",
+     "en": "Overlaps removed:            %d"
+    },
+    {
+     "ru": "Щелей заполнено:             %d",
+     "en": "Gaps filled:                 %d"
+    },
+    {
+     "ru": "Площадь до/после: %s / %s (%+.3f %%)",
+     "en": "Area before/after: %s / %s (%+.3f %%)"
+    },
+    {
+     "ru": "Объектов на входе/выходе: %d / %d",
+     "en": "Objects in/out: %d / %d"
+    },
+    {
+     "ru": "Суммарная площадь изменилась более чем на процент. Проверьте пороги. Скорее всего порог площади завышен.",
+     "en": "The total area changed by more than one per cent. Check the thresholds. The area threshold is most likely too high."
+    },
+    {
+     "ru": "Группировка по %s: групп %d",
+     "en": "Grouped by %s: %d groups"
+    },
+    {
+     "ru": "Колец не изменялось:         %d (уже допуска)",
+     "en": "Rings left unchanged:        %d (narrower than the tolerance)"
+    },
+    {
+     "ru": "Микрообъектов удалено:       %d",
+     "en": "Tiny objects deleted:        %d"
+    },
+    {
+     "ru": "Объектов с самокасанием колец: %d. GEOS считает такую геометрию корректной, а SQL Server может её отклонить. При заливке в MSSQL применяйте MakeValid на стороне сервера.",
+     "en": "Objects with ring self-touches: %d. GEOS considers such geometry valid while SQL Server may reject it. When loading into MSSQL apply MakeValid on the server side."
+    },
+    {
+     "ru": "Объектов исчезло: %d, см. слой оставшихся проблем",
+     "en": "Objects disappeared: %d, see the remaining problems layer"
+    },
+    {
+     "ru": "Исправлений отменено из-за потери площади: %d",
+     "en": "Repairs cancelled due to area loss: %d"
+    },
+    {
+     "ru": "перекрытие шире допуска, это спор за площадь",
+     "en": "the overlap is wider than the tolerance, a dispute over area"
+    }
+   ]
+  },
+  {
+   "code": "1.04",
+   "name": "linefix",
+   "title": {
+    "ru": "Очистка топологии линий",
+    "en": "Line topology cleanup"
+   },
+   "group": "1",
+   "help": {
+    "ru": "<b>1.04 Очистка топологии линий</b><br><br>Исправляет то, что заведомо является следом оцифровки, и не трогает то, что может нести смысл.<br><br><b>Что делается</b><br><ul><li>снятие повторяющихся вершин и игл.</li><li>обрезка перелётов. Хвост за узлом короче допуска отрезается до самой точки пересечения.</li><li>дотягивание недоводов. Конец переносится на проекцию, на соседнюю линию.</li><li>вставка недостающих узлов в точках примыкания.</li><li>удаление линий нулевой длины.</li></ul><b>Что не делается</b>. Висячие концы не трогаются, линии короче порога не удаляются без явного разрешения, псевдоузлы не объединяются.<br><br><b>Гарантия</b>. Конец линии не смещается дальше допуска. Повторный запуск по результату ничего не меняет.<br><br>Перед запуском стоит выполнить <b>1.02</b> и посмотреть, сколько находок попадает в разряд решаемых человеком.",
+    "en": "<b>1.04 Line topology cleanup</b><br><br>Fixes what is certainly a digitising trace and leaves alone anything that may carry meaning.<br><br><b>What is done</b><br><ul><li>removal of repeated vertices and spikes.</li><li>trimming of overshoots. A tail past a node shorter than the tolerance is cut back to the intersection point itself.</li><li>closing of undershoots. The end is moved onto its projection on the neighbouring line.</li><li>insertion of missing nodes at the joints.</li><li>removal of zero-length lines.</li></ul><b>What is not done</b>. Dangles are not touched, lines shorter than the threshold are not deleted without explicit permission, pseudo nodes are not merged.<br><br><b>Guarantee</b>. A line end does not move further than the tolerance. A repeat run over the result changes nothing.<br><br>Before running it, it is worth running <b>1.02</b> and seeing how many findings fall into the category left to the operator."
+   },
+   "params": [
+    {
+     "key": "INPUT",
+     "kind": "lines",
+     "label": {
+      "ru": "Входной слой (линии)",
+      "en": "Input layer (lines)"
+     },
+     "hint": {
+      "ru": "Линейный слой, который очищается.\nСлой не изменяется, результат пишется в новый слой.",
+      "en": "The line layer to clean. The layer is not modified, the result goes\nto a new layer."
+     },
+     "geometry": [
+      "line"
+     ]
+    },
+    {
+     "key": "TOLERANCE",
+     "kind": "number",
+     "label": {
+      "ru": "Допуск (в единицах CRS слоя)",
+      "en": "Tolerance (in layer CRS units)"
+     },
+     "hint": {
+      "ru": "Предельное смещение конца линии и предельная длина\nобрезаемого хвоста.",
+      "en": "The maximum displacement of a line end and the maximum length of a\ntrimmed tail."
+     },
+     "minimum": 1e-09,
+     "default": 2.0
+    },
+    {
+     "key": "MIN_LENGTH",
+     "kind": "number",
+     "label": {
+      "ru": "Порог длины линии (0 - не учитывать)",
+      "en": "Line length threshold (0 - ignore)"
+     },
+     "hint": {
+      "ru": "Линии короче этой длины попадают в оставшиеся проблемы. Удаляются\nони только с отдельной галочки. Удаление уничтожает и атрибуты.",
+      "en": "Lines shorter than this length go to the remaining problems. They\nare deleted only with a separate checkbox. Deletion destroys the\nattributes as well."
+     },
+     "minimum": 0.0,
+     "default": 0.0
+    },
+    {
+     "key": "DO_TRIM",
+     "kind": "bool",
+     "label": {
+      "ru": "Обрезать перелёты за узел",
+      "en": "Trim overshoots past a node"
+     },
+     "hint": {
+      "ru": "Хвост, торчащий за пересечением, отрезается до самой точки пересечения.\nОбрезаются только хвосты короче допуска.",
+      "en": "A tail sticking out past a crossing is cut back to the crossing\npoint. Only tails shorter than the tolerance are trimmed."
+     },
+     "default": true
+    },
+    {
+     "key": "DO_CLOSE",
+     "kind": "bool",
+     "label": {
+      "ru": "Дотягивать недоводы до соседней линии",
+      "en": "Close undershoots onto the neighbouring line"
+     },
+     "hint": {
+      "ru": "Конец переносится на проекцию, то есть на ближайшую точку соседнего\nребра. Смещение не превышает допуска.",
+      "en": "The end is moved to the projection, that is to the nearest point of\nthe neighbouring edge. The displacement does not exceed the\ntolerance."
+     },
+     "default": true
+    },
+    {
+     "key": "DO_SNAP",
+     "kind": "bool",
+     "label": {
+      "ru": "Вставлять недостающие узлы",
+      "en": "Insert missing nodes"
+     },
+     "hint": {
+      "ru": "Сшивка концов и вставка недостающих узлов на рёбра соседних линий.\nВершина не смещается дальше допуска.",
+      "en": "Snapping of ends and insertion of missing nodes into the edges of\nneighbouring lines. A vertex is never moved farther than the\ntolerance."
+     },
+     "default": true
+    },
+    {
+     "key": "DROP_SHORT",
+     "kind": "bool",
+     "label": {
+      "ru": "Удалять линии короче порога длины",
+      "en": "Delete lines shorter than the length threshold"
+     },
+     "hint": {
+      "ru": "По умолчанию выключено. Удаление объекта уничтожает и его атрибуты.\nБез этой галочки такие линии только попадают в оставшиеся проблемы.",
+      "en": "Off by default. Deleting a feature destroys its attributes as well.\nWithout this checkbox such lines only go to the remaining problems."
+     },
+     "default": false
+    },
+    {
+     "key": "SPIKE",
+     "kind": "number",
+     "label": {
+      "ru": "Порог угла иглы, градусы",
+      "en": "Spike angle threshold, degrees"
+     },
+     "hint": {
+      "ru": "Игла это разворот линии назад почти на месте. Угол между входящим\nи исходящим ребром меньше этого значения считается иглой.",
+      "en": "A spike is a line turning back almost in place. An angle between the\nincoming and the outgoing edge smaller than this value counts as a\nspike."
+     },
+     "minimum": 0.0,
+     "maximum": 45.0,
+     "default": 1.0
+    },
+    {
+     "key": "OUTPUT",
+     "kind": "sink",
+     "label": {
+      "ru": "Очищенный слой",
+      "en": "Cleaned layer"
+     },
+     "hint": {
+      "ru": "Новый слой с исправленной геометрией и атрибутами исходного.",
+      "en": "A new layer with the fixed geometry and the attributes of the\nsource."
+     },
+     "geometry": "any",
+     "fields": [
+      [
+       "id",
+       "int"
+      ],
+      [
+       "name",
+       "string"
+      ]
+     ]
+    },
+    {
+     "key": "REMAINS",
+     "kind": "sink",
+     "label": {
+      "ru": "Оставшиеся проблемы",
+      "en": "Remaining problems"
+     },
+     "hint": {
+      "ru": "Точки на месте того, что исправить нельзя или не разрешено.\nПоля те же, что у слоя находок инструмента 1.02.",
+      "en": "Points where something cannot be fixed or is not allowed to be\nfixed. The fields are the same as in the findings layer of tool\n1.02."
+     },
+     "geometry": "point",
+     "optional": true,
+     "fields": [
+      [
+       "num",
+       "int"
+      ],
+      [
+       "type",
+       "string"
+      ],
+      [
+       "label",
+       "string"
+      ],
+      [
+       "severity",
+       "string"
+      ],
+      [
+       "fid_a",
+       "long"
+      ],
+      [
+       "fid_b",
+       "long"
+      ],
+      [
+       "value",
+       "double"
+      ],
+      [
+       "note",
+       "string"
+      ],
+      [
+       "grp",
+       "string"
+      ]
+     ]
+    }
+   ],
+   "messages": [
+    {
+     "ru": "── Исправлено молча ──",
+     "en": "-- Fixed silently --"
+    },
+    {
+     "ru": "Линий: %d, допуск %g",
+     "en": "Lines: %d, tolerance %g"
+    },
+    {
+     "ru": "Повторяющихся вершин снято:  %d",
+     "en": "Repeated vertices removed:   %d"
+    },
+    {
+     "ru": "Игл снято:                   %d",
+     "en": "Spikes removed:              %d"
+    },
+    {
+     "ru": "Перелётов обрезано:          %d",
+     "en": "Overshoots trimmed:          %d"
+    },
+    {
+     "ru": "Недоводов закрыто:           %d (макс. смещение %s)",
+     "en": "Undershoots closed:          %d (max shift %s)"
+    },
+    {
+     "ru": "Узлов вставлено:             %d",
+     "en": "Nodes inserted:              %d"
+    },
+    {
+     "ru": "Длина до/после: %s / %s (%+.3f %%)",
+     "en": "Length before/after: %s / %s (%+.3f %%)"
+    },
+    {
+     "ru": "Объектов на входе/выходе: %d / %d",
+     "en": "Objects in/out: %d / %d"
+    },
+    {
+     "ru": "Линий нулевой длины удалено: %d",
+     "en": "Zero-length lines removed:   %d"
+    },
+    {
+     "ru": "Коротких линий удалено:      %d",
+     "en": "Short lines removed:         %d"
+    },
+    {
+     "ru": "Объектов потеряно: %d",
+     "en": "Objects lost: %d"
+    }
+   ]
+  },
+  {
+   "code": "1.05",
+   "name": "topologyclean",
+   "title": {
+    "ru": "Сшивка узлов и вершин",
+    "en": "Node and vertex snapping"
+   },
+   "group": "1",
+   "help": {
+    "ru": "<b>1.05 Сшивка узлов и вершин</b><br><br>Приводит границы соседних объектов к точному совпадению, не сдвигая геометрию дальше заданного допуска. Заменяет ручную последовательность из прилипания слоя к самому себе и вставки вершин.<br><br><b>Две операции</b><br><ul><li><b>Вставка узлов</b>. Если вершина одного объекта лежит на ребре соседнего, но узла там нет, узел вставляется. Существующие вершины остаются на месте. Отдельно ставятся узлы там, где рёбра пересекаются крест-накрест без общих вершин.</li><li><b>Слияние вершин</b>. Вершины ближе допуска друг к другу сводятся в одну точку. Порядок обхода задаёт, кто кого притягивает. Лидер кластера не двигается.</li></ul><b>Гарантия</b>. Ни одна вершина не смещается дальше допуска. Кластеризация жадная по лидеру, поэтому цепочек из вершин, уводящих геометрию за допуск, не возникает.<br><br><b>Объекты уже допуска</b> при слиянии схлопнулись бы сами в себя. Противоположные берега слиплись бы. По умолчанию такие объекты остаются нетронутыми и служат опорой для соседей.<br><br><b>Эталонный слой</b> (необязательно). Его вершины считаются неподвижными и притягивают входной слой. Сам эталон не изменяется и в результат не попадает.<br><br><b>Отметки Z</b> сохраняются. При слиянии вершина берёт плановые координаты лидера и оставляет собственную отметку.<br><br>Повторный запуск по готовому результату ничего не меняет.",
+    "en": "<b>1.05 Node and vertex snapping</b><br><br>Brings the borders of neighbouring objects to an exact match without moving geometry further than the given tolerance. Replaces the manual procedure of snapping a layer to itself with vertex insertion.<br><br><b>Two operations</b><br><ul><li><b>Node insertion</b>. If a vertex of one object lies on the edge of another but there is no node there, a node is inserted. Existing vertices stay in place. Nodes are also inserted where edges cross each other without shared vertices.</li><li><b>Vertex merging</b>. Vertices closer to each other than the tolerance are brought to a single point. The traversal order decides which attracts which. The cluster leader does not move.</li></ul><b>Guarantee</b>. No vertex moves further than the tolerance. Clustering is greedy by leader, so chains of vertices dragging geometry beyond the tolerance cannot appear.<br><br><b>Objects narrower than the tolerance</b> would collapse into themselves during merging, as their opposite banks would stick together. By default such objects stay untouched and serve as an anchor for their neighbours.<br><br><b>The reference layer</b> (optional). Its vertices are considered fixed and attract the input layer. The reference itself is not modified and does not appear in the result.<br><br><b>Z values</b> are preserved. When merging, a vertex takes the plan coordinates of the leader and keeps its own elevation.<br><br>A repeat run over a finished result changes nothing."
+   },
+   "params": [
+    {
+     "key": "INPUT",
+     "kind": "features",
+     "label": {
+      "ru": "Входной слой (полигоны или линии)",
+      "en": "Input layer (polygons or lines)"
+     },
+     "hint": {
+      "ru": "Полигональный или линейный слой.\nСлой не изменяется, результат пишется в новый слой.",
+      "en": "A polygon or line layer. The layer is not modified, the result goes\nto a new layer."
+     },
+     "geometry": [
+      "polygon",
+      "line"
+     ]
+    },
+    {
+     "key": "TOLERANCE",
+     "kind": "number",
+     "label": {
+      "ru": "Допуск (в единицах CRS слоя)",
+      "en": "Tolerance (in layer CRS units)"
+     },
+     "hint": {
+      "ru": "Максимальное расстояние, на которое разрешено сдвинуть вершину.\nОн же радиус поиска соседних рёбер для вставки узлов.\nБерите чуть больше реальной величины расхождений и заметно меньше\nдлины самого короткого осмысленного ребра.",
+      "en": "The maximum distance a vertex is allowed to move. It is also the\nsearch radius for neighbouring edges when inserting nodes. Take a\nlittle more than the real size of the discrepancies and clearly less\nthan the length of the shortest meaningful edge."
+     },
+     "minimum": 1e-09,
+     "default": 2.0
+    },
+    {
+     "key": "MODE",
+     "kind": "enum",
+     "label": {
+      "ru": "Режим",
+      "en": "Mode"
+     },
+     "hint": {
+      "ru": "Полная сшивка закрывает зазоры и согласует узлы.\nТолько вставка узлов не меняет ни одной существующей координаты,\nэто безопасный первый проход для контроля объёма правок.",
+      "en": "Full snapping closes gaps and reconciles nodes. Node insertion only\ndoes not change any existing coordinate, it is a safe first pass for\nchecking the amount of edits."
+     },
+     "options": [
+      {
+       "ru": "Слияние вершин и вставка узлов (полная сшивка)",
+       "en": "Merge vertices and insert nodes (full snap)"
+      },
+      {
+       "ru": "Только вставка узлов (вершины не двигаются)",
+       "en": "Insert nodes only (vertices do not move)"
+      },
+      {
+       "ru": "Только слияние вершин",
+       "en": "Merge vertices only"
+      }
+     ],
+     "default": 0
+    },
+    {
+     "key": "REFERENCE",
+     "kind": "features",
+     "label": {
+      "ru": "Эталонный слой (необязательно)",
+      "en": "Reference layer (optional)"
+     },
+     "hint": {
+      "ru": "Слой, который трогать нельзя. Его вершины становятся опорными,\nвходной слой подтягивается к ним. Сам эталон не изменяется.",
+      "en": "A layer that must not be touched. Its vertices become anchors, and\nthe input layer is pulled to them. The reference itself is not\nmodified."
+     },
+     "geometry": [
+      "polygon",
+      "line"
+     ],
+     "optional": true
+    },
+    {
+     "key": "PRIORITY",
+     "kind": "enum",
+     "label": {
+      "ru": "Кто кого притягивает",
+      "en": "Which object attracts which"
+     },
+     "hint": {
+      "ru": "Определяет, чьи вершины остаются на месте при слиянии.\nОбычно на месте оставляют крупный объект,\nа мелкий подтянуть к нему.",
+      "en": "Defines whose vertices stay in place when merging. Usually the large\nfeature stays in place and the small one is pulled to it."
+     },
+     "options": [
+      {
+       "ru": "По порядку объектов в слое",
+       "en": "By object order in the layer"
+      },
+      {
+       "ru": "Крупные объекты притягивают мелкие",
+       "en": "Larger objects attract smaller ones"
+      }
+     ],
+     "default": 1
+    },
+    {
+     "key": "Z_MODE",
+     "kind": "enum",
+     "label": {
+      "ru": "Отметка Z вставленного узла",
+      "en": "Z value of an inserted node"
+     },
+     "hint": {
+      "ru": "Интерполяция сохраняет форму ребра в разрезе.\nВторой вариант нужен, когда узлы должны совпасть и по высоте.",
+      "en": "Interpolation keeps the shape of the edge in section. The second\noption is needed when nodes must match in height too."
+     },
+     "options": [
+      {
+       "ru": "Интерполировать вдоль ребра",
+       "en": "Interpolate along the edge"
+      },
+      {
+       "ru": "Взять у притянутой вершины",
+       "en": "Take from the attracted vertex"
+      }
+     ],
+     "default": 0
+    },
+    {
+     "key": "CROSSINGS",
+     "kind": "bool",
+     "label": {
+      "ru": "Ставить узлы в точках пересечения рёбер",
+      "en": "Insert nodes at edge intersections"
+     },
+     "hint": {
+      "ru": "Нужно для перехлёстов, где рёбра пересекаются крест-накрест,\nа общих вершин нет. Вставка узлов по вершинам такой случай\nне закрывает, потому что вставлять там нечего.",
+      "en": "Needed for crossings where edges cross each other and have no shared\nvertices. Node insertion by vertices does not close such a case,\nbecause there is nothing to insert there."
+     },
+     "default": true
+    },
+    {
+     "key": "PROTECT",
+     "kind": "bool",
+     "label": {
+      "ru": "Не изменять объекты уже допуска",
+      "en": "Do not modify objects narrower than the tolerance"
+     },
+     "hint": {
+      "ru": "У объекта, чья ширина меньше допуска, противоположные берега\nслиплись бы, и он схлопнулся бы сам в себя. С этой галочкой он\nостаётся нетронутым и служит опорой. Соседи подтягиваются к нему.\nБез неё такие объекты теряются целиком.",
+      "en": "A feature narrower than the tolerance would have its opposite banks\nstuck together, and it would collapse into itself. With this\ncheckbox it stays untouched and serves as an anchor. The neighbours\nare pulled to it. Without it such features are lost entirely."
+     },
+     "default": true
+    },
+    {
+     "key": "REPAIR",
+     "kind": "enum",
+     "label": {
+      "ru": "Если сшивка испортила геометрию",
+      "en": "If snapping broke the geometry"
+     },
+     "hint": {
+      "ru": "Слияние вершин выворачивает форму, если объект уже допуска.\nПротивоположные берега слипаются. Первый вариант пробует исправить,\nа если правка съедает больше четверти площади, возвращает объект\nв исходный вид. Второй сразу возвращает исходный, тогда границы\nтакого объекта останутся несогласованными. Третий пишет как вышло.",
+      "en": "Vertex merging turns the shape inside out if a feature is narrower\nthan the tolerance. The opposite banks stick together. The first\noption tries to repair, and if the repair takes more than a quarter\nof the area, it restores the feature to its original state. The\nsecond restores the original at once, and the borders of such a\nfeature stay inconsistent. The third writes the result as it came\nout."
+     },
+     "options": [
+      {
+       "ru": "Исправить, а если не выходит, вернуть исходную геометрию",
+       "en": "Repair, and if that fails restore the original geometry"
+      },
+      {
+       "ru": "Вернуть исходную геометрию объекта",
+       "en": "Restore the original geometry"
+      },
+      {
+       "ru": "Оставить как есть",
+       "en": "Leave as is"
+      }
+     ],
+     "default": 0
+    },
+    {
+     "key": "VALIDATE",
+     "kind": "bool",
+     "label": {
+      "ru": "Проверять корректность геометрии до и после",
+      "en": "Check geometry validity before and after"
+     },
+     "hint": {
+      "ru": "Считает количество некорректных геометрий на входе и на выходе.\nНа больших слоях проверка занимает заметное время.",
+      "en": "Counts invalid geometries at the input and at the output. On large\nlayers the check takes noticeable time."
+     },
+     "default": true
+    },
+    {
+     "key": "OUTPUT",
+     "kind": "sink",
+     "label": {
+      "ru": "Сшитый слой",
+      "en": "Snapped layer"
+     },
+     "hint": {
+      "ru": "Новый слой со сшитой геометрией и атрибутами исходного.",
+      "en": "A new layer with the snapped geometry and the attributes of the\nsource."
+     },
+     "geometry": "any",
+     "fields": [
+      [
+       "id",
+       "int"
+      ],
+      [
+       "name",
+       "string"
+      ]
+     ]
+    },
+    {
+     "key": "REPORT",
+     "kind": "sink",
+     "label": {
+      "ru": "Точки правок (необязательно)",
+      "en": "Edit points (optional)"
+     },
+     "hint": {
+      "ru": "Точка на месте каждой правки. Поле kind называет вид правки,\nполе dist хранит смещение.",
+      "en": "A point at the place of each edit. The kind field names the kind of\nedit, the dist field holds the displacement."
+     },
+     "geometry": "point",
+     "optional": true,
+     "fields": [
+      [
+       "kind",
+       "string"
+      ],
+      [
+       "dist",
+       "double"
+      ],
+      [
+       "ring",
+       "int"
+      ]
+     ]
+    }
+   ],
+   "messages": [
+    {
+     "ru": "Чтение слоя...",
+     "en": "Reading the layer..."
+    },
+    {
+     "ru": "── Результат ──",
+     "en": "-- Result --"
+    },
+    {
+     "ru": "Сшивка: колец %d, вершин %d, допуск %g",
+     "en": "Snapping: %d rings, %d vertices, tolerance %g"
+    },
+    {
+     "ru": "Длина ребра: медиана %s, пятый процентиль %s (рёбер %d)",
+     "en": "Edge length: median %s, fifth percentile %s (%d edges)"
+    },
+    {
+     "ru": "Вершин сдвинуто:      %d",
+     "en": "Vertices moved:       %d"
+    },
+    {
+     "ru": "Смещение макс/сред:   %s / %s",
+     "en": "Shift max/mean:       %s / %s"
+    },
+    {
+     "ru": "Узлов вставлено:      %d (из них в пересечениях рёбер: %d)",
+     "en": "Nodes inserted:       %d (of which at edge intersections: %d)"
+    },
+    {
+     "ru": "Вершин было/стало:    %d / %d",
+     "en": "Vertices before/after: %d / %d"
+    },
+    {
+     "ru": "Объектов записано:    %d",
+     "en": "Objects written:      %d"
+    },
+    {
+     "ru": "Эталон: колец %d",
+     "en": "Reference layer: %d rings"
+    },
+    {
+     "ru": "Допуск больше пяти процентов самых коротких рёбер (%s), мелкие изгибы будут сглажены.",
+     "en": "The tolerance exceeds the fifth percentile of edge length (%s), small bends will be smoothed out."
+    },
+    {
+     "ru": "Колец не изменялось:  %d (уже допуска)",
+     "en": "Rings left unchanged: %d (narrower than the tolerance)"
+    },
+    {
+     "ru": "Площадь до/после:     %s / %s (%s, %+.3f %%)",
+     "en": "Area before/after:    %s / %s (%s, %+.3f %%)"
+    },
+    {
+     "ru": "Вырожденных колец удалено: %d (допуск больше размера объекта)",
+     "en": "Degenerate rings removed: %d (the tolerance exceeds the object size)"
+    },
+    {
+     "ru": "Объектов потеряно целиком: %d",
+     "en": "Objects lost entirely: %d"
+    },
+    {
+     "ru": "Объектов без геометрии пропущено: %d",
+     "en": "Objects without geometry skipped: %d"
+    },
+    {
+     "ru": "Объектов испорчено сшивкой: %d",
+     "en": "Objects broken by snapping: %d"
+    },
+    {
+     "ru": "  идентификаторы: %s%s",
+     "en": "  identifiers: %s%s"
+    },
+    {
+     "ru": "Некорректных геометрий до/после: %d / %d",
+     "en": "Invalid geometries before/after: %d / %d"
+    },
+    {
+     "ru": "Некорректных стало больше. Уменьшите допуск. Ориентир это пятый процентиль длины ребра, он напечатан выше.",
+     "en": "The number of invalid geometries has grown. Reduce the tolerance. The fifth percentile of edge length printed above is a good reference."
+    },
+    {
+     "ru": "Ширина колец: минимум %s, медиана %s",
+     "en": "Ring width: minimum %s, median %s"
+    },
+    {
+     "ru": "Колец уже допуска: %d. Они оставлены без изменений и служат опорой для соседей.",
+     "en": "Rings narrower than the tolerance: %d. They are left unchanged and serve as an anchor for their neighbours."
+    },
+    {
+     "ru": "  из них исправлено:        %d",
+     "en": "  of which repaired:        %d"
+    },
+    {
+     "ru": "  возвращено к исходным:    %d",
+     "en": "  restored to original:     %d"
+    },
+    {
+     "ru": "Колец уже допуска: %d. У такого кольца противоположные берега слипнутся, и оно схлопнется само в себя. Включите защиту узких объектов либо возьмите допуск меньше %s.",
+     "en": "Rings narrower than the tolerance: %d. The opposite banks of such a ring would stick together and it would collapse into itself. Enable the protection of narrow objects or use a tolerance below %s."
+    }
+   ]
+  },
+  {
+   "code": "1.06",
+   "name": "insertnodes",
+   "title": {
+    "ru": "Вставка недостающих узлов",
+    "en": "Insertion of missing nodes"
+   },
+   "group": "1",
+   "help": {
+    "ru": "<b>1.06 Вставка недостающих узлов</b><br><br>Достраивает узлы там, где вершина одного объекта лежит на ребре другого, но узла там нет. Ничего больше инструмент не делает. Существующие вершины не двигаются и не удаляются.<br><br><b>Когда это нужно</b>. Границы соседей совпадают геометрически, а вершинность у них разная. Отрисовке это не мешает и на глаз не видно, но мешает объединению по атрибуту, оверлеям, генерализации и загрузке в базу со строгой топологией. Типичный источник это независимое построение полигонов по разные стороны общей прямой, например линии разлома или края маски обрезки.<br><br><b>Гарантия</b>. Узел ставится в проекцию точки на ребро, то есть строго на прямую этого ребра. Поэтому форма не меняется вовсе, и появиться самопересечению неоткуда. Отчёт печатает площадь до и после. Расхождение возможно только на уровне точности координат.<br><br><b>Проходов может понадобиться несколько</b>. Вставленный узел сам иногда ложится на ребро третьего объекта. Инструмент повторяет проходы, пока узлы находятся, и печатает их количество.<br><br><b>Опорный слой</b> (необязательно). Его вершины служат источником узлов для входного слоя. Сам он не изменяется и в результат не попадает.<br><br><b>Отклонение от ребра</b> это не допуск в обычном смысле. Здесь расстояние равно нулю, и величина нужна лишь как защита. Умолчание отвечает точности координат, а не размеру объектов. Увеличивать его до метров не следует. Инструмент начнёт подтягивать рёбра, и гарантия неизменной площади перестанет выполняться.<br><br>Находит эти места инструмент <b>1.01</b>, тип нарушения <b>вершина лежит на ребре соседа без узла</b>.",
+    "en": "<b>1.06 Insertion of missing nodes</b><br><br>Adds nodes where a vertex of one object lies on the edge of another but no node is present. The tool does nothing else. Existing vertices are neither moved nor deleted.<br><br><b>When this is needed</b>. The borders of neighbours coincide geometrically while their vertices differ. This does not affect rendering and is invisible to the eye, but it breaks dissolve by attribute, overlays, generalisation and loading into a database with strict topology. A typical source is independent construction of polygons on either side of a shared straight line, such as a fault line or the edge of a clipping mask.<br><br><b>Guarantee</b>. A node is placed at the projection of the point onto the edge, that is strictly on the line of that edge. The shape therefore does not change at all and a self-intersection has nowhere to come from. The report prints the area before and after. A discrepancy is possible only at the level of coordinate precision.<br><br><b>Several passes may be required</b>. An inserted node sometimes lands on the edge of a third object. The tool repeats passes while nodes are still found, and prints their number.<br><br><b>The donor layer</b> (optional). Its vertices serve as a source of nodes for the input layer. It is not modified and does not appear in the result.<br><br><b>The deviation from the edge</b> is not a tolerance in the usual sense. Here the distance is zero, and the number is needed only as a safeguard. The default matches coordinate precision, not object size. It should not be raised to metres. The tool would start pulling edges and the promise about area would stop holding.<br><br>These places are found by tool <b>1.01</b>, violation type <b>vertex lies on a neighbour edge without a node</b>."
+   },
+   "params": [
+    {
+     "key": "INPUT",
+     "kind": "features",
+     "label": {
+      "ru": "Входной слой (полигоны или линии)",
+      "en": "Input layer (polygons or lines)"
+     },
+     "hint": {
+      "ru": "Полигональный или линейный слой.\nСлой не изменяется, результат пишется в новый слой.",
+      "en": "A polygon or line layer. The layer is not modified, the result goes\nto a new layer."
+     },
+     "geometry": [
+      "polygon",
+      "line"
+     ]
+    },
+    {
+     "key": "REFERENCE",
+     "kind": "features",
+     "label": {
+      "ru": "Опорный слой (необязательно)",
+      "en": "Donor layer (optional)"
+     },
+     "hint": {
+      "ru": "Источник узлов для входного слоя. Не изменяется и в результат\nне попадает. Нужен, когда вершины одного слоя лежат на рёбрах другого.",
+      "en": "The source of nodes for the input layer. It is not modified and does\nnot go into the result. Needed when the vertices of one layer lie on\nthe edges of another."
+     },
+     "geometry": [
+      "polygon",
+      "line"
+     ],
+     "optional": true
+    },
+    {
+     "key": "EPS",
+     "kind": "number",
+     "label": {
+      "ru": "Допустимое отклонение вершины от ребра",
+      "en": "Allowed vertex deviation from the edge"
+     },
+     "hint": {
+      "ru": "Защита от ложных срабатываний, а не допуск поиска.\nУзел ставится, только если вершина лежит на ребре ближе\nэтой величины. Значение отвечает точности координат.\nЗадавать метры здесь не следует.",
+      "en": "Protection against false positives, not a search tolerance. A node\nis placed only when a vertex lies on an edge closer than this value.\nThe value matches the coordinate precision. Do not set metres here."
+     },
+     "minimum": 1e-12,
+     "default": 1e-06
+    },
+    {
+     "key": "CROSSINGS",
+     "kind": "bool",
+     "label": {
+      "ru": "Ставить узлы в точках пересечения рёбер",
+      "en": "Insert nodes at edge intersections"
+     },
+     "hint": {
+      "ru": "Точка пересечения лежит на обоих рёбрах, поэтому такая вставка\nтоже не меняет ни формы, ни площади.",
+      "en": "The crossing point lies on both edges, so such an insertion does not\nchange the shape or the area either."
+     },
+     "default": true
+    },
+    {
+     "key": "MAX_PASSES",
+     "kind": "integer",
+     "label": {
+      "ru": "Предельное количество проходов",
+      "en": "Maximum number of passes"
+     },
+     "hint": {
+      "ru": "Вставленный узел сам иногда ложится на ребро третьего объекта,\nпоэтому проходы повторяются, пока узлы находятся. На согласованном\nпокрытии хватает двух-трёх. Если предел достигнут, значит слой\nне является покрытием. Причина обычно в наложении объектов.",
+      "en": "An inserted node sometimes lands on an edge of a third feature\nitself, so the passes repeat while nodes are found. On a consistent\ncoverage two or three are enough. If the limit is reached, the layer\nis not a coverage. The usual cause is overlapping features."
+     },
+     "minimum": 1.0,
+     "maximum": 50.0,
+     "default": 10
+    },
+    {
+     "key": "OUTPUT",
+     "kind": "sink",
+     "label": {
+      "ru": "Слой с узлами",
+      "en": "Layer with nodes"
+     },
+     "hint": {
+      "ru": "Новый слой со вставленными узлами и атрибутами исходного.\nВставка узлов не меняет ни форму, ни площадь.",
+      "en": "A new layer with the inserted nodes and the attributes of the\nsource. Node insertion changes neither the shape nor the area."
+     },
+     "geometry": "any",
+     "fields": [
+      [
+       "id",
+       "int"
+      ],
+      [
+       "name",
+       "string"
+      ]
+     ]
+    },
+    {
+     "key": "REPORT",
+     "kind": "sink",
+     "label": {
+      "ru": "Вставленные узлы (необязательно)",
+      "en": "Inserted nodes (optional)"
+     },
+     "hint": {
+      "ru": "Точка на месте каждого вставленного узла.\nПоле dist хранит отклонение вершины от ребра.",
+      "en": "A point at the place of each inserted node. The dist field holds the\noffset of the vertex from the edge."
+     },
+     "geometry": "point",
+     "optional": true,
+     "fields": [
+      [
+       "kind",
+       "string"
+      ],
+      [
+       "dist",
+       "double"
+      ]
+     ]
+    }
+   ],
+   "messages": [
+    {
+     "ru": "Чтение слоя...",
+     "en": "Reading the layer..."
+    },
+    {
+     "ru": "── Результат ──",
+     "en": "-- Result --"
+    },
+    {
+     "ru": "Колец %d, вершин %d, отклонение %g",
+     "en": "Rings %d, vertices %d, deviation %g"
+    },
+    {
+     "ru": "Узлов вставлено всего: %d",
+     "en": "Nodes inserted in total: %d"
+    },
+    {
+     "ru": "  на рёбрах соседей:   %d",
+     "en": "  on neighbour edges:    %d"
+    },
+    {
+     "ru": "  в пересечениях рёбер: %d",
+     "en": "  at edge intersections: %d"
+    },
+    {
+     "ru": "Проходов: %d",
+     "en": "Passes: %d"
+    },
+    {
+     "ru": "Предел количества проходов достигнут, узлы могут быть ещё нужны. На согласованном покрытии хватает двух-трёх проходов. Запустите инструмент повторно по результату либо поднимите предел.",
+     "en": "The pass limit has been reached and more nodes may still be needed. Two or three passes are enough for a consistent coverage. Run the tool again over the result or raise the limit."
+    },
+    {
+     "ru": "Больше половины узлов пришлось на пересечения рёбер. Это признак того, что объекты слоя накладываются друг на друга, то есть слой не является единым покрытием. Посмотрите перекрытия инструментом 1.01. Если наложение входит в замысел, снимите галочку об узлах в пересечениях. Тогда инструмент достроит только недостающие общие вершины.",
+     "en": "More than half of the nodes fell on edge intersections. This means the objects of the layer overlap each other, that is the layer is not a single coverage. Look at the overlaps with tool 1.01. If the overlap is by design, clear the edge intersection option. The tool will then only add the missing shared vertices."
+    },
+    {
+     "ru": "Объектов изменено:    %d",
+     "en": "Objects changed:      %d"
+    },
+    {
+     "ru": "Вершин было/стало:    %d / %d",
+     "en": "Vertices before/after: %d / %d"
+    },
+    {
+     "ru": "Чтобы понять природу, запустите ещё раз со снятой галочкой об узлах в пересечениях рёбер. Если откаты исчезнут, дело в пересечениях, если останутся, в самих вершинах на рёбрах.",
+     "en": "To understand the cause, run again with the edge intersection nodes option turned off. If the rollbacks disappear, the intersections are to blame; if they remain, the vertices on edges are."
+    },
+    {
+     "ru": "Объектов на входе/выходе: %d / %d",
+     "en": "Objects in/out: %d / %d"
+    },
+    {
+     "ru": "Опорный слой: колец %d",
+     "en": "Donor layer: %d rings"
+    },
+    {
+     "ru": "Проход %d: узлов %d",
+     "en": "Pass %d: %d nodes"
+    },
+    {
+     "ru": "Пересечений пропущено как неустойчивые: %d",
+     "en": "Crossings skipped as unstable: %d"
+    },
+    {
+     "ru": "Совпадающих вершин снято: %d (точные дубликаты, на форму не влияют)",
+     "en": "Coincident vertices removed: %d (exact duplicates, they do not affect the shape)"
+    },
+    {
+     "ru": "Площадь до/после:     %.6f / %.6f",
+     "en": "Area before/after:    %.6f / %.6f"
+    },
+    {
+     "ru": "Площадь не изменилась ни на единицу.",
+     "en": "The area did not change by a single unit."
+    },
+    {
+     "ru": "Объектов возвращено к исходному виду: %d. Вставка узла вывернула их геометрию, узлы для них не добавлены. Идентификаторы: %s%s",
+     "en": "Objects restored to their original form: %d. Node insertion turned their geometry inside out, so no nodes were added for them. Identifiers: %s%s"
+    },
+    {
+     "ru": "Объектов потеряно: %d. Этого быть не должно.",
+     "en": "Objects lost: %d. This should not happen."
+    },
+    {
+     "ru": "Вырожденных колец: %d",
+     "en": "Degenerate rings: %d"
+    },
+    {
+     "ru": "Расхождение площади %.3e, это ошибка округления.",
+     "en": "Area discrepancy %.3e, this is a rounding error."
+    },
+    {
+     "ru": "Площадь изменилась на %s. Инструмент обещает не менять её вовсе, поэтому проверьте отклонение от ребра. Скорее всего оно завышено.",
+     "en": "The area changed by %s. The tool promises not to change it at all, so check the deviation from the edge. It is most likely too large."
+    }
+   ]
+  },
+  {
+   "code": "1.07",
+   "name": "assemblycheck",
+   "title": {
+    "ru": "Контроль сборки по атрибуту",
+    "en": "Assembly check by attribute"
+   },
+   "group": "1",
+   "help": {
+    "ru": "<b>1.07 Контроль сборки по атрибуту</b><br><br>Проверяет, собирается ли каждая группа объектов в одно целое тело. Объединение объектов с одинаковым значением атрибута должно давать ровно одну часть без внутренних колец.<br><br><b>Зачем это нужно</b>. Именно ради корректной сборки блоков и панелей покрытие и приводится в порядок. Проверка отвечает на конечный вопрос напрямую, вместо ручного объединения без атрибутов и осмотра результата.<br><br><b>Что находится</b><br><ul><li><b>Группа распалась на части</b>. Внутри группы остался разрыв. В поле <b>note</b> указано расстояние до ближайшей части. Это и есть допуск, которого не хватило.</li><li><b>Внутреннее кольцо в группе</b>. Внутри группы осталась дыра. Настоящие технологические полости тоже попадут сюда, их отличают по площади.</li></ul><b>Важное свойство</b>. Проверка находит то, чего не видит поиск щелей по всему покрытию. Зазор, выходящий на внешний край, дырой в объединении не является, но при сборке группы он разрезает её на части.<br><br><b>Когда группа не обязана быть цельной</b>. Одно значение атрибута часто описывает несколько разнесённых тел. Это полигоны изолиний одного уровня, участки одного типа, острова. Для таких данных задайте <b>максимальный разрыв</b>. Части, отстоящие дальше него, считаются отдельными телами. Признак того, что порог нужен, виден сразу. Если в поле note стоят сотни метров, это не дефекты сборки.<br><br><b>Для линейных слоёв</b> проверяется то же самое, собирается ли группа в одну связную цепь. Смежные участки склеиваются, поэтому количество исходных отрезков роли не играет. Внутренних колец у линий не бывает, мерой служит длина.<br><br>Если выбрано несколько полей, ключом становится их сочетание.",
+    "en": "<b>1.07 Assembly check by attribute</b><br><br>Checks whether each group of objects assembles into one whole body. The union of objects sharing an attribute value must produce exactly one part without interior rings.<br><br><b>Why this is needed</b>. Correct assembly of blocks and panels is exactly what the coverage is being cleaned for. The check answers that final question directly, instead of a manual union without attributes followed by staring at the result.<br><br><b>What is found</b><br><ul><li><b>The group split into parts</b>. A break remains inside the group. The <b>note</b> field gives the distance to the nearest part. That is exactly the tolerance that was missing.</li><li><b>An interior ring within a group</b>. A hole remains inside the group. Genuine technological cavities land here too, and are told apart by area.</li></ul><b>An important property</b>. The check finds what a coverage-wide gap search cannot see. A gap reaching the outer edge is not a hole in the union, yet it cuts the group in two during assembly.<br><br><b>When a group need not be whole</b>. One attribute value often describes several separated bodies. These are contour polygons of one level, areas of one type, islands. For such data set the <b>maximum gap</b>. Parts further apart than that are treated as separate bodies. The sign that the threshold is needed shows at once. If the note field holds hundreds of metres, these are not assembly defects.<br><br><b>For line layers</b> the question is the same - whether the group assembles into one connected chain. Adjacent segments are merged, so the number of original pieces does not matter. Lines have no interior rings, and length serves as the measure.<br><br>If several fields are selected, their combination becomes the key."
+   },
+   "params": [
+    {
+     "key": "INPUT",
+     "kind": "features",
+     "label": {
+      "ru": "Слой (полигоны или линии)",
+      "en": "Layer (polygons or lines)"
+     },
+     "hint": {
+      "ru": "Слой полигонов или линий. Объекты собираются в группы\nпо значению полей группировки.",
+      "en": "A layer of polygons or lines. Features are assembled into groups by\nthe value of the grouping fields."
+     },
+     "geometry": [
+      "polygon",
+      "line"
+     ]
+    },
+    {
+     "key": "FIELDS",
+     "kind": "field",
+     "label": {
+      "ru": "Поле или поля группировки",
+      "en": "Grouping field or fields"
+     },
+     "hint": {
+      "ru": "Объекты с одинаковым значением этих полей собираются в одно тело.\nКаждое тело проверяется на разрывы и полости.",
+      "en": "Features with the same value of these fields are assembled into one\nbody. Each body is checked for breaks and cavities."
+     },
+     "parent": "INPUT",
+     "multiple": true
+    },
+    {
+     "key": "AREA",
+     "kind": "number",
+     "label": {
+      "ru": "Порог площади мусора (в кв. единицах CRS)",
+      "en": "Debris area threshold (in square CRS units)"
+     },
+     "hint": {
+      "ru": "Внутренние кольца мельче порога помечаются как технический мусор.",
+      "en": "Inner rings smaller than the threshold are marked as technical\ndebris."
+     },
+     "minimum": 0.0,
+     "default": 1.0
+    },
+    {
+     "key": "MAX_GAP",
+     "kind": "number",
+     "label": {
+      "ru": "Максимальный разрыв внутри тела (в единицах CRS)",
+      "en": "Maximum gap within one body (in CRS units)"
+     },
+     "hint": {
+      "ru": "Части, отстоящие друг от друга дальше этого расстояния, считаются\nотдельными телами и находкой не являются.\nНоль означает, что группа обязана собираться в одно целое.\nНоль подходит для зон, блоков и панелей. Для полигонов изолиний\nи подобных данных задавайте величину порядка нескольких допусков.",
+      "en": "Parts farther apart than this distance count as separate bodies and\nare not a finding. Zero means that the group must assemble into one\npiece. Zero suits zones, blocks and panels. For isoline polygons and\nsimilar data set a value of several tolerances."
+     },
+     "minimum": 0.0,
+     "default": 0.0
+    },
+    {
+     "key": "IGNORE_HOLES",
+     "kind": "bool",
+     "label": {
+      "ru": "Внутренние кольца допустимы",
+      "en": "Interior rings are acceptable"
+     },
+     "hint": {
+      "ru": "Отключает поиск полостей внутри тел. Нужно там, где полость\nвходит в замысел, например у полигонов изолиний.",
+      "en": "Switches off the search for cavities inside bodies. Needed where a\ncavity is part of the design, for example for isoline polygons."
+     },
+     "default": false
+    },
+    {
+     "key": "OUTPUT",
+     "kind": "sink",
+     "label": {
+      "ru": "Находки сборки",
+      "en": "Assembly findings"
+     },
+     "hint": {
+      "ru": "Слой точек, по одной на каждую находку сборки.\nПоля те же, что у слоя находок инструмента 1.01.",
+      "en": "A point layer with one point per assembly finding. The fields are\nthe same as in the findings layer of tool 1.01."
+     },
+     "geometry": "point",
+     "fields": [
+      [
+       "num",
+       "int"
+      ],
+      [
+       "type",
+       "string"
+      ],
+      [
+       "label",
+       "string"
+      ],
+      [
+       "severity",
+       "string"
+      ],
+      [
+       "fid_a",
+       "long"
+      ],
+      [
+       "fid_b",
+       "long"
+      ],
+      [
+       "value",
+       "double"
+      ],
+      [
+       "note",
+       "string"
+      ],
+      [
+       "grp",
+       "string"
+      ]
+     ]
+    }
+   ],
+   "messages": [
+    {
+     "ru": "── Сборка по %s ──",
+     "en": "-- Assembly by %s --"
+    },
+    {
+     "ru": "Групп: %d, без дефектов сборки: %d",
+     "en": "Groups: %d, without assembly defects: %d"
+    },
+    {
+     "ru": "Дефектов сборки не найдено.",
+     "en": "No assembly defects found."
+    },
+    {
+     "ru": "Групп из нескольких отдельных тел: %d (разрыв больше заданного порога, нарушением не считается)",
+     "en": "Groups made of several separate bodies: %d (the gap exceeds the given threshold and is not a violation)"
+    },
+    {
+     "ru": "Групп с дефектами сборки: %d. Смотрите поле note. Там стоит расстояние, которого не хватило допуску. Если разрывы измеряются сотнями метров, значит группы не обязаны быть цельными и нужно задать максимальный разрыв.",
+     "en": "Groups with assembly defects: %d. See the note field. It holds the distance the tolerance was missing. If the gaps are hundreds of metres, the groups need not be whole and a maximum gap should be set."
+    },
+    {
+     "ru": "группа",
+     "en": "group"
+    },
+    {
+     "ru": "тел",
+     "en": "bodies"
+    },
+    {
+     "ru": "разрыв",
+     "en": "split"
+    },
+    {
+     "ru": "колец",
+     "en": "rings"
+    },
+    {
+     "ru": "... и ещё %d групп, см. слой находок",
+     "en": "... and %d more groups, see the findings layer"
+    },
+    {
+     "ru": "длина",
+     "en": "length"
+    },
+    {
+     "ru": "площадь",
+     "en": "area"
+    },
+    {
+     "ru": "разрыв до ближайшей части 0.05",
+     "en": "gap to the nearest part 0.05"
+    },
+    {
+     "ru": "полость внутри группы площадью 20",
+     "en": "a cavity inside the group, area 20"
+    }
+   ]
+  },
+  {
+   "code": "1.08",
+   "name": "cutintocoverage",
+   "title": {
+    "ru": "Ввод контуров в покрытие",
+    "en": "Contours into a coverage"
+   },
+   "group": "1",
+   "help": {
+    "ru": "<b>1.08 Ввод контуров в покрытие</b><br><br>Вводит нарисованные контуры в полигональное покрытие. Результат это новый слой. Контур стоит в нём отдельным объектом, а что происходит с соседями, задаёт режим наложения.<br><br><b>Зачем отдельный инструмент</b>. Врезка средствами редактора делает два независимых действия. У нового объекта отрезается то, что легло на соседей, а у каждого соседа отрезается то, что легло под новый объект. Кромка разреза приходит из двух разных вычислений и совпадает только на вид. Вершины расходятся, и дальше эти расхождения находит инструмент <b>1.01</b>.<br><br><b>Гарантии</b><br><ul><li>Кромка разреза приходит из одного наложения и достаётся обеим сторонам одинаковой.</li><li>Исходный слой не изменяется.</li><li>Врезка площадь только перераспределяет. Прирост покрытия равен площади контуров, легшей за его краем, и отчёт печатает обе величины.</li></ul><br><b>Режим наложения</b><br><ul><li><b>Наложение</b>. Новый объект получает весь контур, соседи урезаются. Покрытие растёт на ту часть контура, что легла за его краем.</li><li><b>Отсечение</b>. Новый объект ложится только в свободное место, соседи площади не теряют.</li><li><b>Врезка</b>. Новый объект получает только то, что лежит внутри покрытия. Площадь покрытия не меняется, она перераспределяется.</li></ul><br><b>Порог площади</b> работает по общему правилу плагина. Остаток соседа мельче порога отходит контуру целиком, осколок не создаётся. Кусок соседа мельче порога контуру не достаётся, и сосед остаётся как был.<br><br><b>Атрибуты нового объекта</b>. Поле, у которого все отдавшие площадь соседи имеют одно значение, получает это значение. Поле с разными значениями остаётся пустым, потому что выбрать между соседями инструмент не может. Контур, легший на пустое место, получает пустые атрибуты целиком.<br><br><b>Контуры применяются по одному</b>, в порядке слоя. Результат каждой врезки входит в покрытие до начала следующей. Поэтому два перекрывающихся контура не накладываются друг на друга.<br><br><b>Отметки Z</b> возвращаются с ближайшего исходного ребра. Вершина на середине ребра получает отметку, посчитанную вдоль этого ребра, как это делает инструмент <b>1.06</b>. Объекты, которых врезка не коснулась, переносятся без изменения.<br><br>Линия врезается после построения буфера. Буфер строится отдельным инструментом QGIS.",
+    "en": "<b>1.08 Contours into a coverage</b><br><br>Puts drawn contours into a polygon coverage. The result is a new layer. The contour stands there as a feature of its own, and what happens to the neighbours is set by the overlay mode.<br><br><b>Why a separate tool</b>. Cutting by hand in the editor takes two independent actions. The new feature loses what fell on the neighbours, and every neighbour loses what fell under the new feature. The cut edge comes out of two different computations and matches only to the eye. The vertices drift apart, and tool <b>1.01</b> then reports the difference.<br><br><b>Guarantees</b><br><ul><li>The cut edge comes out of a single overlay and reaches both sides the same.</li><li>The input layer is never changed.</li><li>Cutting in only redistributes the area. The growth of the coverage equals the part of the contours that fell beyond its edge, and the report prints both values.</li></ul><br><b>Overlay mode</b><br><ul><li><b>Overlay</b>. The new feature gets the whole contour and the neighbours are trimmed. The coverage grows by the part of the contour that fell beyond its edge.</li><li><b>Clipping</b>. The new feature lies in free space only, the neighbours lose no area.</li><li><b>Cutting in</b>. The new feature gets only what lies inside the coverage. The area of the coverage does not change, it is redistributed.</li></ul><br><b>The area threshold</b> follows the common rule of the plugin. A remainder of a neighbour smaller than the threshold goes to the contour whole, no sliver is created. A piece of a neighbour smaller than the threshold does not reach the contour, and the neighbour stays as it was.<br><br><b>Attributes of the new feature</b>. A field where every neighbour that gave up area holds one value receives that value. A field with differing values is left empty, because the tool cannot choose between the neighbours. A contour that fell on empty ground receives empty attributes throughout.<br><br><b>Contours are applied one by one</b>, in the order of the layer. The result of each cut enters the coverage before the next one starts. Two overlapping contours therefore do not pile up on each other.<br><br><b>Z values</b> are taken from the nearest source edge. A vertex in the middle of an edge receives a value computed along that edge, the way tool <b>1.06</b> does it. Features the cut did not touch are carried over unchanged.<br><br>A line is cut in after a buffer is built. The buffer is built by a separate QGIS tool."
+   },
+   "params": [
+    {
+     "key": "INPUT",
+     "kind": "features",
+     "label": {
+      "ru": "Покрытие (полигоны)",
+      "en": "Coverage (polygons)"
+     },
+     "hint": {
+      "ru": "Полигональный слой покрытия, в которое вводятся контуры.\nСлой не изменяется, результат пишется в новый слой.",
+      "en": "The polygon coverage layer that receives the contours. The layer is\nnot modified, the result goes to a new layer."
+     },
+     "geometry": [
+      "polygon"
+     ]
+    },
+    {
+     "key": "CUT",
+     "kind": "features",
+     "label": {
+      "ru": "Контуры (полигоны)",
+      "en": "Contours (polygons)"
+     },
+     "hint": {
+      "ru": "Каждый объект слоя это отдельный контур. Контуры применяются\nпо одному, в порядке слоя, и результат каждого входит в покрытие\nдо начала следующего. Линию перед врезкой превращают в полигон\nпостроением буфера.",
+      "en": "Each feature of the layer is a separate contour. Contours are\napplied one by one, in layer order, and the result of each enters\nthe coverage before the next one starts. A line is turned into a\npolygon by a buffer before it is cut in."
+     },
+     "geometry": [
+      "polygon"
+     ]
+    },
+    {
+     "key": "MODE",
+     "kind": "enum",
+     "label": {
+      "ru": "Режим наложения",
+      "en": "Overlay mode"
+     },
+     "hint": {
+      "ru": "Наложение отдаёт новому объекту весь контур, соседи урезаются.\nОтсечение оставляет соседям их площадь, а контур ложится только\nв свободное место. Врезка отдаёт новому объекту то, что лежит\nвнутри покрытия, и площадь покрытия при этом не меняется.",
+      "en": "Overlay gives the new feature the whole contour, the neighbours are\ntrimmed. Clip leaves the neighbours their area, and the contour\ntakes only free space. Inset gives the new feature what lies inside\nthe coverage, and the area of the coverage does not change."
+     },
+     "options": [
+      {
+       "ru": "Наложение",
+       "en": "Overlay"
+      },
+      {
+       "ru": "Отсечение",
+       "en": "Clipping"
+      },
+      {
+       "ru": "Врезка",
+       "en": "Cutting in"
+      }
+     ],
+     "default": 0
+    },
+    {
+     "key": "AREA",
+     "kind": "number",
+     "label": {
+      "ru": "Порог площади (в кв. единицах CRS)",
+      "en": "Area threshold (in square CRS units)"
+     },
+     "hint": {
+      "ru": "Остаток соседа мельче этой площади не оставляется отдельным\nобъектом, а отходит контуру целиком. Кусок соседа мельче этой\nплощади контуру не достаётся, и сосед остаётся как был.\nНоль режет всё, что пересеклось, вплоть до осколков в микроны.",
+      "en": "A neighbour remainder smaller than this area is not kept as a\nseparate feature and goes to the contour entirely. A piece of a\nneighbour smaller than this area does not go to the contour, and the\nneighbour stays as it was. Zero cuts everything that intersected,\ndown to slivers of microns."
+     },
+     "minimum": 0.0,
+     "default": 1.0
+    },
+    {
+     "key": "NODE_EPS",
+     "kind": "number",
+     "label": {
+      "ru": "Допустимое отклонение вершины от ребра",
+      "en": "Allowed vertex deviation from the edge"
+     },
+     "hint": {
+      "ru": "Разрез кладёт вершину на границу соседа с третьим объектом,\nи у этого третьего узла в той точке нет. Инструмент достраивает\nтакие узлы, как это делает инструмент 1.06. Узел ставится\nв проекцию точки на ребро, поэтому форма и площадь не меняются.\nНоль отключает вставку, и врезка оставит нарушение после себя.",
+      "en": "The cut puts a vertex on the border between a neighbour and a third\nfeature, and the third feature has no node at that point. The tool\nadds such nodes the way tool 1.06 does. The node is placed at the\nprojection of the point onto the edge, so the shape and the area do\nnot change. Zero switches the insertion off, and the cut leaves a\nviolation behind."
+     },
+     "minimum": 0.0,
+     "default": 1e-06
+    },
+    {
+     "key": "KEEP_Z",
+     "kind": "bool",
+     "label": {
+      "ru": "Восстанавливать отметки Z",
+      "en": "Restore Z values"
+     },
+     "hint": {
+      "ru": "Наложение работает в плане, поэтому отметка вершины берётся\nс ближайшего исходного ребра. Вершина на середине ребра получает\nотметку, посчитанную вдоль этого ребра. Объекты, которых врезка\nне коснулась, переносятся без изменения.",
+      "en": "The overlay works in plan, so the elevation of a vertex is taken\nfrom the nearest original edge. A vertex in the middle of an edge\ngets an elevation computed along that edge. Features the cut did not\ntouch are carried over unchanged."
+     },
+     "default": true
+    },
+    {
+     "key": "OUTPUT",
+     "kind": "sink",
+     "label": {
+      "ru": "Покрытие с контурами",
+      "en": "Coverage with the contours"
+     },
+     "hint": {
+      "ru": "Новый слой покрытия с введёнными контурами.\nОбъекты, которых врезка не коснулась, переносятся без изменения.",
+      "en": "A new coverage layer with the contours cut in. Features the cut did\nnot touch are carried over unchanged."
+     },
+     "geometry": "any",
+     "fields": [
+      [
+       "id",
+       "int"
+      ],
+      [
+       "name",
+       "string"
+      ]
+     ]
+    }
+   ],
+   "messages": [
+    {
+     "ru": "Наложение",
+     "en": "Overlay"
+    },
+    {
+     "ru": "Отсечение",
+     "en": "Clipping"
+    },
+    {
+     "ru": "Врезка",
+     "en": "Cutting in"
+    },
+    {
+     "ru": "── Результат ──",
+     "en": "-- Result --"
+    },
+    {
+     "ru": "Объектов %d, контуров %d, порог площади %g",
+     "en": "Objects %d, contours %d, area threshold %g"
+    },
+    {
+     "ru": "Режим наложения: %s",
+     "en": "Overlay mode: %s"
+    },
+    {
+     "ru": "Контуров врезано:            %d",
+     "en": "Contours cut in:              %d"
+    },
+    {
+     "ru": "Объектов изменено:           %d",
+     "en": "Objects changed:              %d"
+    },
+    {
+     "ru": "Объектов поглощено целиком:  %d",
+     "en": "Objects absorbed whole:       %d"
+    },
+    {
+     "ru": "Объектов добавлено:          %d",
+     "en": "Objects added:                %d"
+    },
+    {
+     "ru": "Узлов вставлено соседям:     %d",
+     "en": "Nodes inserted for neighbours: %d"
+    },
+    {
+     "ru": "Площадь до/после: %s / %s",
+     "en": "Area before/after: %s / %s"
+    },
+    {
+     "ru": "Легло вне покрытия: %s",
+     "en": "Fell outside the coverage: %s"
+    },
+    {
+     "ru": "Объектов на входе/выходе: %d / %d",
+     "en": "Objects in/out: %d / %d"
+    },
+    {
+     "ru": "Отброшено за краем покрытия: %s",
+     "en": "Dropped beyond the coverage edge: %s"
+    },
+    {
+     "ru": "Расхождение площади: %s. Врезка обязана площадь только перераспределять.",
+     "en": "Area discrepancy: %s. Cutting in must only redistribute the area."
+    },
+    {
+     "ru": "Контур %d: соседей затронуто %d, вне покрытия %s",
+     "en": "Contour %d: neighbours touched %d, outside the coverage %s"
+    }
+   ]
+  },
+  {
+   "code": "2.01",
+   "name": "topologysimplify",
+   "title": {
+    "ru": "Топологическое упрощение",
+    "en": "Topology-preserving simplify"
+   },
+   "group": "2",
+   "help": {
+    "ru": "<b>2.01 Топологическое упрощение</b><br><br>Прореживает вершины так, что граница, общая для двух соседей, остаётся общей. Работает с полигонами и с линиями.<br><br><b>Для линий</b> смысл тот же. Общий участок двух линий прореживается один раз, а концы линий и точки ветвления остаются на месте. Это нужно изолиниям, гидросети, горным выработкам. Обычное упрощение разрывает их в узлах.<br><br><b>Зачем это нужно</b>. Обычное упрощение обрабатывает каждый полигон отдельно, поэтому одна и та же граница прореживается дважды и по-разному. Там, где была одна линия, появляются щели и перехлёсты. На слое зон из 341 объекта независимое упрощение с допуском 5 давало 46 перекрытий и 25 щелей, топологическое не даёт ни одного.<br><br><b>Как это работает</b><br><ul><li>Кольца раскладываются на рёбра, ребро опознаётся по паре концов без учёта направления. Поэтому одно и то же ребро у двух соседей даёт одну запись.</li><li>Рёбра склеиваются в дуги. Дуга обрывается там, где сходятся три полигона или меняется набор владельцев границы.</li><li>Каждая дуга прореживается ровно один раз, и обоим соседям достаётся один и тот же результат.</li><li>Концы дуг неподвижны, поэтому узлы, где сходятся три полигона, остаются на месте.</li></ul><b>Два метода прореживания</b>. <b>Дуглас-Пекер</b> меряет отклонение вершины от хорды. Он держит углы и характерные изломы, но на плавной кривой оставляет заметные грани. <b>Висвалингам</b> меряет площадь треугольника из трёх соседних вершин. На плавных линиях результат мягче, зато острый угол из коротких рёбер может срезаться. Для границ блоков и выработок подходит первый, для изолиний и гидросети второй.<br><br><b>Допуск</b> в обоих случаях задаётся в единицах длины, одним полем. Одно поле работает и в моделях, и в пакетном режиме. Для Висвалингама он пересчитывается в площадь. Точного соответствия между методами нет и быть не может, один меряет расстояние, другой площадь. При равной величине в поле Висвалингам оставляет заметно больше вершин. Для сравнимого результата его допуск берут крупнее.<br><br><b>Сглаживание</b> срезает углы по схеме Чайкина после прореживания. Линия остаётся внутри исходной, поэтому выбросов и новых самопересечений не возникает. Сглаживание идёт по тем же дугам, поэтому общая граница соседей остаётся общей. Каждый проход примерно удваивает количество вершин, обычно хватает одного или двух.<br><br><b>Точность опознания общих вершин</b> это не допуск упрощения. Она нужна, когда соседи записаны с разной точностью координат.<br><br>Площадь при упрощении меняется, это его смысл. Топология при этом не портится. Проверьте результат инструментом <b>1.01</b>, количество находок не должно вырасти.",
+    "en": "<b>2.01 Topology-preserving simplify</b><br><br>Thins out vertices so that a border shared by two neighbours stays shared. Works with polygons and with lines.<br><br><b>For lines</b> the idea is the same. A segment shared by two lines is thinned once, while line endpoints and branch nodes stay in place. This matters for contours, stream networks and mine workings, which ordinary simplification tears apart at the junctions.<br><br><b>Why this is needed</b>. Ordinary simplification processes each polygon separately, so the same border is thinned twice and differently. Where there was one line, gaps and overlaps appear. On a zone layer of 341 objects, independent simplification with a tolerance of 5 produced 46 overlaps and 25 gaps, while the topological one produces none.<br><br><b>How it works</b><br><ul><li>Rings are broken into edges, and an edge is identified by its pair of ends regardless of direction. The same edge of two neighbours therefore yields a single record.</li><li>Edges are glued into arcs. An arc breaks where three polygons meet or where the set of border owners changes.</li><li>Each arc is thinned exactly once, and both neighbours receive the same result.</li><li>Arc ends are fixed, so the nodes where three polygons meet stay in place.</li></ul><b>Two thinning methods</b>. <b>Douglas-Peucker</b> measures the deviation of a vertex from the chord. It holds corners and characteristic bends, but leaves visible facets on a smooth curve. <b>Visvalingam</b> measures the area of the triangle formed by three neighbouring vertices. On smooth lines the result is softer, though a sharp corner made of short edges may be cut off. The first suits block and working borders, the second suits contours and stream networks.<br><br><b>The tolerance</b> is given in length units for both, in a single field. A single field works both in models and in batch mode. For Visvalingam it is converted into an area. There is no exact correspondence between the methods and there cannot be, one measures distance and the other area. With the same number in the field Visvalingam keeps noticeably more vertices. A larger tolerance is therefore used for a comparable result.<br><br><b>Smoothing</b> cuts corners by Chaikin's scheme after thinning. The line stays inside the original one, so no overshoots and no new self-intersections appear. Smoothing runs over the same arcs, so a border shared by two neighbours stays shared. Each pass roughly doubles the vertex count, and one or two are usually enough.<br><br><b>The precision for matching shared vertices</b> is not a simplification tolerance. It is needed when neighbours are stored with different coordinate precision.<br><br>The area changes during simplification, that is its purpose. Topology is not damaged. Check the result with tool <b>1.01</b>, the number of findings must not grow."
+   },
+   "params": [
+    {
+     "key": "INPUT",
+     "kind": "features",
+     "label": {
+      "ru": "Входной слой (полигоны или линии)",
+      "en": "Input layer (polygons or lines)"
+     },
+     "hint": {
+      "ru": "Полигональный или линейный слой.\nСлой не изменяется, результат пишется в новый слой.",
+      "en": "A polygon or line layer. The layer is not modified, the result goes\nto a new layer."
+     },
+     "geometry": [
+      "polygon",
+      "line"
+     ]
+    },
+    {
+     "key": "TOLERANCE",
+     "kind": "number",
+     "label": {
+      "ru": "Допуск упрощения (в единицах CRS слоя)",
+      "en": "Simplification tolerance (in layer CRS units)"
+     },
+     "hint": {
+      "ru": "Предельное отклонение упрощённой линии от исходной.\nНоль означает, что ничего не прореживается.",
+      "en": "The maximum deviation of the simplified line from the original. Zero\nmeans nothing is thinned out."
+     },
+     "minimum": 0.0,
+     "default": 1.0
+    },
+    {
+     "key": "METHOD",
+     "kind": "enum",
+     "label": {
+      "ru": "Метод прореживания",
+      "en": "Thinning method"
+     },
+     "hint": {
+      "ru": "Дуглас-Пекер меряет отклонение вершины от хорды. Он держит углы\nи характерные изломы, но на плавной кривой оставляет грани.\nВисвалингам меряет площадь треугольника из трёх соседних\nвершин. На плавных линиях результат мягче, зато острый угол\nиз коротких рёбер может срезаться.\nДля границ блоков и выработок подходит первый, для изолиний\nи гидросети второй.",
+      "en": "Douglas-Peucker measures the deviation of a vertex from the chord.\nIt keeps corners and characteristic bends, but leaves facets on a\nsmooth curve. Visvalingam measures the area of the triangle formed\nby three neighbouring vertices. On smooth lines the result is\nsofter, but a sharp corner made of short edges may be cut off. The\nfirst suits borders of blocks and workings, the second suits\nisolines and river networks."
+     },
+     "options": [
+      {
+       "ru": "Дуглас-Пекер (по отклонению)",
+       "en": "Douglas-Peucker (by deviation)"
+      },
+      {
+       "ru": "Висвалингам (по площади)",
+       "en": "Visvalingam (by area)"
+      }
+     ],
+     "default": 0
+    },
+    {
+     "key": "MIN_POINTS",
+     "kind": "integer",
+     "label": {
+      "ru": "Не упрощать дуги короче, вершин",
+      "en": "Do not simplify arcs shorter than, vertices"
+     },
+     "hint": {
+      "ru": "Защита коротких участков границы. Ноль отключает её.",
+      "en": "Protection of short border segments. Zero switches it off."
+     },
+     "minimum": 0.0,
+     "default": 0
+    },
+    {
+     "key": "SMOOTH",
+     "kind": "integer",
+     "label": {
+      "ru": "Сглаживание, количество проходов (0 - без сглаживания)",
+      "en": "Smoothing, number of passes (0 - no smoothing)"
+     },
+     "hint": {
+      "ru": "Срезание углов по схеме Чайкина после прореживания.\nЛиния остаётся внутри исходной, поэтому выбросов и новых\nсамопересечений не возникает. Сглаживание идёт по тем же дугам,\nпоэтому общая граница соседей остаётся общей.\nКаждый проход примерно удваивает количество вершин, обычно хватает\nодного или двух.",
+      "en": "Corner cutting by the Chaikin scheme after thinning. The line stays\ninside the original, so no overshoots or new self-intersections\nappear. Smoothing runs along the same arcs, so the shared border of\nneighbours stays shared. Each pass roughly doubles the number of\nvertices, one or two passes are usually enough."
+     },
+     "minimum": 0.0,
+     "maximum": 5.0,
+     "default": 0
+    },
+    {
+     "key": "GRID",
+     "kind": "number",
+     "label": {
+      "ru": "Точность опознания общих вершин",
+      "en": "Precision for matching shared vertices"
+     },
+     "hint": {
+      "ru": "Вершины, отстоящие меньше этой величины, считаются одной.\nНужно, когда соседи записаны с разной точностью координат.\nЭто не допуск упрощения, задавать метры здесь не следует.",
+      "en": "Vertices closer than this value count as one. Needed when neighbours\nare stored with different coordinate precision. This is not the\nsimplification tolerance, do not set metres here."
+     },
+     "minimum": 1e-12,
+     "default": 1e-06
+    },
+    {
+     "key": "FIELDS",
+     "kind": "field",
+     "label": {
+      "ru": "Поле или поля группировки (необязательно)",
+      "en": "Grouping field or fields (optional)"
+     },
+     "hint": {
+      "ru": "Границы объектов разных групп общими не считаются.\nНужно, когда в одном слое лежат несколько покрытий.",
+      "en": "Borders between features of different groups do not count as shared.\nNeeded when several coverages lie in one layer."
+     },
+     "parent": "INPUT",
+     "multiple": true,
+     "optional": true
+    },
+    {
+     "key": "KEEP_Z",
+     "kind": "bool",
+     "label": {
+      "ru": "Сохранять отметки Z",
+      "en": "Keep Z values"
+     },
+     "hint": {
+      "ru": "Прореживание идёт по плановым координатам, отметка переносится\nс оставшихся вершин.",
+      "en": "Thinning works on plan coordinates, the elevation is carried over\nfrom the remaining vertices."
+     },
+     "default": true
+    },
+    {
+     "key": "OUTPUT",
+     "kind": "sink",
+     "label": {
+      "ru": "Упрощённый слой",
+      "en": "Simplified layer"
+     },
+     "hint": {
+      "ru": "Новый слой с упрощённой геометрией и атрибутами исходного.",
+      "en": "A new layer with the simplified geometry and the attributes of the\nsource."
+     },
+     "geometry": "any",
+     "fields": [
+      [
+       "id",
+       "int"
+      ],
+      [
+       "name",
+       "string"
+      ]
+     ]
+    }
+   ],
+   "messages": [
+    {
+     "ru": "Чтение слоя...",
+     "en": "Reading the layer..."
+    },
+    {
+     "ru": "── Результат ──",
+     "en": "-- Result --"
+    },
+    {
+     "ru": "Метод: Висвалингам",
+     "en": "Method: Visvalingam"
+    },
+    {
+     "ru": "Метод: Дуглас-Пекер",
+     "en": "Method: Douglas-Peucker"
+    },
+    {
+     "ru": "Дуг: %d, из них общих для соседей: %d",
+     "en": "Arcs: %d, of which shared by neighbours: %d"
+    },
+    {
+     "ru": "Вершин было/стало: %d / %d (%.1f %%)",
+     "en": "Vertices before/after: %d / %d (%.1f %%)"
+    },
+    {
+     "ru": "Объектов на входе/выходе: %d / %d",
+     "en": "Objects in/out: %d / %d"
+    },
+    {
+     "ru": "Общих границ не найдено. Если объекты соприкасаются, увеличьте точность опознания общих вершин.",
+     "en": "No shared borders were found. If the objects do touch, increase the precision for matching shared vertices."
+    },
+    {
+     "ru": "Группировка по %s: групп %d",
+     "en": "Grouped by %s: %d groups"
+    },
+    {
+     "ru": "Сглаживание: проходов %d",
+     "en": "Smoothing: %d passes"
+    },
+    {
+     "ru": "Площадь до/после: %s / %s (%+.3f %%)",
+     "en": "Area before/after: %s / %s (%+.3f %%)"
+    },
+    {
+     "ru": "Длина до/после: %s / %s (%+.3f %%)",
+     "en": "Length before/after: %s / %s (%+.3f %%)"
+    },
+    {
+     "ru": "Объектов потеряно: %d. Допуск больше размера объекта.",
+     "en": "Objects lost: %d. The tolerance exceeds the object size."
+    },
+    {
+     "ru": "Некорректных геометрий: %d. Уменьшите допуск.",
+     "en": "Invalid geometries: %d. Reduce the tolerance."
+    }
+   ]
+  },
+  {
+   "code": "2.02",
+   "name": "boundaries",
+   "title": {
+    "ru": "Границы полигонов линиями",
+    "en": "Polygon borders as lines"
+   },
+   "group": "2",
+   "help": {
+    "ru": "<b>2.02 Границы полигонов линиями</b><br><br>Выдаёт границы покрытия отдельными линиями, от узла до узла.<br><br><b>Чем отличается от перевода полигонов в линии</b>. Обычный перевод выдаёт общую границу дважды, по разу от каждого соседа. Получаются две совпадающие линии, одна поверх другой. Здесь она выходит один раз и несёт признак того, с чем граничит.<br><br><b>Три вида границ</b><br><ul><li><b>Граница между объектами</b>. Заполнены оба идентификатора соседей.</li><li><b>Внешний край покрытия</b>. Второй сосед пуст.</li><li><b>Край полости</b>. Полость внутри объекта, в которой ничего нет. Если в полости лежит другой объект, это уже граница между объектами.</li></ul><b>Зачем это нужно</b>. Границу между двумя пластами оформляют иначе, чем внешний край или край выработки. Две совпадающие линии этого не позволяют. Стиль ляжет на обе, и толщина удвоится.<br><br><b>Поле для значений по обе стороны</b> необязательно. Если задано, в атрибутах линии окажется значение этого поля у каждого из соседей. Для геологических границ это пласт слева и пласт справа.<br><br><b>Где рвётся линия</b>. Там, где сходятся три и более объекта, и там, где меняется пара соседей. Поэтому граница между двумя телами выходит одним куском на всю длину.<br><br><b>Отклонение при поиске общих вершин</b>. Если у соседей разная вершинность, общая граница не опознаётся и участок выходит двумя линиями. Перед разбором такие узлы достраиваются, вершины при этом не двигаются. Проверить слой заранее можно инструментом <b>1.01</b>, тип нарушения <b>вершина лежит на ребре соседа без узла</b>.<br><br>Сглаживания и упрощения здесь нет. Для этого есть <b>2.01</b>, и он работает с линиями.",
+    "en": "<b>2.02 Polygon borders as lines</b><br><br>Outputs the borders of a coverage as separate lines, from node to node.<br><br><b>How it differs from converting polygons to lines</b>. The usual conversion outputs a shared border twice, once from each neighbour. The result is two coincident lines stacked on each other. Here it comes out once and carries a mark of what it borders on.<br><br><b>Three kinds of border</b><br><ul><li><b>A border between objects</b>. Both neighbour identifiers are filled in.</li><li><b>The outer edge of the coverage</b>. The second neighbour is empty.</li><li><b>The edge of a cavity</b>. A hole inside an object with nothing in it. If another object lies in the cavity, it is a border between objects instead.</li></ul><b>Why this is needed</b>. A border between two seams is drawn differently from the outer edge or the edge of a working. With two coincident lines that cannot be done. The style lands on both and the width doubles.<br><br><b>The field for values on both sides</b> is optional. If set, the value of that field for each neighbour ends up in the line attributes. For geological borders these are the seam on the left and the seam on the right.<br><br><b>Where a line breaks</b>. Where three or more objects meet, and where the pair of neighbours changes. A border between two bodies therefore comes out as a single piece over its whole length.<br><br><b>The deviation for matching shared vertices</b>. If neighbours have different vertices, a shared border is not recognised and the stretch comes out as two lines. Such nodes are added before the analysis, and the vertices do not move. The layer can be checked in advance with tool <b>1.01</b>, violation type <b>vertex lies on a neighbour edge without a node</b>.<br><br>There is no smoothing or simplification here. Tool <b>2.01</b> does that, and it works with lines."
+   },
+   "params": [
+    {
+     "key": "INPUT",
+     "kind": "features",
+     "label": {
+      "ru": "Входной слой (полигоны)",
+      "en": "Input layer (polygons)"
+     },
+     "hint": {
+      "ru": "Полигональный слой покрытия. Слой не изменяется.",
+      "en": "The polygon coverage layer. The layer is not modified."
+     },
+     "geometry": [
+      "polygon"
+     ]
+    },
+    {
+     "key": "FIELD",
+     "kind": "field",
+     "label": {
+      "ru": "Поле, значения которого записать по обе стороны",
+      "en": "Field whose values to record on both sides"
+     },
+     "hint": {
+      "ru": "Значение этого поля у обоих соседей попадёт в атрибуты линии.\nДля геологических границ это пласт слева и пласт справа.",
+      "en": "The value of this field on both neighbours goes into the attributes\nof the line. For geological borders this is the seam on the left and\nthe seam on the right."
+     },
+     "parent": "INPUT",
+     "optional": true
+    },
+    {
+     "key": "NODE_EPS",
+     "kind": "number",
+     "label": {
+      "ru": "Отклонение при поиске общих вершин",
+      "en": "Deviation when matching shared vertices"
+     },
+     "hint": {
+      "ru": "Вершина, лежащая на ребре соседа ближе этой величины, получает\nузел перед разбором. Без этого общая граница не опознаётся.\nУ соседей разная вершинность, и участок выходит двумя линиями.\nВершины при этом не двигаются. Ноль отключает.",
+      "en": "A vertex lying on a neighbour's edge closer than this value gets a\nnode before the analysis. Without it the shared border is not\nrecognised. The neighbours have different vertices, and the segment\ncomes out as two lines. Vertices do not move. Zero switches it off."
+     },
+     "minimum": 0.0,
+     "default": 1e-06
+    },
+    {
+     "key": "GRID",
+     "kind": "number",
+     "label": {
+      "ru": "Точность опознания общих вершин",
+      "en": "Precision for matching shared vertices"
+     },
+     "hint": {
+      "ru": "Координаты соседей могут быть записаны с разной точностью.\nВеличина нужна, чтобы такие вершины считались одной. Это не допуск.\nУвеличивать её до метров не следует.",
+      "en": "Neighbour coordinates may be stored with different precision. The\nvalue makes such vertices count as one. It is not a tolerance. Do\nnot raise it to metres."
+     },
+     "minimum": 1e-12,
+     "default": 1e-06
+    },
+    {
+     "key": "OUTPUT",
+     "kind": "sink",
+     "label": {
+      "ru": "Границы",
+      "en": "Borders"
+     },
+     "hint": {
+      "ru": "Линейный слой границ. Общая граница двух соседей\nвыходит одной линией.",
+      "en": "A line layer of borders. The shared border of two neighbours comes\nout as one line."
+     },
+     "geometry": "line",
+     "fields": [
+      [
+       "kind",
+       "string"
+      ],
+      [
+       "label",
+       "string"
+      ],
+      [
+       "fid_a",
+       "long"
+      ],
+      [
+       "fid_b",
+       "long"
+      ],
+      [
+       "length",
+       "double"
+      ],
+      [
+       "val_a",
+       "string"
+      ],
+      [
+       "val_b",
+       "string"
+      ]
+     ]
+    }
+   ],
+   "messages": [
+    {
+     "ru": "Чтение слоя...",
+     "en": "Reading the layer..."
+    },
+    {
+     "ru": "граница между объектами",
+     "en": "border between objects"
+    },
+    {
+     "ru": "внешний край покрытия",
+     "en": "outer edge of the coverage"
+    },
+    {
+     "ru": "край полости",
+     "en": "edge of a cavity"
+    },
+    {
+     "ru": "── Результат ──",
+     "en": "-- Result --"
+    },
+    {
+     "ru": "Объектов: %d",
+     "en": "Objects: %d"
+    },
+    {
+     "ru": "Границ между объектами: %d",
+     "en": "Borders between objects: %d"
+    },
+    {
+     "ru": "Внешний край покрытия:  %d",
+     "en": "Outer edge of the coverage: %d"
+    },
+    {
+     "ru": "Краёв полостей:         %d",
+     "en": "Cavity edges:              %d"
+    },
+    {
+     "ru": "Всего линий:            %d",
+     "en": "Lines in total:            %d"
+    }
+   ]
+  },
+  {
+   "code": "2.03",
+   "name": "coverage",
+   "title": {
+    "ru": "Топологическая модель покрытия",
+    "en": "Coverage topology model"
+   },
+   "group": "2",
+   "help": {
+    "ru": "<b>2.03 Топологическая модель покрытия</b><br><br>Раскладывает покрытие на узлы и дуги. Слой не изменяется, на выходе два новых - точки узлов и линии дуг.<br><br><b>Что это такое</b>. Та самая модель, что была в ArcInfo coverage. Полигон описывается не своей границей, а ссылками на дуги. Дуга хранится один раз и знает, что лежит слева и справа. Правка дуги меняет обоих соседей сразу, поэтому границам негде разойтись.<br><br><b>Узлы</b> несут степень, то есть количество сходящихся дуг. Степень 1 это висячий конец, 2 псевдоузел, который можно убрать слиянием дуг, 3 и больше настоящее ветвление, где сходятся три и более объекта.<br><br><b>Дуги</b> несут номера узлов начала и конца и идентификаторы обоих соседей, <b>left_fid</b> и <b>right_fid</b>. Для края покрытия второй сосед равен минус единице.<br><br><b>Чем отличается от 2.02</b>. Инструмент 2.02 выдаёт границы для оформления. Это линии с признаком того, с чем они граничат. Здесь помимо линий выдаются узлы со степенью, и дуги привязаны к ним номерами. Это модель для разбора связности, а не для стилизации.<br><br><b>Отклонение при поиске общих вершин</b>. Узлы достраиваются перед разбором, иначе общая граница не опознаётся и участок выходит двумя дугами. Вершины при этом не двигаются.",
+    "en": "<b>2.03 Coverage topology model</b><br><br>Breaks a coverage into nodes and arcs. The layer is not modified, and two new ones are produced - node points and arc lines.<br><br><b>What this is</b>. The model that ArcInfo coverages used. A polygon is described not by its own border but by references to arcs. An arc is stored once and knows what lies to its left and to its right. Editing an arc changes both neighbours at once, so the borders have nowhere to diverge.<br><br><b>Nodes</b> carry a degree, the number of arcs meeting there. Degree 1 is a dangle, 2 is a pseudo node that can be removed by merging arcs, 3 and above is a real junction where three or more objects meet.<br><br><b>Arcs</b> carry the numbers of their start and end nodes and the identifiers of both neighbours, <b>left_fid</b> and <b>right_fid</b>. For the edge of the coverage the second neighbour is minus one.<br><br><b>How it differs from 2.02</b>. Tool 2.02 outputs borders for styling. These are lines with a mark of what they border on. Here, besides the lines, nodes with degrees are produced and the arcs are tied to them by number. This is a model for reasoning about connectivity, not for styling.<br><br><b>The deviation for matching shared vertices</b>. Nodes are added before the analysis, otherwise a shared border is not recognised and the stretch comes out as two arcs. The vertices do not move."
+   },
+   "params": [
+    {
+     "key": "INPUT",
+     "kind": "features",
+     "label": {
+      "ru": "Входной слой (полигоны)",
+      "en": "Input layer (polygons)"
+     },
+     "hint": {
+      "ru": "Полигональный слой покрытия. Слой не изменяется.",
+      "en": "The polygon coverage layer. The layer is not modified."
+     },
+     "geometry": [
+      "polygon"
+     ]
+    },
+    {
+     "key": "NODE_EPS",
+     "kind": "number",
+     "label": {
+      "ru": "Отклонение при поиске общих вершин",
+      "en": "Deviation when matching shared vertices"
+     },
+     "hint": {
+      "ru": "Узлы достраиваются перед разбором, иначе общая граница\nне опознаётся. Вершины при этом не двигаются.",
+      "en": "Nodes are added before the analysis, otherwise the shared border is\nnot recognised. Vertices do not move."
+     },
+     "minimum": 0.0,
+     "default": 1e-06
+    },
+    {
+     "key": "GRID",
+     "kind": "number",
+     "label": {
+      "ru": "Точность опознания общих вершин",
+      "en": "Precision for matching shared vertices"
+     },
+     "hint": {
+      "ru": "Координаты соседей могут быть записаны с разной точностью.\nВеличина нужна, чтобы такие вершины считались одной. Это не допуск.\nУвеличивать её до метров не следует.",
+      "en": "Neighbour coordinates may be stored with different precision. The\nvalue makes such vertices count as one. It is not a tolerance. Do\nnot raise it to metres."
+     },
+     "minimum": 1e-12,
+     "default": 1e-06
+    },
+    {
+     "key": "NODES",
+     "kind": "sink",
+     "label": {
+      "ru": "Узлы",
+      "en": "Nodes"
+     },
+     "hint": {
+      "ru": "Слой точек узлов покрытия. Узел - это конец дуги.",
+      "en": "A point layer of coverage nodes. A node is an end of an arc."
+     },
+     "geometry": "point",
+     "fields": [
+      [
+       "node_id",
+       "int"
+      ],
+      [
+       "degree",
+       "int"
+      ],
+      [
+       "kind",
+       "string"
+      ]
+     ]
+    },
+    {
+     "key": "ARCS",
+     "kind": "sink",
+     "label": {
+      "ru": "Дуги",
+      "en": "Arcs"
+     },
+     "hint": {
+      "ru": "Линейный слой дуг. Дуга - участок границы между двумя узлами\nс одними и теми же соседями слева и справа.",
+      "en": "A line layer of arcs. An arc is a border segment between two nodes\nwith the same neighbours on the left and on the right."
+     },
+     "geometry": "line",
+     "fields": [
+      [
+       "arc_id",
+       "int"
+      ],
+      [
+       "from_node",
+       "int"
+      ],
+      [
+       "to_node",
+       "int"
+      ],
+      [
+       "left_fid",
+       "long"
+      ],
+      [
+       "right_fid",
+       "long"
+      ],
+      [
+       "length",
+       "double"
+      ]
+     ]
+    }
+   ],
+   "messages": [
+    {
+     "ru": "Чтение слоя...",
+     "en": "Reading the layer..."
+    },
+    {
+     "ru": "висячий",
+     "en": "dangle"
+    },
+    {
+     "ru": "псевдоузел",
+     "en": "pseudo node"
+    },
+    {
+     "ru": "── Результат ──",
+     "en": "-- Result --"
+    },
+    {
+     "ru": "Объектов: %d",
+     "en": "Objects: %d"
+    },
+    {
+     "ru": "Узлов: %d, дуг: %d",
+     "en": "Nodes: %d, arcs: %d"
+    },
+    {
+     "ru": "Дуг между двумя объектами: %d",
+     "en": "Arcs between two objects: %d"
+    },
+    {
+     "ru": "Висячих узлов: %d, псевдоузлов: %d",
+     "en": "Dangling nodes: %d, pseudo nodes: %d"
+    },
+    {
+     "ru": "ветвление",
+     "en": "junction"
+    }
+   ]
+  }
+ ]
+}
