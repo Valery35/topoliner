@@ -34,6 +34,27 @@ except ImportError:  # сборка без GDAL
     HAS_GDAL = False
 
 
+def gdal_environment():
+    """
+    Окружение дочернего процесса, в котором находится библиотека GDAL.
+
+    Пакет osgeo на Windows ищет gdal*.dll по каталогам PATH. Python из
+    состава QGIS, запущенный без python-qgis.bat, каталога QGIS\\bin в PATH
+    не имеет, и дочерний процесс падал на импорте _gdal, хотя код
+    предупреждений не выдавал. Каталог добавляется в начало PATH,
+    если библиотека в нём лежит.
+    """
+    import glob
+    env = dict(os.environ)
+    base = os.path.dirname(sys.executable)
+    for folder in (base, os.path.join(base, os.pardir, os.pardir, "bin")):
+        folder = os.path.normpath(folder)
+        if glob.glob(os.path.join(folder, "gdal*.dll")):
+            env["PATH"] = folder + os.pathsep + env.get("PATH", "")
+            break
+    return env
+
+
 class TestNice(unittest.TestCase):
 
     def test_binary_tail_is_cut(self):
@@ -220,7 +241,8 @@ class TestBakeAliases(unittest.TestCase):
             % (PLUGIN, self.path))
         done = subprocess.run([sys.executable, "-W", "error::FutureWarning",
                                "-W", "error::DeprecationWarning", "-c", code],
-                              capture_output=True, text=True, timeout=120)
+                              capture_output=True, text=True, timeout=120,
+                              env=gdal_environment())
         self.assertEqual(done.returncode, 0, done.stderr[-800:])
 
     def test_missing_file_is_silent(self):

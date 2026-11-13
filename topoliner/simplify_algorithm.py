@@ -74,16 +74,19 @@ class TopologySimplifyAlgorithm(QgsProcessingAlgorithm):
         return help_for("topologysimplify") + help_footer()
 
     def initAlgorithm(self, config=None):
-        self.addParameter(QgsProcessingParameterFeatureSource(
+        p = QgsProcessingParameterFeatureSource(
             self.INPUT, tr("Входной слой (полигоны или линии)"),
-            [QgsProcessing.TypeVectorPolygon, QgsProcessing.TypeVectorLine]))
+            [QgsProcessing.TypeVectorPolygon, QgsProcessing.TypeVectorLine])
+        p.setHelp(tr("Полигональный или линейный слой.\n"
+                     "Слой не изменяется, результат пишется в новый слой."))
+        self.addParameter(p)
 
         p = QgsProcessingParameterNumber(
             self.TOLERANCE, tr("Допуск упрощения (в единицах CRS слоя)"),
             type=QgsProcessingParameterNumber.Double, defaultValue=1.0, minValue=0.0)
         p.setHelp(
-            "Предельное отклонение упрощённой линии от исходной.\n"
-            "Ноль означает, что ничего не прореживается."
+            tr("Предельное отклонение упрощённой линии от исходной.\n"
+               "Ноль означает, что ничего не прореживается.")
         )
         self.addParameter(p)
 
@@ -93,13 +96,13 @@ class TopologySimplifyAlgorithm(QgsProcessingAlgorithm):
                      tr("Висвалингам (по площади)")],
             defaultValue=0)
         p.setHelp(
-            "Дуглас-Пекер меряет отклонение вершины от хорды. Он держит углы\n"
-            "и характерные изломы, но на плавной кривой оставляет грани.\n"
-            "Висвалингам меряет площадь треугольника из трёх соседних\n"
-            "вершин. На плавных линиях результат мягче, зато острый угол\n"
-            "из коротких рёбер может срезаться.\n"
-            "Для границ блоков и выработок подходит первый, для изолиний\n"
-            "и гидросети второй."
+            tr("Дуглас-Пекер меряет отклонение вершины от хорды. Он держит углы\n"
+               "и характерные изломы, но на плавной кривой оставляет грани.\n"
+               "Висвалингам меряет площадь треугольника из трёх соседних\n"
+               "вершин. На плавных линиях результат мягче, зато острый угол\n"
+               "из коротких рёбер может срезаться.\n"
+               "Для границ блоков и выработок подходит первый, для изолиний\n"
+               "и гидросети второй.")
         )
         self.addParameter(p)
 
@@ -107,7 +110,7 @@ class TopologySimplifyAlgorithm(QgsProcessingAlgorithm):
             self.MIN_POINTS, tr("Не упрощать дуги короче, вершин"),
             type=QgsProcessingParameterNumber.Integer, defaultValue=0, minValue=0)
         p.setHelp(
-            "Защита коротких участков границы. Ноль отключает её."
+            tr("Защита коротких участков границы. Ноль отключает её.")
         )
         self.addParameter(p)
 
@@ -116,12 +119,12 @@ class TopologySimplifyAlgorithm(QgsProcessingAlgorithm):
             type=QgsProcessingParameterNumber.Integer, defaultValue=0,
             minValue=0, maxValue=5)
         p.setHelp(
-            "Срезание углов по схеме Чайкина после прореживания.\n"
-            "Линия остаётся внутри исходной, поэтому выбросов и новых\n"
-            "самопересечений не возникает. Сглаживание идёт по тем же дугам,\n"
-            "поэтому общая граница соседей остаётся общей.\n"
-            "Каждый проход примерно удваивает количество вершин, обычно хватает\n"
-            "одного или двух."
+            tr("Срезание углов по схеме Чайкина после прореживания.\n"
+               "Линия остаётся внутри исходной, поэтому выбросов и новых\n"
+               "самопересечений не возникает. Сглаживание идёт по тем же дугам,\n"
+               "поэтому общая граница соседей остаётся общей.\n"
+               "Каждый проход примерно удваивает количество вершин, обычно хватает\n"
+               "одного или двух.")
         )
         self.addParameter(p)
 
@@ -130,9 +133,9 @@ class TopologySimplifyAlgorithm(QgsProcessingAlgorithm):
             type=QgsProcessingParameterNumber.Double,
             defaultValue=1e-6, minValue=1e-12)
         p.setHelp(
-            "Вершины, отстоящие меньше этой величины, считаются одной.\n"
-            "Нужно, когда соседи записаны с разной точностью координат.\n"
-            "Это не допуск упрощения, задавать метры здесь не следует."
+            tr("Вершины, отстоящие меньше этой величины, считаются одной.\n"
+               "Нужно, когда соседи записаны с разной точностью координат.\n"
+               "Это не допуск упрощения, задавать метры здесь не следует.")
         )
         self.addParameter(p)
 
@@ -140,21 +143,23 @@ class TopologySimplifyAlgorithm(QgsProcessingAlgorithm):
             self.FIELDS, tr("Поле или поля группировки (необязательно)"),
             parentLayerParameterName=self.INPUT, allowMultiple=True, optional=True)
         p.setHelp(
-            "Границы объектов разных групп общими не считаются.\n"
-            "Нужно, когда в одном слое лежат несколько покрытий."
+            tr("Границы объектов разных групп общими не считаются.\n"
+               "Нужно, когда в одном слое лежат несколько покрытий.")
         )
         self.addParameter(p)
 
         p = QgsProcessingParameterBoolean(
             self.KEEP_Z, tr("Сохранять отметки Z"), defaultValue=True)
         p.setHelp(
-            "Прореживание идёт по плановым координатам, отметка переносится\n"
-            "с оставшихся вершин."
+            tr("Прореживание идёт по плановым координатам, отметка переносится\n"
+               "с оставшихся вершин.")
         )
         self.addParameter(p)
 
-        self.addParameter(QgsProcessingParameterFeatureSink(
-            self.OUTPUT, tr("Упрощённый слой")))
+        p = QgsProcessingParameterFeatureSink(
+            self.OUTPUT, tr("Упрощённый слой"))
+        p.setHelp(tr("Новый слой с упрощённой геометрией и атрибутами исходного."))
+        self.addParameter(p)
 
     @no_warnings
     def processAlgorithm(self, parameters, context, feedback):
@@ -307,7 +312,7 @@ class TopologySimplifyAlgorithm(QgsProcessingAlgorithm):
         if shared_total == 0 and arcs_total:
             feedback.pushInfo(
                 tr("Общих границ не найдено. Если объекты соприкасаются, "
-                "увеличьте точность опознания общих вершин."))
+                   "увеличьте точность опознания общих вершин."))
         feedback.setProgress(100)
         return {self.OUTPUT: dest_id}
 
@@ -358,16 +363,18 @@ class BoundariesAlgorithm(QgsProcessingAlgorithm):
         return help_for("boundaries") + help_footer()
 
     def initAlgorithm(self, config=None):
-        self.addParameter(QgsProcessingParameterFeatureSource(
+        p = QgsProcessingParameterFeatureSource(
             self.INPUT, tr("Входной слой (полигоны)"),
-            [QgsProcessing.TypeVectorPolygon]))
+            [QgsProcessing.TypeVectorPolygon])
+        p.setHelp(tr("Полигональный слой покрытия. Слой не изменяется."))
+        self.addParameter(p)
 
         p = QgsProcessingParameterField(
             self.FIELD, tr("Поле, значения которого записать по обе стороны"),
             parentLayerParameterName=self.INPUT, optional=True)
         p.setHelp(
-            "Значение этого поля у обоих соседей попадёт в атрибуты линии.\n"
-            "Для геологических границ это пласт слева и пласт справа."
+            tr("Значение этого поля у обоих соседей попадёт в атрибуты линии.\n"
+               "Для геологических границ это пласт слева и пласт справа.")
         )
         self.addParameter(p)
 
@@ -376,10 +383,10 @@ class BoundariesAlgorithm(QgsProcessingAlgorithm):
             type=QgsProcessingParameterNumber.Double, defaultValue=1e-6,
             minValue=0.0)
         p.setHelp(
-            "Вершина, лежащая на ребре соседа ближе этой величины, получает\n"
-            "узел перед разбором. Без этого общая граница не опознаётся.\n"
-            "У соседей разная вершинность, и участок выходит двумя линиями.\n"
-            "Вершины при этом не двигаются. Ноль отключает."
+            tr("Вершина, лежащая на ребре соседа ближе этой величины, получает\n"
+               "узел перед разбором. Без этого общая граница не опознаётся.\n"
+               "У соседей разная вершинность, и участок выходит двумя линиями.\n"
+               "Вершины при этом не двигаются. Ноль отключает.")
         )
         self.addParameter(p)
 
@@ -388,14 +395,17 @@ class BoundariesAlgorithm(QgsProcessingAlgorithm):
             type=QgsProcessingParameterNumber.Double, defaultValue=1e-6,
             minValue=1e-12)
         p.setHelp(
-            "Координаты соседей могут быть записаны с разной точностью.\n"
-            "Величина нужна, чтобы такие вершины считались одной. Это не допуск.\n"
-            "Увеличивать её до метров не следует."
+            tr("Координаты соседей могут быть записаны с разной точностью.\n"
+               "Величина нужна, чтобы такие вершины считались одной. Это не допуск.\n"
+               "Увеличивать её до метров не следует.")
         )
         self.addParameter(p)
 
-        self.addParameter(QgsProcessingParameterFeatureSink(
-            self.OUTPUT, tr("Границы"), QgsProcessing.TypeVectorLine))
+        p = QgsProcessingParameterFeatureSink(
+            self.OUTPUT, tr("Границы"), QgsProcessing.TypeVectorLine)
+        p.setHelp(tr("Линейный слой границ. Общая граница двух соседей\n"
+                     "выходит одной линией."))
+        self.addParameter(p)
 
     @no_warnings
     def processAlgorithm(self, parameters, context, feedback):
@@ -543,17 +553,19 @@ class CoverageAlgorithm(QgsProcessingAlgorithm):
         return help_for("coverage") + help_footer()
 
     def initAlgorithm(self, config=None):
-        self.addParameter(QgsProcessingParameterFeatureSource(
+        p = QgsProcessingParameterFeatureSource(
             self.INPUT, tr("Входной слой (полигоны)"),
-            [QgsProcessing.TypeVectorPolygon]))
+            [QgsProcessing.TypeVectorPolygon])
+        p.setHelp(tr("Полигональный слой покрытия. Слой не изменяется."))
+        self.addParameter(p)
 
         p = QgsProcessingParameterNumber(
             self.NODE_EPS, tr("Отклонение при поиске общих вершин"),
             type=QgsProcessingParameterNumber.Double, defaultValue=1e-6,
             minValue=0.0)
         p.setHelp(
-            "Узлы достраиваются перед разбором, иначе общая граница\n"
-            "не опознаётся. Вершины при этом не двигаются."
+            tr("Узлы достраиваются перед разбором, иначе общая граница\n"
+               "не опознаётся. Вершины при этом не двигаются.")
         )
         self.addParameter(p)
 
@@ -562,16 +574,21 @@ class CoverageAlgorithm(QgsProcessingAlgorithm):
             type=QgsProcessingParameterNumber.Double, defaultValue=1e-6,
             minValue=1e-12)
         p.setHelp(
-            "Координаты соседей могут быть записаны с разной точностью.\n"
-            "Величина нужна, чтобы такие вершины считались одной. Это не допуск.\n"
-            "Увеличивать её до метров не следует."
+            tr("Координаты соседей могут быть записаны с разной точностью.\n"
+               "Величина нужна, чтобы такие вершины считались одной. Это не допуск.\n"
+               "Увеличивать её до метров не следует.")
         )
         self.addParameter(p)
 
-        self.addParameter(QgsProcessingParameterFeatureSink(
-            self.NODES, tr("Узлы"), QgsProcessing.TypeVectorPoint))
-        self.addParameter(QgsProcessingParameterFeatureSink(
-            self.ARCS, tr("Дуги"), QgsProcessing.TypeVectorLine))
+        p = QgsProcessingParameterFeatureSink(
+            self.NODES, tr("Узлы"), QgsProcessing.TypeVectorPoint)
+        p.setHelp(tr("Слой точек узлов покрытия. Узел - это конец дуги."))
+        self.addParameter(p)
+        p = QgsProcessingParameterFeatureSink(
+            self.ARCS, tr("Дуги"), QgsProcessing.TypeVectorLine)
+        p.setHelp(tr("Линейный слой дуг. Дуга - участок границы между двумя узлами\n"
+                     "с одними и теми же соседями слева и справа."))
+        self.addParameter(p)
 
     @no_warnings
     def processAlgorithm(self, parameters, context, feedback):

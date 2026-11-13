@@ -154,17 +154,20 @@ class LineAuditAlgorithm(QgsProcessingAlgorithm):
         return help_for("lineaudit") + help_footer()
 
     def initAlgorithm(self, config=None):
-        self.addParameter(QgsProcessingParameterFeatureSource(
+        p = QgsProcessingParameterFeatureSource(
             self.INPUT, tr("Проверяемый слой (линии)"),
-            [QgsProcessing.TypeVectorLine]))
+            [QgsProcessing.TypeVectorLine])
+        p.setHelp(tr("Линейный слой, который проверяется.\n"
+                     "Слой не изменяется, находки пишутся в отдельный слой точек."))
+        self.addParameter(p)
 
         p = QgsProcessingParameterNumber(
             self.TOLERANCE, tr("Допуск (в единицах CRS слоя)"),
             type=QgsProcessingParameterNumber.Double, defaultValue=2.0,
             minValue=1e-9)
         p.setHelp(
-            "Расстояние, ниже которого расхождение считается погрешностью.\n"
-            "Недовод и перелёт короче допуска относятся к мусору."
+            tr("Расстояние, ниже которого расхождение считается погрешностью.\n"
+               "Недовод и перелёт короче допуска относятся к мусору.")
         )
         self.addParameter(p)
 
@@ -172,35 +175,38 @@ class LineAuditAlgorithm(QgsProcessingAlgorithm):
             self.MIN_LENGTH, tr("Порог длины линии (0 - не учитывать)"),
             type=QgsProcessingParameterNumber.Double, defaultValue=0.0,
             minValue=0.0)
-        p.setHelp("Линии короче этой длины попадают в находки.")
+        p.setHelp(tr("Линии короче этой длины попадают в находки."))
         self.addParameter(p)
 
         p = QgsProcessingParameterBoolean(
             self.DO_DANGLES, tr("Искать висячие концы, недоводы и перелёты"),
             defaultValue=True)
         p.setHelp(
-            "Три разных случая на конце линии. Недовод и перелёт короче допуска\n"
-            "относятся к мусору, висячий конец остаётся человеку. У гидросети\n"
-            "или сети выработок это устье либо тупик."
+            tr("Три разных случая на конце линии. Недовод и перелёт короче допуска\n"
+               "относятся к мусору, висячий конец остаётся человеку. У гидросети\n"
+               "или сети выработок это устье либо тупик.")
         )
         self.addParameter(p)
         p = QgsProcessingParameterBoolean(
             self.DO_CROSSINGS, tr("Искать пересечения без узла"), defaultValue=True)
         p.setHelp(
-            "Линии пересекаются, а вершины в точке пересечения нет ни у одной."
+            tr("Линии пересекаются, а вершины в точке пересечения нет ни у одной.")
         )
         self.addParameter(p)
         p = QgsProcessingParameterBoolean(
             self.DO_PSEUDO, tr("Искать псевдоузлы"), defaultValue=False)
         p.setHelp(
-            "Две линии сходятся концами, и больше в этой точке ничего нет. Их можно\n"
-            "объединить. Выключено намеренно, во многих слоях разбиение на участки\n"
-            "сделано специально."
+            tr("Две линии сходятся концами, и больше в этой точке ничего нет. Их можно\n"
+               "объединить. Выключено намеренно, во многих слоях разбиение на участки\n"
+               "сделано специально.")
         )
         self.addParameter(p)
 
-        self.addParameter(QgsProcessingParameterFeatureSink(
-            self.OUTPUT, tr("Находки"), QgsProcessing.TypeVectorPoint))
+        p = QgsProcessingParameterFeatureSink(
+            self.OUTPUT, tr("Находки"), QgsProcessing.TypeVectorPoint)
+        p.setHelp(tr("Слой точек, по одной на каждую находку.\n"
+                     "Поле severity делит находки на auto и review."))
+        self.addParameter(p)
 
     @no_warnings
     def processAlgorithm(self, parameters, context, feedback):
@@ -294,17 +300,20 @@ class LineFixAlgorithm(QgsProcessingAlgorithm):
         return help_for("linefix") + help_footer()
 
     def initAlgorithm(self, config=None):
-        self.addParameter(QgsProcessingParameterFeatureSource(
+        p = QgsProcessingParameterFeatureSource(
             self.INPUT, tr("Входной слой (линии)"),
-            [QgsProcessing.TypeVectorLine]))
+            [QgsProcessing.TypeVectorLine])
+        p.setHelp(tr("Линейный слой, который очищается.\n"
+                     "Слой не изменяется, результат пишется в новый слой."))
+        self.addParameter(p)
 
         p = QgsProcessingParameterNumber(
             self.TOLERANCE, tr("Допуск (в единицах CRS слоя)"),
             type=QgsProcessingParameterNumber.Double, defaultValue=2.0,
             minValue=1e-9)
         p.setHelp(
-            "Предельное смещение конца линии и предельная длина\n"
-            "обрезаемого хвоста."
+            tr("Предельное смещение конца линии и предельная длина\n"
+               "обрезаемого хвоста.")
         )
         self.addParameter(p)
 
@@ -313,35 +322,38 @@ class LineFixAlgorithm(QgsProcessingAlgorithm):
             type=QgsProcessingParameterNumber.Double, defaultValue=0.0,
             minValue=0.0)
         p.setHelp(
-            "Линии короче этой длины попадают в оставшиеся проблемы. Удаляются\n"
-            "они только с отдельной галочки. Удаление уничтожает и атрибуты."
+            tr("Линии короче этой длины попадают в оставшиеся проблемы. Удаляются\n"
+               "они только с отдельной галочки. Удаление уничтожает и атрибуты.")
         )
         self.addParameter(p)
 
         p = QgsProcessingParameterBoolean(
             self.DO_TRIM, tr("Обрезать перелёты за узел"), defaultValue=True)
         p.setHelp(
-            "Хвост, торчащий за пересечением, отрезается до самой точки пересечения.\n"
-            "Обрезаются только хвосты короче допуска."
+            tr("Хвост, торчащий за пересечением, отрезается до самой точки пересечения.\n"
+               "Обрезаются только хвосты короче допуска.")
         )
         self.addParameter(p)
         p = QgsProcessingParameterBoolean(
             self.DO_CLOSE, tr("Дотягивать недоводы до соседней линии"),
             defaultValue=True)
         p.setHelp(
-            "Конец переносится на проекцию, то есть на ближайшую точку соседнего\n"
-            "ребра. Смещение не превышает допуска."
+            tr("Конец переносится на проекцию, то есть на ближайшую точку соседнего\n"
+               "ребра. Смещение не превышает допуска.")
         )
         self.addParameter(p)
-        self.addParameter(QgsProcessingParameterBoolean(
-            self.DO_SNAP, tr("Вставлять недостающие узлы"), defaultValue=True))
+        p = QgsProcessingParameterBoolean(
+            self.DO_SNAP, tr("Вставлять недостающие узлы"), defaultValue=True)
+        p.setHelp(tr("Сшивка концов и вставка недостающих узлов на рёбра соседних линий.\n"
+                     "Вершина не смещается дальше допуска."))
+        self.addParameter(p)
 
         p = QgsProcessingParameterBoolean(
             self.DROP_SHORT, tr("Удалять линии короче порога длины"),
             defaultValue=False)
         p.setHelp(
-            "По умолчанию выключено. Удаление объекта уничтожает и его атрибуты.\n"
-            "Без этой галочки такие линии только попадают в оставшиеся проблемы."
+            tr("По умолчанию выключено. Удаление объекта уничтожает и его атрибуты.\n"
+               "Без этой галочки такие линии только попадают в оставшиеся проблемы.")
         )
         self.addParameter(p)
 
@@ -350,16 +362,21 @@ class LineFixAlgorithm(QgsProcessingAlgorithm):
             type=QgsProcessingParameterNumber.Double, defaultValue=1.0,
             minValue=0.0, maxValue=45.0)
         p.setHelp(
-            "Игла это разворот линии назад почти на месте. Угол между входящим\n"
-            "и исходящим ребром меньше этого значения считается иглой."
+            tr("Игла это разворот линии назад почти на месте. Угол между входящим\n"
+               "и исходящим ребром меньше этого значения считается иглой.")
         )
         self.addParameter(p)
 
-        self.addParameter(QgsProcessingParameterFeatureSink(
-            self.OUTPUT, tr("Очищенный слой")))
-        self.addParameter(QgsProcessingParameterFeatureSink(
+        p = QgsProcessingParameterFeatureSink(
+            self.OUTPUT, tr("Очищенный слой"))
+        p.setHelp(tr("Новый слой с исправленной геометрией и атрибутами исходного."))
+        self.addParameter(p)
+        p = QgsProcessingParameterFeatureSink(
             self.REMAINS, tr("Оставшиеся проблемы"), QgsProcessing.TypeVectorPoint,
-            optional=True, createByDefault=True))
+            optional=True, createByDefault=True)
+        p.setHelp(tr("Точки на месте того, что исправить нельзя или не разрешено.\n"
+                     "Поля те же, что у слоя находок инструмента 1.02."))
+        self.addParameter(p)
 
     @no_warnings
     def processAlgorithm(self, parameters, context, feedback):

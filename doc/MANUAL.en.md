@@ -24,7 +24,7 @@ The tools appear in the **Processing** panel, group **Topoliner**.
 ## Interface language
 
 The plugin is bilingual. The language is taken from the QGIS locale, not from
-the system one: if QGIS is set to English, the plugin interface is English too.
+the system one. If QGIS is set to English, the plugin interface is English too.
 Names, parameters, help texts, reports and violation names are all translated.
 
 ---
@@ -33,8 +33,9 @@ Names, parameters, help texts, reports and violation names are all translated.
 
 The tool number sets both the group and the order in the Processing panel:
 group **1. Topology** holds 1.01 to 1.08, group **2. Generalisation** holds
-2.01 to 2.03. The order within the first group follows the workflow: check,
-clean, snap separately if needed, verify the assembly.
+2.01 to 2.03. The order within the first group follows the workflow. The layer
+is checked, cleaned, snapped separately if needed, and then the assembly is
+verified.
 
 | Tool | What it does | Modifies the layer |
 |---|---|---|
@@ -50,8 +51,8 @@ clean, snap separately if needed, verify the assembly.
 | **2.02 Polygon borders as lines** | Outputs borders as separate lines, each one once | No |
 | **2.03 Coverage topology model** | Breaks a coverage into nodes and arcs | No |
 
-All tools work in models and in batch mode. The input layer is never modified;
-the result always goes to a new layer.
+All tools work in models and in batch mode. The input layer is never modified.
+The result always goes to a new layer.
 
 ---
 
@@ -62,9 +63,8 @@ the result always goes to a new layer.
 Four steps, in this order.
 
 **Step 1. Check.** Run **1.01 Polygon topology check** with a tolerance of 2 and
-an area threshold of 1. Read the summary in the Processing panel. It answers
-the main question: how much will be fixed silently and how much has to be
-looked at by hand.
+an area threshold of 1. Read the summary in the Processing panel. It shows
+how much will be fixed silently and how much has to be looked at by hand.
 
 **Step 2. Clean.** Run **1.03 Polygon topology cleanup** with the same
 thresholds. Read the report, especially the line about the area.
@@ -78,7 +78,7 @@ block field, then on the panel field. This is the acceptance criterion.
 ### A line layer
 
 **Step 1.** **1.02 Line topology check** with a tolerance of 2. See how many
-undershoots and overshoots there are against dangles: the first two are fixed,
+undershoots and overshoots there are against dangles. The first two are fixed,
 the third is left to you.
 
 **Step 2.** **1.04 Line topology cleanup** with the same tolerance.
@@ -99,7 +99,7 @@ search radius for neighbouring edges. Take it slightly above the real size
 of the discrepancies and well below the width of the narrowest object.
 For borders digitised from plans this is usually 1 to 2 metres.
 
-**The main rule for the tolerance: it must be smaller than the width of the
+**The main rule for the tolerance. It must be smaller than the width of the
 narrowest object.**
 
 ![An object narrower than the tolerance is left untouched, so it does not collapse.](figures/narrow_en.png)
@@ -112,15 +112,15 @@ serve as anchors for their neighbours.
 
 **Area threshold**, in square CRS units. The area below which a fragment is
 treated as technical debris. A reasonable starting point is the tolerance
-squared: with a tolerance of 2 metres that is 4 square metres, though 1 is
+squared. With a tolerance of 2 metres that is 4 square metres, though 1 is
 often enough in practice.
 
 **Overlaps are judged by width, not by area.** A strip as wide as the tolerance
 and tens of metres long collects a hundred square units while still being
 a consequence of vertex movement. Debris is an overlap narrower than the
-tolerance; a wider one is a dispute over real area.
+tolerance. A wider one is a dispute over real area.
 
-If in doubt, start small: underestimating a threshold is safe, overestimating
+If in doubt, start small. Underestimating a threshold is safe, overestimating
 is not.
 
 ---
@@ -137,26 +137,26 @@ polygon edge, and the left one has no vertex there.](figures/missing_node_en.png
 `fid_a`, `fid_b`, `value`, `note` and `grp`.
 
 **How to read it.** Style the layer by `severity`. The `review` points are
-the working list; the `auto` points do not need looking at, the cleanup tool
+the working list. The `auto` points do not need looking at, the cleanup tool
 will remove them.
 
 **A tolerance hint.** After the check the tool prints how the discrepancies
-are distributed in this layer: how many there are, the median, the 95th
-percentile and the maximum. If the distribution has a break, it is named:
-below it lies digitising error, above it a disagreement between sources.
+are distributed in this layer. It prints how many there are, the median, the
+95th percentile and the maximum. If the distribution has a break, it is named.
+Below it lies digitising error, above it a disagreement between sources.
 If there is no break, the tool says so instead of inventing a number.
 
-A ceiling is printed separately: the value above which the tolerance should
-not be set, because it would collapse short edges and narrow objects. It is
+A ceiling is printed separately. It is the value above which the tolerance
+should not be set, because it would collapse short edges and narrow objects. It is
 computed from the fifth percentile of edge length and the minimum object
 width.
 
 If the median discrepancy turns out to be close to the tolerance given, the
-distribution is truncated: the check does not look beyond the tolerance, and
+distribution is truncated. The check does not look beyond the tolerance, and
 the real discrepancies are larger. It is worth repeating with a larger one.
 
 **Two similar violations are worth telling apart.** *A vertex lies on
-a neighbour edge* means a distance of zero: the borders coincide geometrically
+a neighbour edge* means a distance of zero. The borders coincide geometrically
 but the neighbours have different vertices. That is a defect under any
 tolerance. *A vertex near an edge* means mere proximity, and the count is set
 entirely by the tolerance. If the median in the summary is close to the
@@ -170,7 +170,7 @@ zone layer of 379 objects a whole-layer check produced 166 findings, while
 grouping by seam gave 41.
 
 **The cavity area threshold** separates a pillar, a lake or an unmapped area
-from a coverage defect: a small hole is an error, a very large one is almost
+from a coverage defect. A small hole is an error, a very large one is almost
 always part of the design.
 
 **Parameters**
@@ -204,18 +204,18 @@ and slivers do not apply to them, while undershoots, overshoots, dangles
 and pseudo nodes appear.
 
 **Three cases at a line end are worth telling apart.** An *undershoot* is an
-end that did not reach a neighbouring line: the distance is below the
+end that did not reach a neighbouring line. The distance is below the
 tolerance, a digitising trace. An *overshoot* is a tail sticking out past
 an intersection, also a digitising trace. A *dangle* is an end with nothing
-to connect to: in a stream network or a set of mine workings it is usually
+to connect to. In a stream network or a set of mine workings it is usually
 an outlet or a dead end, so the decision is left to the operator.
 
-The order of checks matters: the end of a tail past a node is also away from
+The order of checks matters. The end of a tail past a node is also away from
 the neighbouring line, so overshoots are looked for before undershoots.
 
 **A pseudo node** is a joint of two lines end to end with nothing else there.
-The check is off by default: in many layers the splitting into segments
-is deliberate.
+The check is off by default, because in many layers the splitting into
+segments is deliberate.
 
 **Parameters**
 
@@ -247,16 +247,16 @@ polygons, deletion of tiny objects without explicit permission. All of this
 goes to the **Remaining problems** layer with an explanation in `note`.
 
 **Order of steps.** Vertex artefacts, then tiny parts and holes, then snapping,
-then repair of invalid geometry, then overlaps, then gaps. The order is fixed:
-spikes must go before snapping, otherwise they turn into false nodes and get
-spread across neighbours; validity repair must come after snapping, because
+then repair of invalid geometry, then overlaps, then gaps. The order is fixed.
+Spikes must go before snapping, otherwise they turn into false nodes and get
+spread across neighbours. Validity repair must come after snapping, because
 snapping can itself produce a self-intersection.
 
 **Guarantees.** No vertex moves further than the tolerance. An edit taking more
 than a quarter of an object's area is cancelled and the object is restored.
 A repeat run changes nothing. Attributes are preserved.
 
-The output layer is always of multi type: a repair may split an object.
+The output layer is always of multi type. A repair may split an object.
 
 **Parameters**
 
@@ -322,12 +322,12 @@ run over the result changes nothing.
 Use it when the coverage is otherwise fine and only the borders need
 reconciling. It does not touch overlaps or gaps.
 
-A useful habit: run it first in **Insert nodes only** mode. It does not move
+It is useful to run it first in **Insert nodes only** mode. It does not move
 a single existing coordinate and shows the real amount of discrepancy through
 the number of inserted nodes.
 
 **The reference layer** is a separate parameter. Its vertices are treated as
-fixed and attract the input layer; the reference itself is not modified and
+fixed and attract the input layer. The reference itself is not modified and
 does not appear in the result. Use it when a new area is stitched to a border
 that has already been accepted.
 
@@ -357,7 +357,7 @@ Adds nodes where a vertex of one object lies on the edge of another. Nothing
 else.
 
 **How it differs from snapping.** Snapping moves vertices to close
-discrepancies. Here there is no discrepancy at all: the borders already
+discrepancies. Here there is no discrepancy at all. The borders already
 coincide, only the vertices differ. Insertion therefore moves nothing, and
 the total area stays exactly the same.
 
@@ -372,7 +372,7 @@ edge of a third object. The tool repeats passes while nodes are still found.
 
 **The deviation from the edge** is not a tolerance. The distance here is zero,
 and the number only acts as a safeguard. The default matches coordinate
-precision; setting metres is wrong.
+precision. Setting metres is wrong.
 
 **Parameters**
 
@@ -398,18 +398,18 @@ Checks that the union of objects sharing an attribute value gives exactly one
 part without interior rings. The layer is not modified.
 
 **What is found.** *The group split into parts* means a break remains inside
-the group; the `note` field holds the distance to the nearest part, which is
+the group. The `note` field holds the distance to the nearest part, which is
 exactly the tolerance that was missing. *An interior ring within a group* means
 a hole remains inside.
 
 **An important property.** The check finds what a coverage-wide gap search
-cannot: a gap reaching the outer edge is not a hole in the union, yet it cuts
-the group in two during assembly.
+cannot see. A gap reaching the outer edge is not a hole in the union, yet it
+cuts the group in two during assembly.
 
 **When a group need not be whole.** One attribute value often describes several
-separated bodies: contour polygons of one level, islands, areas of one type.
-Set the **maximum gap** for such data. The sign that it is needed shows at once:
-if `note` holds hundreds of metres, these are not assembly defects.
+separated bodies. These are contour polygons of one level, islands, areas of
+one type. Set the **maximum gap** for such data. The sign that it is needed
+shows at once. If `note` holds hundreds of metres, these are not assembly defects.
 
 **Parameters**
 
@@ -509,14 +509,14 @@ Thins vertices so that a border shared by two neighbours stays shared.
 
 **Why.** Ordinary simplification processes each polygon separately, so the same
 border is thinned twice and differently, producing gaps and overlaps.
-Measured on a zone layer with a tolerance of 5: the topological version
+On a zone layer with a tolerance of 5 the topological version
 produces no violations at all, the independent one produces 46 overlaps,
 25 gaps and 189 mismatched nodes.
 
 **Two thinning methods.** Douglas-Peucker measures the deviation of a vertex
-from the chord: it holds corners, but leaves visible facets on a smooth curve.
+from the chord. It holds corners, but leaves visible facets on a smooth curve.
 Visvalingam measures the area of the triangle formed by three neighbouring
-vertices: on smooth lines the result is softer, though a sharp corner made
+vertices. On smooth lines the result is softer, though a sharp corner made
 of short edges may be cut off.
 
 **Smoothing** cuts corners after thinning, over the same arcs, so a shared
@@ -533,7 +533,7 @@ arc is thinned exactly once, and both neighbours receive the same result.
 Arc ends are fixed, so the nodes where three polygons meet do not move.
 
 The area changes during simplification, that is its purpose. Topology is not
-damaged: check the result with 1.01, the number of findings must not grow.
+damaged. Check the result with 1.01, the number of findings must not grow.
 
 **Parameters**
 
@@ -560,8 +560,8 @@ Outputs the borders of a coverage as separate lines, from node to node.
 The layer is not modified.
 
 **How it differs from converting polygons to lines.** The usual conversion
-outputs a shared border twice, once from each neighbour: two coincident lines
-stacked on each other. The style lands on both and the width doubles. Here
+outputs a shared border twice, once from each neighbour. The result is two
+coincident lines stacked on each other. The style lands on both and the width doubles. Here
 the border comes out once.
 
 **Three kinds of border**: between objects, the outer edge of the coverage,
@@ -597,7 +597,7 @@ with tool 1.01.
 ## 2.03 Coverage topology model
 
 Breaks a coverage into nodes and arcs. The layer is not modified, and two new
-ones are produced: node points and arc lines.
+ones are produced - node points and arc lines.
 
 **What this is.** The model that ArcInfo coverages used. A polygon is described
 not by its own border but by references to arcs. An arc is stored once and
@@ -643,7 +643,7 @@ When snapping, a vertex takes the plan coordinates of the leader and keeps its
 own elevation, so seams with different Z do not get mixed.
 
 In the cleanup tool the intersection operations work in plan, so Z is restored
-from the nearest original vertex. For coverages this is correct; for layers
+from the nearest original vertex. For coverages this is correct. For layers
 with sharp elevation changes along a border the result should be checked.
 
 ---
@@ -659,7 +659,7 @@ themselves.
 **Objects disappeared.** An object was lost entirely during repair. Find it
 in the remaining problems layer by the `lost` type.
 
-**Repairs cancelled due to area loss.** The safeguard worked: repairing invalid
+**Repairs cancelled due to area loss.** The safeguard worked. Repairing invalid
 geometry would have taken more than a quarter of the area, so the object was
 left unchanged.
 
@@ -674,8 +674,8 @@ SQL Server may reject it. Apply `MakeValid` on the server side when loading.
 outer edge is not a hole and is not found this way. Such gaps are closed by
 vertex snapping when their width is below the tolerance.
 
-**The layer is read into memory in full.** Measured on a cadastral layer:
-11,866 objects, 15,700 rings, 726,000 vertices.
+**The layer is read into memory in full.** Measurements were taken on
+a cadastral layer of 11,866 objects, 15,700 rings and 726,000 vertices.
 
 | Tool | Time |
 |---|---|
@@ -691,17 +691,17 @@ coordinates run into millions of metres, such as Web Mercator, a double
 resolves about a nanometre. The edge between vertices exists as a formula,
 and the sign of the determinant that decides which side a point is on is
 computed from differences of large numbers, where the leading digits cancel.
-That is where overlaps of a few dozen square microns come from: they have
+That is where overlaps of a few dozen square microns come from. They have
 no width, only length. The tool treats them as debris because it judges
 an overlap by width. In a local system with six-digit coordinates there is
 an order of magnitude less of this noise.
 
-**Lines have their own group 3**: check and cleanup. Lines are also accepted
-by 1.05 snapping, 1.06 node insertion, 2.01 simplification and 1.07 assembly
-check.
+**Lines** have their own check 1.02 and cleanup 1.04. Lines are also accepted
+by 1.05 snapping, 1.06 node insertion, 1.07 assembly check and 2.01
+simplification.
 
 **Automation cannot know which of two disputed borders is correct.** It only
-tells scale: a centimetre overlap is an error, a hectare one is a disagreement
+tells scale. A centimetre overlap is an error, a hectare one is a disagreement
 between sources. Wide overlaps and large gaps therefore always stay with
 the operator.
 
@@ -721,9 +721,9 @@ Other formats do not store an alternative field name, and there the alias
 lives in the project only.
 
 Measured values are rounded to four significant digits. The rounding follows
-significant digits rather than decimal places, so an area of a few square
-microns does not become zero and a length of several thousand metres does not
-carry digits the source data never had. Counts are not rounded at all.
+significant digits rather than decimal places. An area of a few square
+microns therefore does not become zero, and a length of several thousand metres
+does not carry digits the source data never had. Counts are not rounded at all.
 
 ### The findings layer
 
@@ -749,8 +749,8 @@ matches the `num` field in the layer, so the list points to a place on the map
 and the object identifier points into the source data. The list is convenient
 to hand to whoever prepared the data.
 
-**How to style it.** A rule on `severity`: `review` in red and larger, `auto`
-small and grey. The working list is then visible at once.
+**How to style it.** A rule on `severity` draws `review` in red and larger,
+`auto` small and grey. The working list is then visible at once.
 
 ### The edit points layer
 
@@ -808,15 +808,15 @@ Produced by **2.02**. The geometry is linear, each line runs from node to node.
 | `val_a` | string | The value of the chosen field for the first neighbour. Only if a field was set |
 | `val_b` | string | The same for the second neighbour. Empty for an outer edge |
 
-**How to style it.** A rule on `kind`: the outer edge thicker, borders between
-objects thinner, a cavity edge dashed. For geological borders, a rule on the
-pair `val_a` and `val_b`: the border between two particular seams gets its own
-style.
+**How to style it.** A rule on `kind` draws the outer edge thicker, borders
+between objects thinner, a cavity edge dashed. For geological borders there is
+a rule on the pair `val_a` and `val_b`. The border between two particular seams
+gets its own style.
 
 ### The cleaned and snapped layers
 
 The attributes of the input layer are preserved in full. No fields are added.
-The geometry of a cleaned layer is always of multi type: a repair may split
+The geometry of a cleaned layer is always of multi type. A repair may split
 an object into several parts.
 
 ---

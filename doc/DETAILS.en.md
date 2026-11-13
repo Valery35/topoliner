@@ -4,11 +4,11 @@
 
 ## Classification of topology violations
 
-An "do everything" button is only possible with a strict split: only what is
+An "do everything" button is only possible with a strict split. Only what is
 certainly technical debris gets fixed silently. Anything that may carry meaning
 is reported and never touched under any settings.
 
-The line is drawn by two thresholds: a **tolerance** in length units and
+The line is drawn by two thresholds, a **tolerance** in length units and
 an **area threshold**.
 
 | Violation | What it is | Decision |
@@ -35,7 +35,7 @@ an **area threshold**.
 ### What the button cannot do in principle
 
 Automation cannot know which of two disputed borders is correct. It can only
-tell scale: a centimetre overlap is certainly an error, a hectare one is
+tell scale. A centimetre overlap is certainly an error, a hectare one is
 a disagreement between sources. Wide overlaps, large gaps, duplicates and
 nested objects therefore always stay with the operator.
 
@@ -56,7 +56,7 @@ The layer is not modified. The output is a point layer with the fields `type`,
 in the Processing panel. The `severity` field takes the values `auto` and
 `review` according to the table above.
 
-The tool answers the main question before cleaning: how much will go silently
+The tool answers the main question before cleaning, how much will go silently
 and how much has to be looked at by hand.
 
 ---
@@ -67,12 +67,12 @@ The order of steps is fixed:
 
 1. removal of repeated vertices and spikes,
 2. removal of tiny parts and filling of tiny holes,
-3. snapping: merging close vertices and inserting missing nodes,
+3. snapping - merging close vertices and inserting missing nodes,
 4. repair of invalid geometry with area loss control,
 5. subtraction of narrow overlaps by the priority rule,
 6. handing small gaps to the neighbour with the longest shared border.
 
-Step 3 comes after vertex cleaning on purpose: otherwise spikes and duplicates
+Step 3 comes after vertex cleaning on purpose. Otherwise spikes and duplicates
 turn into false nodes and get spread across neighbours. Step 4 comes after
 snapping, because snapping can itself produce a self-intersection. Steps 5
 and 6 come last, as they work on an already reconciled coverage.
@@ -80,7 +80,7 @@ and 6 come last, as they work on an already reconciled coverage.
 ### Guarantees
 
 - No vertex moves further than the tolerance.
-- An edit taking more than a quarter of an object's area is cancelled; the
+- An edit taking more than a quarter of an object's area is cancelled. The
   object stays as it was and goes into the remaining problems.
 - A repeat run over the result changes nothing.
 - Attributes are preserved. Objects are never deleted without permission.
@@ -93,26 +93,26 @@ Replaces the manual routine of snapping a layer to itself with vertex
 insertion, followed by a dissolve without attributes as a check.
 
 **Node insertion.** A vertex of one object lies on the edge of another and
-there is no node there. A node is inserted; existing vertices stay in place.
+there is no node there. A node is inserted. Existing vertices stay in place.
 It is exactly the absence of such nodes that makes a dissolve leave hairline
 slivers.
 
 **Vertex merging.** Vertices closer than the tolerance are brought to a single
-point. Clustering is greedy by leader: vertices are traversed in a fixed order,
-the first free one becomes the leader and never moves again, and the others
+point. Clustering is greedy by leader. Vertices are traversed in a fixed order.
+The first free one becomes the leader and never moves again, and the others
 within the tolerance are attracted to it.
 
 ### The displacement guarantee
 
 No vertex moves further than the tolerance. This follows from the leader
-scheme: the leader is chosen once and stays put, so chains of the form
+scheme. The leader is chosen once and stays put, so chains of the form
 "A pulled B, B pulled C" that drag geometry beyond the tolerance are
 impossible. A classical snap of a layer to itself gives no such guarantee.
 
 ### Objects narrower than the tolerance
 
 Such an object would have its opposite banks stick together and would collapse
-into itself. By default it is left untouched and serves as an anchor: the
+into itself. By default it is left untouched and serves as an anchor. The
 neighbours are pulled towards it. Advising a smaller tolerance would not help,
 because a tolerance below the narrowest object stops closing real
 discrepancies.
@@ -125,14 +125,14 @@ The union of objects sharing an attribute value must give exactly one part
 without interior rings. The tool checks this across all groups at once and
 replaces the manual union followed by staring at the result.
 
-It finds what a coverage-wide gap search cannot see: a gap reaching the outer
+It finds what a coverage-wide gap search cannot see. A gap reaching the outer
 edge is not a hole in the union, yet it cuts the group in two during assembly.
 Pinned by the test `test_open_gap_splits_the_group`.
 
 The `note` field of a finding holds the distance to the nearest part of the
 group, which is exactly the tolerance that was missing.
 
-Parts are grouped into bodies by connectivity: two parts belong to one body
+Parts are grouped into bodies by connectivity. Two parts belong to one body
 if the distance between them is not greater than the **maximum gap** parameter.
 Only a split within a body counts as a break, separate bodies are not a violation.
 Zero means the group must be whole, which is the mode for zones, blocks
@@ -145,10 +145,10 @@ and panels.
 Only insertion. No existing vertex is moved or deleted, so the total area stays
 exactly the same rather than approximately the same. A node is placed at the
 projection of the point onto the edge, that is strictly on the line of that
-edge, so the shape does not change and a self-intersection has nowhere to come
+edge. The shape therefore does not change, and a self-intersection has nowhere to come
 from.
 
-Several passes may be required: an inserted node sometimes lands on the edge
+Several passes may be required. An inserted node sometimes lands on the edge
 of a third object. On a real kriging polygon layer the passes produced 136,
 56 and 10 nodes, after which the findings were exhausted.
 
@@ -156,14 +156,14 @@ of a third object. On a real kriging polygon layer the passes produced 136,
 
 ## 2.01 Topology-preserving simplify
 
-Rings are broken into edges; an edge is identified by its pair of ends
+Rings are broken into edges. An edge is identified by its pair of ends
 regardless of direction, so the same edge of two neighbours yields a single
-record. Edges are glued into arcs: a chain continues while exactly two edges
+record. Edges are glued into arcs. A chain continues while exactly two edges
 with the same owner set meet at a vertex, and breaks at a branch node. Each arc
 is thinned exactly once, so both neighbours receive the same result. Arc ends
 are fixed, so the nodes where three polygons meet do not move.
 
-Measured on a zone layer of 341 objects with a tolerance of 5: independent
+In a measurement on a zone layer of 341 objects with a tolerance of 5, independent
 simplification gives 46 overlaps, 25 gaps and 189 mismatched nodes, while the
 topological one gives none.
 
@@ -236,7 +236,7 @@ cd topoliner
 python -m unittest discover -s tests -v
 ```
 
-QGIS is not needed: the core works with plain coordinate lists, and the
+QGIS is not needed. The core works with plain coordinate lists, and the
 intersection operations go through an adapter that has a Shapely
 implementation. Shapely uses the same GEOS as QGIS, so the behaviour matches
 production.

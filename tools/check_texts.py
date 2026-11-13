@@ -72,6 +72,7 @@ def help_strings():
                     if isinstance(text, str):
                         out.append(("help_texts.py", key.value, node.lineno, text))
 
+    english = english_catalogue()
     for name in sorted(os.listdir(PLUGIN)):
         if not name.endswith(".py"):
             continue
@@ -82,13 +83,32 @@ def help_strings():
                 continue
             if getattr(node.func, "attr", "") != "setHelp" or not node.args:
                 continue
+            arg = node.args[0]
+            # Подсказка идёт через tr, текст лежит первым аргументом.
+            if (isinstance(arg, ast.Call) and getattr(arg.func, "id", "") == "tr"
+                    and arg.args):
+                arg = arg.args[0]
             try:
-                text = ast.literal_eval(node.args[0])
+                text = ast.literal_eval(arg)
             except ValueError:
                 continue
             if isinstance(text, str):
                 out.append((name, "setHelp", node.lineno, text))
+                if text in english:
+                    out.append((name, "setHelp en", node.lineno, english[text]))
     return out
+
+
+def english_catalogue():
+    """Словарь EN из i18n.py, без импорта модуля плагина."""
+    path = os.path.join(PLUGIN, "i18n.py")
+    with open(path, encoding="utf-8") as fh:
+        tree = ast.parse(fh.read())
+    for node in tree.body:
+        if (isinstance(node, ast.Assign)
+                and getattr(node.targets[0], "id", "") == "EN"):
+            return ast.literal_eval(node.value)
+    return {}
 
 
 def clean_markdown(text):

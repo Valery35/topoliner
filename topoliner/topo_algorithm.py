@@ -214,13 +214,14 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
 
     # ── Параметры ─────────────────────────────────────────────────────────
     def initAlgorithm(self, config=None):
-        self.addParameter(
-            QgsProcessingParameterFeatureSource(
+        p = QgsProcessingParameterFeatureSource(
                 self.INPUT,
                 tr("Входной слой (полигоны или линии)"),
                 [QgsProcessing.TypeVectorPolygon, QgsProcessing.TypeVectorLine],
             )
-        )
+        p.setHelp(tr("Полигональный или линейный слой.\n"
+                     "Слой не изменяется, результат пишется в новый слой."))
+        self.addParameter(p)
 
         p_tol = QgsProcessingParameterNumber(
             self.TOLERANCE,
@@ -230,10 +231,10 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
             minValue=1e-9,
         )
         p_tol.setHelp(
-            "Максимальное расстояние, на которое разрешено сдвинуть вершину.\n"
-            "Он же радиус поиска соседних рёбер для вставки узлов.\n"
-            "Берите чуть больше реальной величины расхождений и заметно меньше\n"
-            "длины самого короткого осмысленного ребра."
+            tr("Максимальное расстояние, на которое разрешено сдвинуть вершину.\n"
+               "Он же радиус поиска соседних рёбер для вставки узлов.\n"
+               "Берите чуть больше реальной величины расхождений и заметно меньше\n"
+               "длины самого короткого осмысленного ребра.")
         )
         self.addParameter(p_tol)
 
@@ -241,16 +242,16 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
             self.MODE,
             tr("Режим"),
             options=[
-                "Слияние вершин и вставка узлов (полная сшивка)",
-                "Только вставка узлов (вершины не двигаются)",
-                "Только слияние вершин",
+                tr("Слияние вершин и вставка узлов (полная сшивка)"),
+                tr("Только вставка узлов (вершины не двигаются)"),
+                tr("Только слияние вершин"),
             ],
             defaultValue=0,
         )
         p_mode.setHelp(
-            "Полная сшивка закрывает зазоры и согласует узлы.\n"
-            "Только вставка узлов не меняет ни одной существующей координаты,\n"
-            "это безопасный первый проход для контроля объёма правок."
+            tr("Полная сшивка закрывает зазоры и согласует узлы.\n"
+               "Только вставка узлов не меняет ни одной существующей координаты,\n"
+               "это безопасный первый проход для контроля объёма правок.")
         )
         self.addParameter(p_mode)
 
@@ -261,8 +262,8 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
             optional=True,
         )
         p_ref.setHelp(
-            "Слой, который трогать нельзя. Его вершины становятся опорными,\n"
-            "входной слой подтягивается к ним. Сам эталон не изменяется."
+            tr("Слой, который трогать нельзя. Его вершины становятся опорными,\n"
+               "входной слой подтягивается к ним. Сам эталон не изменяется.")
         )
         self.addParameter(p_ref)
 
@@ -270,15 +271,15 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
             self.PRIORITY,
             tr("Кто кого притягивает"),
             options=[
-                "По порядку объектов в слое",
-                "Крупные объекты притягивают мелкие",
+                tr("По порядку объектов в слое"),
+                tr("Крупные объекты притягивают мелкие"),
             ],
             defaultValue=1,
         )
         p_prio.setHelp(
-            "Определяет, чьи вершины остаются на месте при слиянии.\n"
-            "Обычно на месте оставляют крупный объект,\n"
-            "а мелкий подтянуть к нему."
+            tr("Определяет, чьи вершины остаются на месте при слиянии.\n"
+               "Обычно на месте оставляют крупный объект,\n"
+               "а мелкий подтянуть к нему.")
         )
         self.addParameter(p_prio)
 
@@ -286,14 +287,14 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
             self.Z_MODE,
             tr("Отметка Z вставленного узла"),
             options=[
-                "Интерполировать вдоль ребра",
-                "Взять у притянутой вершины",
+                tr("Интерполировать вдоль ребра"),
+                tr("Взять у притянутой вершины"),
             ],
             defaultValue=0,
         )
         p_z.setHelp(
-            "Интерполяция сохраняет форму ребра в разрезе.\n"
-            "Второй вариант нужен, когда узлы должны совпасть и по высоте."
+            tr("Интерполяция сохраняет форму ребра в разрезе.\n"
+               "Второй вариант нужен, когда узлы должны совпасть и по высоте.")
         )
         self.addParameter(p_z)
 
@@ -303,9 +304,9 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
             defaultValue=True,
         )
         p_cross.setHelp(
-            "Нужно для перехлёстов, где рёбра пересекаются крест-накрест,\n"
-            "а общих вершин нет. Вставка узлов по вершинам такой случай\n"
-            "не закрывает, потому что вставлять там нечего."
+            tr("Нужно для перехлёстов, где рёбра пересекаются крест-накрест,\n"
+               "а общих вершин нет. Вставка узлов по вершинам такой случай\n"
+               "не закрывает, потому что вставлять там нечего.")
         )
         self.addParameter(p_cross)
 
@@ -315,10 +316,10 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
             defaultValue=True,
         )
         p_prot.setHelp(
-            "У объекта, чья ширина меньше допуска, противоположные берега\n"
-            "слиплись бы, и он схлопнулся бы сам в себя. С этой галочкой он\n"
-            "остаётся нетронутым и служит опорой. Соседи подтягиваются к нему.\n"
-            "Без неё такие объекты теряются целиком."
+            tr("У объекта, чья ширина меньше допуска, противоположные берега\n"
+               "слиплись бы, и он схлопнулся бы сам в себя. С этой галочкой он\n"
+               "остаётся нетронутым и служит опорой. Соседи подтягиваются к нему.\n"
+               "Без неё такие объекты теряются целиком.")
         )
         self.addParameter(p_prot)
 
@@ -326,18 +327,18 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
             self.REPAIR,
             tr("Если сшивка испортила геометрию"),
             options=[
-                "Исправить, а если не выходит, вернуть исходную геометрию",
-                "Вернуть исходную геометрию объекта",
-                "Оставить как есть",
+                tr("Исправить, а если не выходит, вернуть исходную геометрию"),
+                tr("Вернуть исходную геометрию объекта"),
+                tr("Оставить как есть"),
             ],
             defaultValue=0,
         )
         p_rep.setHelp(
-            "Слияние вершин выворачивает форму, если объект уже допуска.\n"
-            "Противоположные берега слипаются. Первый вариант пробует исправить,\n"
-            "а если правка съедает больше четверти площади, возвращает объект\n"
-            "в исходный вид. Второй сразу возвращает исходный, тогда границы\n"
-            "такого объекта останутся несогласованными. Третий пишет как вышло."
+            tr("Слияние вершин выворачивает форму, если объект уже допуска.\n"
+               "Противоположные берега слипаются. Первый вариант пробует исправить,\n"
+               "а если правка съедает больше четверти площади, возвращает объект\n"
+               "в исходный вид. Второй сразу возвращает исходный, тогда границы\n"
+               "такого объекта останутся несогласованными. Третий пишет как вышло.")
         )
         self.addParameter(p_rep)
 
@@ -347,24 +348,25 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
             defaultValue=True,
         )
         p_val.setHelp(
-            "Считает количество некорректных геометрий на входе и на выходе.\n"
-            "На больших слоях проверка занимает заметное время."
+            tr("Считает количество некорректных геометрий на входе и на выходе.\n"
+               "На больших слоях проверка занимает заметное время.")
         )
         self.addParameter(p_val)
 
-        self.addParameter(
-            QgsProcessingParameterFeatureSink(self.OUTPUT, tr("Сшитый слой"))
-        )
+        p = QgsProcessingParameterFeatureSink(self.OUTPUT, tr("Сшитый слой"))
+        p.setHelp(tr("Новый слой со сшитой геометрией и атрибутами исходного."))
+        self.addParameter(p)
 
-        self.addParameter(
-            QgsProcessingParameterFeatureSink(
+        p = QgsProcessingParameterFeatureSink(
                 self.REPORT,
                 tr("Точки правок (необязательно)"),
                 QgsProcessing.TypeVectorPoint,
                 optional=True,
                 createByDefault=False,
             )
-        )
+        p.setHelp(tr("Точка на месте каждой правки. Поле kind называет вид правки,\n"
+                     "поле dist хранит смещение."))
+        self.addParameter(p)
 
     # ── Выполнение ────────────────────────────────────────────────────────
     @no_warnings
@@ -490,17 +492,17 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
             if narrow and protect:
                 feedback.pushInfo(
                     tr("Колец уже допуска: %d. Они оставлены без изменений и служат "
-                    "опорой для соседей.") % narrow)
+                       "опорой для соседей.") % narrow)
             elif narrow:
                 feedback.pushWarning(
                     tr("Колец уже допуска: %d. У такого кольца противоположные берега "
-                    "слипнутся, и оно схлопнется само в себя. Включите защиту "
-                    "узких объектов либо возьмите допуск меньше %s.")
+                       "слипнутся, и оно схлопнется само в себя. Включите защиту "
+                       "узких объектов либо возьмите допуск меньше %s.")
                     % (narrow, fmt(widths[0] if widths else tolerance)))
         if p05 > 0 and tolerance > p05:
             feedback.pushInfo(
                 tr("Допуск больше пяти процентов самых коротких рёбер (%s), "
-                "мелкие изгибы будут сглажены.") % fmt(p05))
+                   "мелкие изгибы будут сглажены.") % fmt(p05))
 
         def progress(fraction):
             feedback.setProgress(10.0 + 70.0 * fraction)
@@ -654,7 +656,7 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
             if invalid_after > invalid_before:
                 feedback.pushWarning(
                     tr("Некорректных стало больше. Уменьшите допуск. Ориентир это "
-                    "пятый процентиль длины ребра, он напечатан выше.")
+                       "пятый процентиль длины ребра, он напечатан выше.")
                 )
         feedback.pushInfo(tr("Объектов записано:    %d") % written)
         feedback.setProgress(100)
@@ -747,17 +749,20 @@ class InsertNodesAlgorithm(QgsProcessingAlgorithm):
         return help_for("insertnodes") + help_footer()
 
     def initAlgorithm(self, config=None):
-        self.addParameter(QgsProcessingParameterFeatureSource(
+        p = QgsProcessingParameterFeatureSource(
             self.INPUT, tr("Входной слой (полигоны или линии)"),
-            [QgsProcessing.TypeVectorPolygon, QgsProcessing.TypeVectorLine]))
+            [QgsProcessing.TypeVectorPolygon, QgsProcessing.TypeVectorLine])
+        p.setHelp(tr("Полигональный или линейный слой.\n"
+                     "Слой не изменяется, результат пишется в новый слой."))
+        self.addParameter(p)
 
         p = QgsProcessingParameterFeatureSource(
             self.REFERENCE, tr("Опорный слой (необязательно)"),
             [QgsProcessing.TypeVectorPolygon, QgsProcessing.TypeVectorLine],
             optional=True)
         p.setHelp(
-            "Источник узлов для входного слоя. Не изменяется и в результат\n"
-            "не попадает. Нужен, когда вершины одного слоя лежат на рёбрах другого."
+            tr("Источник узлов для входного слоя. Не изменяется и в результат\n"
+               "не попадает. Нужен, когда вершины одного слоя лежат на рёбрах другого.")
         )
         self.addParameter(p)
 
@@ -766,10 +771,10 @@ class InsertNodesAlgorithm(QgsProcessingAlgorithm):
             type=QgsProcessingParameterNumber.Double,
             defaultValue=1e-6, minValue=1e-12)
         p.setHelp(
-            "Защита от ложных срабатываний, а не допуск поиска.\n"
-            "Узел ставится, только если вершина лежит на ребре ближе\n"
-            "этой величины. Значение отвечает точности координат.\n"
-            "Задавать метры здесь не следует."
+            tr("Защита от ложных срабатываний, а не допуск поиска.\n"
+               "Узел ставится, только если вершина лежит на ребре ближе\n"
+               "этой величины. Значение отвечает точности координат.\n"
+               "Задавать метры здесь не следует.")
         )
         self.addParameter(p)
 
@@ -777,8 +782,8 @@ class InsertNodesAlgorithm(QgsProcessingAlgorithm):
             self.CROSSINGS, tr("Ставить узлы в точках пересечения рёбер"),
             defaultValue=True)
         p.setHelp(
-            "Точка пересечения лежит на обоих рёбрах, поэтому такая вставка\n"
-            "тоже не меняет ни формы, ни площади."
+            tr("Точка пересечения лежит на обоих рёбрах, поэтому такая вставка\n"
+               "тоже не меняет ни формы, ни площади.")
         )
         self.addParameter(p)
 
@@ -787,18 +792,24 @@ class InsertNodesAlgorithm(QgsProcessingAlgorithm):
             type=QgsProcessingParameterNumber.Integer, defaultValue=10,
             minValue=1, maxValue=50)
         p.setHelp(
-            "Вставленный узел сам иногда ложится на ребро третьего объекта,\n"
-            "поэтому проходы повторяются, пока узлы находятся. На согласованном\n"
-            "покрытии хватает двух-трёх. Если предел достигнут, значит слой\n"
-            "не является покрытием. Причина обычно в наложении объектов."
+            tr("Вставленный узел сам иногда ложится на ребро третьего объекта,\n"
+               "поэтому проходы повторяются, пока узлы находятся. На согласованном\n"
+               "покрытии хватает двух-трёх. Если предел достигнут, значит слой\n"
+               "не является покрытием. Причина обычно в наложении объектов.")
         )
         self.addParameter(p)
 
-        self.addParameter(QgsProcessingParameterFeatureSink(
-            self.OUTPUT, tr("Слой с узлами")))
-        self.addParameter(QgsProcessingParameterFeatureSink(
+        p = QgsProcessingParameterFeatureSink(
+            self.OUTPUT, tr("Слой с узлами"))
+        p.setHelp(tr("Новый слой со вставленными узлами и атрибутами исходного.\n"
+                     "Вставка узлов не меняет ни форму, ни площадь."))
+        self.addParameter(p)
+        p = QgsProcessingParameterFeatureSink(
             self.REPORT, tr("Вставленные узлы (необязательно)"),
-            QgsProcessing.TypeVectorPoint, optional=True, createByDefault=False))
+            QgsProcessing.TypeVectorPoint, optional=True, createByDefault=False)
+        p.setHelp(tr("Точка на месте каждого вставленного узла.\n"
+                     "Поле dist хранит отклонение вершины от ребра."))
+        self.addParameter(p)
 
     @no_warnings
     def processAlgorithm(self, parameters, context, feedback):
@@ -1018,21 +1029,21 @@ class InsertNodesAlgorithm(QgsProcessingAlgorithm):
                 else:
                     feedback.pushWarning(
                         tr("Площадь изменилась на %s. Инструмент обещает не менять её "
-                        "вовсе, поэтому проверьте отклонение от ребра. Скорее всего "
-                        "оно завышено.") % fmt(delta))
+                           "вовсе, поэтому проверьте отклонение от ребра. Скорее всего "
+                           "оно завышено.") % fmt(delta))
 
         if reverted:
             feedback.pushWarning(
                 tr("Объектов возвращено к исходному виду: %d. Вставка узла вывернула "
-                "их геометрию, узлы для них не добавлены. Идентификаторы: %s%s")
+                   "их геометрию, узлы для них не добавлены. Идентификаторы: %s%s")
                 % (len(reverted), ", ".join(str(i) for i in reverted[:10]),
                    " и ещё %d" % (len(reverted) - 10) if len(reverted) > 10 else ""))
             for line in reasons:
                 feedback.pushInfo("  " + line)
             feedback.pushInfo(
                 tr("Чтобы понять природу, запустите ещё раз со снятой галочкой "
-                "об узлах в пересечениях рёбер. Если откаты исчезнут, дело "
-                "в пересечениях, если останутся, в самих вершинах на рёбрах."))
+                   "об узлах в пересечениях рёбер. Если откаты исчезнут, дело "
+                   "в пересечениях, если останутся, в самих вершинах на рёбрах."))
         feedback.pushInfo(tr("Объектов на входе/выходе: %d / %d") % (len(records), written))
         if dropped:
             feedback.pushWarning(tr("Объектов потеряно: %d. Этого быть не должно.") % dropped)

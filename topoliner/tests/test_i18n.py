@@ -213,6 +213,101 @@ class TestNothingUntranslated(unittest.TestCase):
         self.assertEqual(sorted(missing), [], "Нет перевода: %r" % sorted(missing))
 
 
+class TestParameterDialogs(unittest.TestCase):
+    """
+    Диалоги Processing целиком на языке интерфейса, у каждого поля подсказка.
+
+    Подсказки полей и варианты перечислений долго шли мимо tr. На английском
+    интерфейсе они показывались по-русски, а прежние проверки смотрели только
+    на сообщения журнала. Сторож смотрит на весь initAlgorithm.
+    """
+
+    def init_functions(self):
+        import ast
+        for name in sorted(os.listdir(PLUGIN)):
+            if not name.endswith(".py"):
+                continue
+            with open(os.path.join(PLUGIN, name), encoding="utf-8") as fh:
+                tree = ast.parse(fh.read())
+            for node in ast.walk(tree):
+                if isinstance(node, ast.FunctionDef) and node.name == "initAlgorithm":
+                    yield name, node
+
+    @staticmethod
+    def is_tr(node):
+        import ast
+        return (isinstance(node, ast.Call)
+                and getattr(node.func, "id", "") == "tr")
+
+    def test_cyrillic_only_inside_tr(self):
+        """Любая русская строка диалога, включая варианты и фильтры файлов."""
+        import ast
+        found = []
+        for name, func in self.init_functions():
+            wrapped = set()
+            for node in ast.walk(func):
+                if self.is_tr(node) and node.args:
+                    wrapped.add(id(node.args[0]))
+            for node in ast.walk(func):
+                if (isinstance(node, ast.Constant) and isinstance(node.value, str)
+                        and re.search(r"[А-Яа-яЁё]", node.value)
+                        and id(node) not in wrapped):
+                    found.append("%s:%d %s" % (name, node.lineno, node.value[:40]))
+        self.assertEqual(found, [], "Строка диалога без tr: %r" % found)
+
+    def test_every_hint_is_translated(self):
+        import ast
+        found = []
+        for name, func in self.init_functions():
+            for node in ast.walk(func):
+                if not (isinstance(node, ast.Call)
+                        and getattr(node.func, "attr", "") == "setHelp"):
+                    continue
+                arg = node.args[0] if node.args else None
+                if not (self.is_tr(arg) and isinstance(arg.args[0], ast.Constant)):
+                    found.append("%s:%d подсказка не через tr" % (name, node.lineno))
+                elif arg.args[0].value not in i18n.EN:
+                    found.append("%s:%d нет перевода" % (name, node.lineno))
+        self.assertEqual(found, [], "Подсказки: %r" % found)
+
+    def test_every_parameter_has_a_hint(self):
+        """
+        Параметр уходит в диалог через переменную, у которой перед этим
+        вызван setHelp. Параметр, созданный прямо в addParameter, подсказки
+        не имеет по построению.
+        """
+        import ast
+        found = []
+        for name, func in self.init_functions():
+            helped = set()
+            for node in self.statements(func.body):
+                if isinstance(node, ast.Assign):
+                    for target in node.targets:
+                        helped.discard(getattr(target, "id", None))
+                call = node.value if isinstance(node, ast.Expr) else None
+                if not isinstance(call, ast.Call):
+                    continue
+                attr = getattr(call.func, "attr", "")
+                owner = getattr(getattr(call.func, "value", None), "id", None)
+                if attr == "setHelp":
+                    helped.add(owner)
+                elif attr == "addParameter":
+                    arg = call.args[0] if call.args else None
+                    if getattr(arg, "id", None) not in helped:
+                        found.append("%s:%d" % (name, call.lineno))
+        self.assertEqual(found, [], "Параметр без подсказки: %r" % found)
+
+    def statements(self, body):
+        """Операторы функции по порядку, с заходом в if и for."""
+        import ast
+        for node in body:
+            yield node
+            for field in ("body", "orelse"):
+                inner = getattr(node, field, None)
+                if isinstance(node, (ast.If, ast.For, ast.With)) and inner:
+                    yield from self.statements(inner)
+
+
 class TestCodeHygiene(unittest.TestCase):
     """Требования линтера каталога QGIS.
 

@@ -6,12 +6,12 @@
 [![Plugin page](https://img.shields.io/badge/Plugin%20page-0f766e.svg)](https://www.informpp.ru/%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F-%D1%81%D1%82%D1%80%D0%B0%D0%BD%D0%B8%D1%86%D0%B0/qgis-topoliner)
 [![Support development](https://img.shields.io/badge/Support-development-2ea44f)](https://github.com/Valery35#%D0%BF%D0%BE%D0%B4%D0%B4%D0%B5%D1%80%D0%B6%D0%B0%D1%82%D1%8C-%D1%80%D0%B0%D0%B7%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D0%BA%D1%83)
 
-A QGIS plugin for bringing polygon coverages into order: topology check,
+A QGIS plugin for bringing polygon coverages into order - topology check,
 automatic cleanup, border snapping, insertion of missing nodes, assembly check
 by attribute and simplification that keeps shared borders shared.
 
 All tools live in the Processing panel and work in models and in batch mode.
-The input layer is never modified: every result goes to a new layer.
+The input layer is never modified. Every result goes to a new layer.
 
 Interface in English and Russian, chosen by the QGIS locale.
 
@@ -19,7 +19,7 @@ The plugin is free and open source. [Support development](https://github.com/Val
 
 ## Why
 
-The usual manual routine looks like this: snap a layer to itself with some
+The usual manual routine is to snap a layer to itself with some
 tolerance, then dissolve without attributes, then inspect the result for
 discrepancies. It is well known, repeatable and done by hand every time.
 The plugin does the same thing reproducibly, with a numeric report
@@ -54,7 +54,7 @@ Tool 1.08 puts drawn contours into a coverage. Three overlay modes answer one qu
 ## The main principle
 
 Automation cannot know which of two disputed borders is correct. What it can
-tell is scale: a centimetre overlap is a digitising error, a hectare one is
+tell is scale. A centimetre overlap is a digitising error, a hectare one is
 a disagreement between sources. Behaviour is therefore set by two thresholds,
 a tolerance in length units and an area threshold. Anything above them is left
 to the operator and is never fixed automatically under any settings.
@@ -66,7 +66,7 @@ to the operator and is never fixed automatically under any settings.
 - Objects narrower than the tolerance are left untouched and serve as anchors.
 - A repeat run over the result changes nothing. There is one exception:
   simplification with smoothing, where every pass cuts the corners again.
-- Attributes are preserved; objects are never deleted without explicit permission.
+- Attributes are preserved. Objects are never deleted without explicit permission.
 - Insertion of missing nodes does not change the area at all.
 
 ## Companions
@@ -92,10 +92,10 @@ Restarting QGIS is not required.
 
 ## Documentation
 
-The manual in PDF ships with the plugin: `topoliner/doc/Topoliner_en.pdf`.
+The manual in PDF, `topoliner/doc/Topoliner_en.pdf`, ships with the plugin.
 The **Help** button in a tool dialog opens it in the interface language.
 
-Sources: [doc/MANUAL.en.md](doc/MANUAL.en.md), design notes and the
+Sources - [doc/MANUAL.en.md](doc/MANUAL.en.md), design notes and the
 classification of violations - [doc/DETAILS.en.md](doc/DETAILS.en.md).
 
 ## Development

@@ -231,22 +231,25 @@ class TopologyAuditAlgorithm(QgsProcessingAlgorithm):
         return help_for("topologyaudit") + help_footer()
 
     def initAlgorithm(self, config=None):
-        self.addParameter(QgsProcessingParameterFeatureSource(
+        p = QgsProcessingParameterFeatureSource(
             self.INPUT, tr("Проверяемый слой (полигоны)"),
-            [QgsProcessing.TypeVectorPolygon]))
+            [QgsProcessing.TypeVectorPolygon])
+        p.setHelp(tr("Полигональный слой, который проверяется.\n"
+                     "Слой не изменяется, находки пишутся в отдельный слой точек."))
+        self.addParameter(p)
 
         p = QgsProcessingParameterNumber(
             self.TOLERANCE, tr("Допуск (в единицах CRS слоя)"),
             type=QgsProcessingParameterNumber.Double, defaultValue=2.0, minValue=1e-9)
-        p.setHelp("Расстояние, ниже которого расхождение считается технической погрешностью.")
+        p.setHelp(tr("Расстояние, ниже которого расхождение считается технической погрешностью."))
         self.addParameter(p)
 
         p = QgsProcessingParameterNumber(
             self.AREA, tr("Порог площади мусора (в кв. единицах CRS)"),
             type=QgsProcessingParameterNumber.Double, defaultValue=1.0, minValue=0.0)
         p.setHelp(
-            "Площадь, ниже которой фрагмент считается техническим мусором.\n"
-            "Разумная точка отсчёта это квадрат допуска."
+            tr("Площадь, ниже которой фрагмент считается техническим мусором.\n"
+               "Разумная точка отсчёта это квадрат допуска.")
         )
         self.addParameter(p)
 
@@ -254,10 +257,10 @@ class TopologyAuditAlgorithm(QgsProcessingAlgorithm):
             self.FIELDS, tr("Поле или поля группировки (необязательно)"),
             parentLayerParameterName=self.INPUT, allowMultiple=True, optional=True)
         p.setHelp(
-            "Нужно, когда слой не является единым покрытием, например когда\n"
-            "зоны нескольких пластов лежат в одном слое. Объекты разных групп\n"
-            "накладываются друг на друга по замыслу, и без группировки каждое\n"
-            "такое наложение попадает в перекрытия, дубликаты и вложения."
+            tr("Нужно, когда слой не является единым покрытием, например когда\n"
+               "зоны нескольких пластов лежат в одном слое. Объекты разных групп\n"
+               "накладываются друг на друга по замыслу, и без группировки каждое\n"
+               "такое наложение попадает в перекрытия, дубликаты и вложения.")
         )
         self.addParameter(p)
 
@@ -265,44 +268,51 @@ class TopologyAuditAlgorithm(QgsProcessingAlgorithm):
             self.CAVITY, tr("Полость крупнее этой площади щелью не считается (0 - не учитывать)"),
             type=QgsProcessingParameterNumber.Double, defaultValue=0.0, minValue=0.0)
         p.setHelp(
-            "Полость крупнее этой площади считается частью замысла и находкой\n"
-            "не является: целик, озеро, незакартированный участок.\n"
-            "Мелкая дыра в покрытии это дефект, очень крупная почти всегда нет."
+            tr("Полость крупнее этой площади считается частью замысла и находкой\n"
+               "не является. Это целик, озеро, незакартированный участок.\n"
+               "Мелкая дыра в покрытии это дефект, очень крупная почти всегда нет.")
         )
         self.addParameter(p)
 
         p = QgsProcessingParameterBoolean(
             self.DO_OVERLAPS, tr("Искать перекрытия, дубликаты и вложения"), defaultValue=True)
         p.setHelp(
-            "Попарное сравнение объектов. На больших слоях это самая долгая часть\n"
-            "проверки, и её можно отключить, если интересуют только вершины и щели."
+            tr("Попарное сравнение объектов. На больших слоях это самая долгая часть\n"
+               "проверки, и её можно отключить, если интересуют только вершины и щели.")
         )
         self.addParameter(p)
         p = QgsProcessingParameterBoolean(
             self.DO_GAPS, tr("Искать щели в покрытии"), defaultValue=True)
         p.setHelp(
-            "Щель это дыра в объединении покрытия. Зазор, выходящий на внешний край,\n"
-            "дырой не является и здесь не находится. Его закрывает сшивка вершин."
+            tr("Щель это дыра в объединении покрытия. Зазор, выходящий на внешний край,\n"
+               "дырой не является и здесь не находится. Его закрывает сшивка вершин.")
         )
         self.addParameter(p)
-        self.addParameter(QgsProcessingParameterBoolean(
-            self.DO_NODES, tr("Искать вершины без узла на соседнем ребре"), defaultValue=True))
+        p = QgsProcessingParameterBoolean(
+            self.DO_NODES, tr("Искать вершины без узла на соседнем ребре"), defaultValue=True)
+        p.setHelp(tr("Вершина одного объекта лежит на ребре соседа или рядом с ним,\n"
+                     "а у соседа в этой точке узла нет. Такие места мешают сшивке\n"
+                     "и построению модели покрытия."))
+        self.addParameter(p)
 
         p = QgsProcessingParameterFileDestination(
             self.REPORT_FILE, tr("Отчёт списком"),
-            fileFilter="Текстовый файл (*.txt)", optional=True,
+            fileFilter=tr("Текстовый файл (*.txt)"), optional=True,
             createByDefault=False)
         p.setHelp(
-            "Нумерованный список находок: номер, что не так, у каких\n"
-            "объектов, где именно. Номер совпадает с полем num в слое\n"
-            "находок, поэтому по списку место ищется на карте, а по\n"
-            "идентификатору объекта в исходных данных.\n"
-            "Список удобно передать тому, кто данные готовил."
+            tr("Нумерованный список находок. В нём номер, что не так, у каких\n"
+               "объектов, где именно. Номер совпадает с полем num в слое\n"
+               "находок, поэтому по списку место ищется на карте, а по\n"
+               "идентификатору объекта в исходных данных.\n"
+               "Список удобно передать тому, кто данные готовил.")
         )
         self.addParameter(p)
 
-        self.addParameter(QgsProcessingParameterFeatureSink(
-            self.OUTPUT, tr("Находки"), QgsProcessing.TypeVectorPoint))
+        p = QgsProcessingParameterFeatureSink(
+            self.OUTPUT, tr("Находки"), QgsProcessing.TypeVectorPoint)
+        p.setHelp(tr("Слой точек, по одной на каждую находку.\n"
+                     "Поле severity делит находки на auto и review."))
+        self.addParameter(p)
 
     @no_warnings
     def processAlgorithm(self, parameters, context, feedback):
@@ -464,21 +474,24 @@ class TopologyFixAlgorithm(QgsProcessingAlgorithm):
         return help_for("topologyfix") + help_footer()
 
     def initAlgorithm(self, config=None):
-        self.addParameter(QgsProcessingParameterFeatureSource(
-            self.INPUT, tr("Входной слой (полигоны)"), [QgsProcessing.TypeVectorPolygon]))
+        p = QgsProcessingParameterFeatureSource(
+            self.INPUT, tr("Входной слой (полигоны)"), [QgsProcessing.TypeVectorPolygon])
+        p.setHelp(tr("Полигональный слой, который очищается.\n"
+                     "Слой не изменяется, результат пишется в новый слой."))
+        self.addParameter(p)
 
         p = QgsProcessingParameterNumber(
             self.TOLERANCE, tr("Допуск (в единицах CRS слоя)"),
             type=QgsProcessingParameterNumber.Double, defaultValue=2.0, minValue=1e-9)
-        p.setHelp("Предельное смещение вершины и радиус поиска соседних рёбер.")
+        p.setHelp(tr("Предельное смещение вершины и радиус поиска соседних рёбер."))
         self.addParameter(p)
 
         p = QgsProcessingParameterNumber(
             self.AREA, tr("Порог площади мусора (в кв. единицах CRS)"),
             type=QgsProcessingParameterNumber.Double, defaultValue=1.0, minValue=0.0)
         p.setHelp(
-            "Фрагменты мельче этого порога считаются мусором и убираются молча.\n"
-            "Перекрытия и щели крупнее порога не изменяются."
+            tr("Фрагменты мельче этого порога считаются мусором и убираются молча.\n"
+               "Перекрытия и щели крупнее порога не изменяются.")
         )
         self.addParameter(p)
 
@@ -486,48 +499,52 @@ class TopologyFixAlgorithm(QgsProcessingAlgorithm):
             self.FIELDS, tr("Поле или поля группировки (необязательно)"),
             parentLayerParameterName=self.INPUT, allowMultiple=True, optional=True)
         p.setHelp(
-            "Объекты разных групп не сшиваются между собой и не спорят\n"
-            "за площадь. Нужно, когда в одном слое лежат несколько покрытий,\n"
-            "например зоны разных пластов."
+            tr("Объекты разных групп не сшиваются между собой и не спорят\n"
+               "за площадь. Нужно, когда в одном слое лежат несколько покрытий,\n"
+               "например зоны разных пластов.")
         )
         self.addParameter(p)
 
         p = QgsProcessingParameterBoolean(
             self.DO_SNAP, tr("Сшивать вершины и узлы"), defaultValue=True)
         p.setHelp(
-            "Слияние близких вершин и вставка недостающих узлов. Без этого шага\n"
-            "остальные работают по несогласованному покрытию."
+            tr("Слияние близких вершин и вставка недостающих узлов. Без этого шага\n"
+               "остальные работают по несогласованному покрытию.")
         )
         self.addParameter(p)
         p = QgsProcessingParameterBoolean(
             self.DO_VALID, tr("Исправлять некорректную геометрию"), defaultValue=True)
         p.setHelp(
-            "Самопересечения и вывернутые кольца. Правка, отнимающая больше четверти\n"
-            "площади объекта, отменяется, и объект попадает в оставшиеся проблемы."
+            tr("Самопересечения и вывернутые кольца. Правка, отнимающая больше четверти\n"
+               "площади объекта, отменяется, и объект попадает в оставшиеся проблемы.")
         )
         self.addParameter(p)
         p = QgsProcessingParameterBoolean(
             self.DO_OVERLAPS, tr("Убирать мелкие перекрытия"), defaultValue=True)
         p.setHelp(
-            "Вычитается только узкая полоса, шириной меньше допуска. Широкое\n"
-            "перекрытие это спор за площадь, и оно остаётся человеку."
+            tr("Вычитается только узкая полоса, шириной меньше допуска. Широкое\n"
+               "перекрытие это спор за площадь, и оно остаётся человеку.")
         )
         self.addParameter(p)
-        self.addParameter(QgsProcessingParameterBoolean(
-            self.DO_GAPS, tr("Заполнять мелкие щели"), defaultValue=True))
+        p = QgsProcessingParameterBoolean(
+            self.DO_GAPS, tr("Заполнять мелкие щели"), defaultValue=True)
+        p.setHelp(tr("Щель мельче порога площади отходит соседу с наибольшей общей\n"
+                     "границей. Щель крупнее порога не заполняется и попадает\n"
+                     "в оставшиеся проблемы."))
+        self.addParameter(p)
 
         p = QgsProcessingParameterEnum(
             self.WINNER, tr("При перекрытии площадь сохраняет"),
-            options=["Более крупный объект", "Объект с меньшим идентификатором"],
+            options=[tr("Более крупный объект"), tr("Объект с меньшим идентификатором")],
             defaultValue=0)
-        p.setHelp("Проигравший объект отдаёт полосу перекрытия.")
+        p.setHelp(tr("Проигравший объект отдаёт полосу перекрытия."))
         self.addParameter(p)
 
         p = QgsProcessingParameterBoolean(
             self.DROP_TINY, tr("Удалять объекты мельче порога площади"), defaultValue=False)
         p.setHelp(
-            "По умолчанию выключено. Удаление объекта уничтожает и его атрибуты.\n"
-            "Без этой галочки такие объекты только попадают в слой оставшихся проблем."
+            tr("По умолчанию выключено. Удаление объекта уничтожает и его атрибуты.\n"
+               "Без этой галочки такие объекты только попадают в слой оставшихся проблем.")
         )
         self.addParameter(p)
 
@@ -535,9 +552,9 @@ class TopologyFixAlgorithm(QgsProcessingAlgorithm):
             self.CAVITY, tr("Полость крупнее этой площади щелью не считается (0 - не учитывать)"),
             type=QgsProcessingParameterNumber.Double, defaultValue=0.0, minValue=0.0)
         p.setHelp(
-            "Полость крупнее этой площади считается частью замысла и находкой\n"
-            "не является: целик, озеро, незакартированный участок.\n"
-            "Мелкая дыра в покрытии это дефект, очень крупная почти всегда нет."
+            tr("Полость крупнее этой площади считается частью замысла и находкой\n"
+               "не является. Это целик, озеро, незакартированный участок.\n"
+               "Мелкая дыра в покрытии это дефект, очень крупная почти всегда нет.")
         )
         self.addParameter(p)
 
@@ -546,26 +563,31 @@ class TopologyFixAlgorithm(QgsProcessingAlgorithm):
             type=QgsProcessingParameterNumber.Double, defaultValue=1.0,
             minValue=0.0, maxValue=45.0)
         p.setHelp(
-            "Вершина снимается, если линия разворачивается в ней назад\n"
-            "с углом меньше указанного. Значение около одного градуса\n"
-            "убирает только явные артефакты оцифровки."
+            tr("Вершина снимается, если линия разворачивается в ней назад\n"
+               "с углом меньше указанного. Значение около одного градуса\n"
+               "убирает только явные артефакты оцифровки.")
         )
         self.addParameter(p)
 
         p = QgsProcessingParameterBoolean(
             self.KEEP_Z, tr("Восстанавливать отметки Z"), defaultValue=True)
         p.setHelp(
-            "Операции пересечения работают в плане, поэтому Z берётся у ближайшей\n"
-            "исходной вершины. Для покрытий это верно, для слоёв с резким перепадом\n"
-            "высоты вдоль границы результат стоит проверить."
+            tr("Операции пересечения работают в плане, поэтому Z берётся у ближайшей\n"
+               "исходной вершины. Для покрытий это верно, для слоёв с резким перепадом\n"
+               "высоты вдоль границы результат стоит проверить.")
         )
         self.addParameter(p)
 
-        self.addParameter(QgsProcessingParameterFeatureSink(
-            self.OUTPUT, tr("Очищенный слой")))
-        self.addParameter(QgsProcessingParameterFeatureSink(
+        p = QgsProcessingParameterFeatureSink(
+            self.OUTPUT, tr("Очищенный слой"))
+        p.setHelp(tr("Новый слой с исправленной геометрией и атрибутами исходного."))
+        self.addParameter(p)
+        p = QgsProcessingParameterFeatureSink(
             self.REMAINS, tr("Оставшиеся проблемы"), QgsProcessing.TypeVectorPoint,
-            optional=True, createByDefault=True))
+            optional=True, createByDefault=True)
+        p.setHelp(tr("Точки на месте того, что исправить нельзя или не разрешено.\n"
+                     "Поля те же, что у слоя находок инструмента 1.01."))
+        self.addParameter(p)
 
     @no_warnings
     def processAlgorithm(self, parameters, context, feedback):
@@ -699,8 +721,8 @@ class TopologyFixAlgorithm(QgsProcessingAlgorithm):
         if touch:
             feedback.pushWarning(
                 tr("Объектов с самокасанием колец: %d. GEOS считает такую геометрию "
-                "корректной, а SQL Server может её отклонить. При заливке в MSSQL "
-                "применяйте MakeValid на стороне сервера.") % touch)
+                   "корректной, а SQL Server может её отклонить. При заливке в MSSQL "
+                   "применяйте MakeValid на стороне сервера.") % touch)
 
         feedback.pushInfo("")
         feedback.pushInfo(tr("── Оставлено человеку ──"))
@@ -721,7 +743,7 @@ class TopologyFixAlgorithm(QgsProcessingAlgorithm):
         if abs(rel) > 1.0:
             feedback.pushWarning(
                 tr("Суммарная площадь изменилась более чем на процент. "
-                "Проверьте пороги. Скорее всего порог площади завышен."))
+                   "Проверьте пороги. Скорее всего порог площади завышен."))
         feedback.setProgress(100)
 
         set_field_aliases(self, context, remains_id, field_aliases.findings())
@@ -798,42 +820,51 @@ class AssemblyCheckAlgorithm(QgsProcessingAlgorithm):
         return help_for("assemblycheck") + help_footer()
 
     def initAlgorithm(self, config=None):
-        self.addParameter(QgsProcessingParameterFeatureSource(
+        p = QgsProcessingParameterFeatureSource(
             self.INPUT, tr("Слой (полигоны или линии)"),
-            [QgsProcessing.TypeVectorPolygon, QgsProcessing.TypeVectorLine]))
+            [QgsProcessing.TypeVectorPolygon, QgsProcessing.TypeVectorLine])
+        p.setHelp(tr("Слой полигонов или линий. Объекты собираются в группы\n"
+                     "по значению полей группировки."))
+        self.addParameter(p)
 
-        self.addParameter(QgsProcessingParameterField(
+        p = QgsProcessingParameterField(
             self.FIELDS, tr("Поле или поля группировки"), parentLayerParameterName=self.INPUT,
-            allowMultiple=True))
+            allowMultiple=True)
+        p.setHelp(tr("Объекты с одинаковым значением этих полей собираются в одно тело.\n"
+                     "Каждое тело проверяется на разрывы и полости."))
+        self.addParameter(p)
 
         p = QgsProcessingParameterNumber(
             self.AREA, tr("Порог площади мусора (в кв. единицах CRS)"),
             type=QgsProcessingParameterNumber.Double, defaultValue=1.0, minValue=0.0)
-        p.setHelp("Внутренние кольца мельче порога помечаются как технический мусор.")
+        p.setHelp(tr("Внутренние кольца мельче порога помечаются как технический мусор."))
         self.addParameter(p)
 
         p = QgsProcessingParameterNumber(
             self.MAX_GAP, tr("Максимальный разрыв внутри тела (в единицах CRS)"),
             type=QgsProcessingParameterNumber.Double, defaultValue=0.0, minValue=0.0)
         p.setHelp(
-            "Части, отстоящие друг от друга дальше этого расстояния, считаются\n"
-            "отдельными телами и находкой не являются.\n"
-            "Ноль означает, что группа обязана собираться в одно целое.\n"
-            "Ноль подходит для зон, блоков и панелей. Для полигонов изолиний\n"
-            "и подобных данных задавайте величину порядка нескольких допусков."
+            tr("Части, отстоящие друг от друга дальше этого расстояния, считаются\n"
+               "отдельными телами и находкой не являются.\n"
+               "Ноль означает, что группа обязана собираться в одно целое.\n"
+               "Ноль подходит для зон, блоков и панелей. Для полигонов изолиний\n"
+               "и подобных данных задавайте величину порядка нескольких допусков.")
         )
         self.addParameter(p)
 
         p = QgsProcessingParameterBoolean(
             self.IGNORE_HOLES, tr("Внутренние кольца допустимы"), defaultValue=False)
         p.setHelp(
-            "Отключает поиск полостей внутри тел. Нужно там, где полость\n"
-            "входит в замысел, например у полигонов изолиний."
+            tr("Отключает поиск полостей внутри тел. Нужно там, где полость\n"
+               "входит в замысел, например у полигонов изолиний.")
         )
         self.addParameter(p)
 
-        self.addParameter(QgsProcessingParameterFeatureSink(
-            self.OUTPUT, tr("Находки сборки"), QgsProcessing.TypeVectorPoint))
+        p = QgsProcessingParameterFeatureSink(
+            self.OUTPUT, tr("Находки сборки"), QgsProcessing.TypeVectorPoint)
+        p.setHelp(tr("Слой точек, по одной на каждую находку сборки.\n"
+                     "Поля те же, что у слоя находок инструмента 1.01."))
+        self.addParameter(p)
 
     @no_warnings
     def processAlgorithm(self, parameters, context, feedback):
@@ -898,7 +929,7 @@ class AssemblyCheckAlgorithm(QgsProcessingAlgorithm):
         if separate:
             feedback.pushInfo(
                 tr("Групп из нескольких отдельных тел: %d "
-                "(разрыв больше заданного порога, нарушением не считается)") % separate)
+                   "(разрыв больше заданного порога, нарушением не считается)") % separate)
         if bad:
             feedback.pushInfo("")
             feedback.pushInfo("%-24s %6s %7s %7s %14s"
@@ -913,9 +944,9 @@ class AssemblyCheckAlgorithm(QgsProcessingAlgorithm):
                 feedback.pushInfo(tr("... и ещё %d групп, см. слой находок") % (len(bad) - 40))
             feedback.pushWarning(
                 tr("Групп с дефектами сборки: %d. Смотрите поле note. Там стоит расстояние, "
-                "которого не хватило допуску. Если разрывы измеряются сотнями метров, "
-                "значит группы не обязаны быть цельными и нужно задать "
-                "максимальный разрыв.") % len(bad))
+                   "которого не хватило допуску. Если разрывы измеряются сотнями метров, "
+                   "значит группы не обязаны быть цельными и нужно задать "
+                   "максимальный разрыв.") % len(bad))
         else:
             feedback.pushInfo(tr("Дефектов сборки не найдено."))
         feedback.setProgress(100)

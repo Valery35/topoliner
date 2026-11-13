@@ -667,4 +667,456 @@ EN = {
     "Объект с другой стороны": "Feature on the other side",
     "Значение с одной стороны": "Value on one side",
     "Значение с другой стороны": "Value on the other side",
+
+    # Подсказки полей и прочие строки диалогов Processing
+    "Полигональный слой, который проверяется.\n"
+    "Слой не изменяется, находки пишутся в отдельный слой точек.":
+        "The polygon layer to check. The layer is not modified, findings go\n"
+        "to a separate point layer.",
+    "Расстояние, ниже которого расхождение считается технической погрешностью.":
+        "The distance below which a discrepancy counts as a technical error.",
+    "Площадь, ниже которой фрагмент считается техническим мусором.\n"
+    "Разумная точка отсчёта это квадрат допуска.":
+        "The area below which a fragment counts as technical debris. A\n"
+        "reasonable starting point is the square of the tolerance.",
+    "Нужно, когда слой не является единым покрытием, например когда\n"
+    "зоны нескольких пластов лежат в одном слое. Объекты разных групп\n"
+    "накладываются друг на друга по замыслу, и без группировки каждое\n"
+    "такое наложение попадает в перекрытия, дубликаты и вложения.":
+        "Needed when the layer is not a single coverage, for example when\n"
+        "zones of several seams lie in one layer. Features of different\n"
+        "groups overlap by design, and without grouping each such overlap\n"
+        "goes into overlaps, duplicates and nesting.",
+    "Полость крупнее этой площади считается частью замысла и находкой\n"
+    "не является. Это целик, озеро, незакартированный участок.\n"
+    "Мелкая дыра в покрытии это дефект, очень крупная почти всегда нет.":
+        "A cavity larger than this area is taken as part of the design and is\n"
+        "not a finding. This is a pillar, a lake, an unmapped area. A small\n"
+        "hole in a coverage is a defect, a very large one almost never is.",
+    "Попарное сравнение объектов. На больших слоях это самая долгая часть\n"
+    "проверки, и её можно отключить, если интересуют только вершины и щели.":
+        "Pairwise comparison of features. On large layers this is the longest\n"
+        "part of the check, and it can be switched off when only vertices and\n"
+        "gaps are of interest.",
+    "Щель это дыра в объединении покрытия. Зазор, выходящий на внешний край,\n"
+    "дырой не является и здесь не находится. Его закрывает сшивка вершин.":
+        "A gap is a hole in the union of the coverage. A gap that opens onto\n"
+        "the outer edge is not a hole and is not found here. Vertex snapping\n"
+        "closes it.",
+    "Вершина одного объекта лежит на ребре соседа или рядом с ним,\n"
+    "а у соседа в этой точке узла нет. Такие места мешают сшивке\n"
+    "и построению модели покрытия.":
+        "A vertex of one feature lies on or near a neighbour's edge, and the\n"
+        "neighbour has no node at that point. Such places hinder snapping and\n"
+        "building the coverage model.",
+    "Нумерованный список находок. В нём номер, что не так, у каких\n"
+    "объектов, где именно. Номер совпадает с полем num в слое\n"
+    "находок, поэтому по списку место ищется на карте, а по\n"
+    "идентификатору объекта в исходных данных.\n"
+    "Список удобно передать тому, кто данные готовил.":
+        "A numbered list of findings. It gives the number, what is wrong, for\n"
+        "which features and where exactly. The number matches the num field\n"
+        "in the findings layer, so the list leads to the place on the map,\n"
+        "and the feature identifier leads to it in the source data. The list\n"
+        "is convenient to hand over to whoever prepared the data.",
+    "Слой точек, по одной на каждую находку.\n"
+    "Поле severity делит находки на auto и review.":
+        "A point layer with one point per finding. The severity field splits\n"
+        "findings into auto and review.",
+    "Полигональный слой, который очищается.\n"
+    "Слой не изменяется, результат пишется в новый слой.":
+        "The polygon layer to clean. The layer is not modified, the result\n"
+        "goes to a new layer.",
+    "Предельное смещение вершины и радиус поиска соседних рёбер.":
+        "The maximum displacement of a vertex and the search radius for\n"
+        "neighbouring edges.",
+    "Фрагменты мельче этого порога считаются мусором и убираются молча.\n"
+    "Перекрытия и щели крупнее порога не изменяются.":
+        "Fragments smaller than this threshold count as debris and are\n"
+        "removed silently. Overlaps and gaps larger than the threshold are\n"
+        "not modified.",
+    "Объекты разных групп не сшиваются между собой и не спорят\n"
+    "за площадь. Нужно, когда в одном слое лежат несколько покрытий,\n"
+    "например зоны разных пластов.":
+        "Features of different groups are not snapped to each other and do\n"
+        "not compete for area. Needed when several coverages lie in one\n"
+        "layer, for example zones of different seams.",
+    "Слияние близких вершин и вставка недостающих узлов. Без этого шага\n"
+    "остальные работают по несогласованному покрытию.":
+        "Merging of close vertices and insertion of missing nodes. Without\n"
+        "this step the other steps work on an inconsistent coverage.",
+    "Самопересечения и вывернутые кольца. Правка, отнимающая больше четверти\n"
+    "площади объекта, отменяется, и объект попадает в оставшиеся проблемы.":
+        "Self-intersections and inverted rings. An edit that takes more than\n"
+        "a quarter of a feature's area is cancelled, and the feature goes to\n"
+        "the remaining problems.",
+    "Вычитается только узкая полоса, шириной меньше допуска. Широкое\n"
+    "перекрытие это спор за площадь, и оно остаётся человеку.":
+        "Only a narrow strip, narrower than the tolerance, is subtracted. A\n"
+        "wide overlap is a dispute over area, and it is left to the operator.",
+    "Щель мельче порога площади отходит соседу с наибольшей общей\n"
+    "границей. Щель крупнее порога не заполняется и попадает\n"
+    "в оставшиеся проблемы.":
+        "A gap smaller than the area threshold goes to the neighbour with the\n"
+        "longest shared border. A gap larger than the threshold is not filled\n"
+        "and goes to the remaining problems.",
+    "Проигравший объект отдаёт полосу перекрытия.":
+        "The losing feature gives up the overlap strip.",
+    "По умолчанию выключено. Удаление объекта уничтожает и его атрибуты.\n"
+    "Без этой галочки такие объекты только попадают в слой оставшихся проблем.":
+        "Off by default. Deleting a feature destroys its attributes as well.\n"
+        "Without this checkbox such features only go to the remaining\n"
+        "problems layer.",
+    "Вершина снимается, если линия разворачивается в ней назад\n"
+    "с углом меньше указанного. Значение около одного градуса\n"
+    "убирает только явные артефакты оцифровки.":
+        "A vertex is removed when the line turns back at it with an angle\n"
+        "smaller than this value. A value of about one degree removes only\n"
+        "obvious digitising artefacts.",
+    "Операции пересечения работают в плане, поэтому Z берётся у ближайшей\n"
+    "исходной вершины. Для покрытий это верно, для слоёв с резким перепадом\n"
+    "высоты вдоль границы результат стоит проверить.":
+        "Intersection operations work in plan, so Z is taken from the nearest\n"
+        "original vertex. For coverages this is correct. For layers with a\n"
+        "sharp change in height along a border, check the result.",
+    "Новый слой с исправленной геометрией и атрибутами исходного.":
+        "A new layer with the fixed geometry and the attributes of the\n"
+        "source.",
+    "Точки на месте того, что исправить нельзя или не разрешено.\n"
+    "Поля те же, что у слоя находок инструмента 1.01.":
+        "Points where something cannot be fixed or is not allowed to be\n"
+        "fixed. The fields are the same as in the findings layer of tool\n"
+        "1.01.",
+    "Слой полигонов или линий. Объекты собираются в группы\n"
+    "по значению полей группировки.":
+        "A layer of polygons or lines. Features are assembled into groups by\n"
+        "the value of the grouping fields.",
+    "Объекты с одинаковым значением этих полей собираются в одно тело.\n"
+    "Каждое тело проверяется на разрывы и полости.":
+        "Features with the same value of these fields are assembled into one\n"
+        "body. Each body is checked for breaks and cavities.",
+    "Внутренние кольца мельче порога помечаются как технический мусор.":
+        "Inner rings smaller than the threshold are marked as technical\n"
+        "debris.",
+    "Части, отстоящие друг от друга дальше этого расстояния, считаются\n"
+    "отдельными телами и находкой не являются.\n"
+    "Ноль означает, что группа обязана собираться в одно целое.\n"
+    "Ноль подходит для зон, блоков и панелей. Для полигонов изолиний\n"
+    "и подобных данных задавайте величину порядка нескольких допусков.":
+        "Parts farther apart than this distance count as separate bodies and\n"
+        "are not a finding. Zero means that the group must assemble into one\n"
+        "piece. Zero suits zones, blocks and panels. For isoline polygons and\n"
+        "similar data set a value of several tolerances.",
+    "Отключает поиск полостей внутри тел. Нужно там, где полость\n"
+    "входит в замысел, например у полигонов изолиний.":
+        "Switches off the search for cavities inside bodies. Needed where a\n"
+        "cavity is part of the design, for example for isoline polygons.",
+    "Слой точек, по одной на каждую находку сборки.\n"
+    "Поля те же, что у слоя находок инструмента 1.01.":
+        "A point layer with one point per assembly finding. The fields are\n"
+        "the same as in the findings layer of tool 1.01.",
+    "Текстовый файл (*.txt)":
+        "Text file (*.txt)",
+    "Полигональный слой покрытия, в которое вводятся контуры.\n"
+    "Слой не изменяется, результат пишется в новый слой.":
+        "The polygon coverage layer that receives the contours. The layer is\n"
+        "not modified, the result goes to a new layer.",
+    "Каждый объект слоя это отдельный контур. Контуры применяются\n"
+    "по одному, в порядке слоя, и результат каждого входит в покрытие\n"
+    "до начала следующего. Линию перед врезкой превращают в полигон\n"
+    "построением буфера.":
+        "Each feature of the layer is a separate contour. Contours are\n"
+        "applied one by one, in layer order, and the result of each enters\n"
+        "the coverage before the next one starts. A line is turned into a\n"
+        "polygon by a buffer before it is cut in.",
+    "Наложение отдаёт новому объекту весь контур, соседи урезаются.\n"
+    "Отсечение оставляет соседям их площадь, а контур ложится только\n"
+    "в свободное место. Врезка отдаёт новому объекту то, что лежит\n"
+    "внутри покрытия, и площадь покрытия при этом не меняется.":
+        "Overlay gives the new feature the whole contour, the neighbours are\n"
+        "trimmed. Clip leaves the neighbours their area, and the contour\n"
+        "takes only free space. Inset gives the new feature what lies inside\n"
+        "the coverage, and the area of the coverage does not change.",
+    "Остаток соседа мельче этой площади не оставляется отдельным\n"
+    "объектом, а отходит контуру целиком. Кусок соседа мельче этой\n"
+    "площади контуру не достаётся, и сосед остаётся как был.\n"
+    "Ноль режет всё, что пересеклось, вплоть до осколков в микроны.":
+        "A neighbour remainder smaller than this area is not kept as a\n"
+        "separate feature and goes to the contour entirely. A piece of a\n"
+        "neighbour smaller than this area does not go to the contour, and the\n"
+        "neighbour stays as it was. Zero cuts everything that intersected,\n"
+        "down to slivers of microns.",
+    "Разрез кладёт вершину на границу соседа с третьим объектом,\n"
+    "и у этого третьего узла в той точке нет. Инструмент достраивает\n"
+    "такие узлы, как это делает инструмент 1.06. Узел ставится\n"
+    "в проекцию точки на ребро, поэтому форма и площадь не меняются.\n"
+    "Ноль отключает вставку, и врезка оставит нарушение после себя.":
+        "The cut puts a vertex on the border between a neighbour and a third\n"
+        "feature, and the third feature has no node at that point. The tool\n"
+        "adds such nodes the way tool 1.06 does. The node is placed at the\n"
+        "projection of the point onto the edge, so the shape and the area do\n"
+        "not change. Zero switches the insertion off, and the cut leaves a\n"
+        "violation behind.",
+    "Наложение работает в плане, поэтому отметка вершины берётся\n"
+    "с ближайшего исходного ребра. Вершина на середине ребра получает\n"
+    "отметку, посчитанную вдоль этого ребра. Объекты, которых врезка\n"
+    "не коснулась, переносятся без изменения.":
+        "The overlay works in plan, so the elevation of a vertex is taken\n"
+        "from the nearest original edge. A vertex in the middle of an edge\n"
+        "gets an elevation computed along that edge. Features the cut did not\n"
+        "touch are carried over unchanged.",
+    "Новый слой покрытия с введёнными контурами.\n"
+    "Объекты, которых врезка не коснулась, переносятся без изменения.":
+        "A new coverage layer with the contours cut in. Features the cut did\n"
+        "not touch are carried over unchanged.",
+    "Линейный слой, который проверяется.\n"
+    "Слой не изменяется, находки пишутся в отдельный слой точек.":
+        "The line layer to check. The layer is not modified, findings go to a\n"
+        "separate point layer.",
+    "Расстояние, ниже которого расхождение считается погрешностью.\n"
+    "Недовод и перелёт короче допуска относятся к мусору.":
+        "The distance below which a discrepancy counts as an error. An\n"
+        "undershoot or overshoot shorter than the tolerance counts as debris.",
+    "Линии короче этой длины попадают в находки.":
+        "Lines shorter than this length go to the findings.",
+    "Три разных случая на конце линии. Недовод и перелёт короче допуска\n"
+    "относятся к мусору, висячий конец остаётся человеку. У гидросети\n"
+    "или сети выработок это устье либо тупик.":
+        "Three different cases at the end of a line. An undershoot or\n"
+        "overshoot shorter than the tolerance counts as debris, a dangle is\n"
+        "left to the operator. In a river network or a network of workings it\n"
+        "is a mouth or a dead end.",
+    "Линии пересекаются, а вершины в точке пересечения нет ни у одной.":
+        "Lines cross, and neither of them has a vertex at the crossing point.",
+    "Две линии сходятся концами, и больше в этой точке ничего нет. Их можно\n"
+    "объединить. Выключено намеренно, во многих слоях разбиение на участки\n"
+    "сделано специально.":
+        "Two lines meet at their ends, and nothing else is at that point.\n"
+        "They can be merged. Off on purpose, many layers are split into\n"
+        "segments deliberately.",
+    "Линейный слой, который очищается.\n"
+    "Слой не изменяется, результат пишется в новый слой.":
+        "The line layer to clean. The layer is not modified, the result goes\n"
+        "to a new layer.",
+    "Предельное смещение конца линии и предельная длина\n"
+    "обрезаемого хвоста.":
+        "The maximum displacement of a line end and the maximum length of a\n"
+        "trimmed tail.",
+    "Линии короче этой длины попадают в оставшиеся проблемы. Удаляются\n"
+    "они только с отдельной галочки. Удаление уничтожает и атрибуты.":
+        "Lines shorter than this length go to the remaining problems. They\n"
+        "are deleted only with a separate checkbox. Deletion destroys the\n"
+        "attributes as well.",
+    "Хвост, торчащий за пересечением, отрезается до самой точки пересечения.\n"
+    "Обрезаются только хвосты короче допуска.":
+        "A tail sticking out past a crossing is cut back to the crossing\n"
+        "point. Only tails shorter than the tolerance are trimmed.",
+    "Конец переносится на проекцию, то есть на ближайшую точку соседнего\n"
+    "ребра. Смещение не превышает допуска.":
+        "The end is moved to the projection, that is to the nearest point of\n"
+        "the neighbouring edge. The displacement does not exceed the\n"
+        "tolerance.",
+    "Сшивка концов и вставка недостающих узлов на рёбра соседних линий.\n"
+    "Вершина не смещается дальше допуска.":
+        "Snapping of ends and insertion of missing nodes into the edges of\n"
+        "neighbouring lines. A vertex is never moved farther than the\n"
+        "tolerance.",
+    "По умолчанию выключено. Удаление объекта уничтожает и его атрибуты.\n"
+    "Без этой галочки такие линии только попадают в оставшиеся проблемы.":
+        "Off by default. Deleting a feature destroys its attributes as well.\n"
+        "Without this checkbox such lines only go to the remaining problems.",
+    "Игла это разворот линии назад почти на месте. Угол между входящим\n"
+    "и исходящим ребром меньше этого значения считается иглой.":
+        "A spike is a line turning back almost in place. An angle between the\n"
+        "incoming and the outgoing edge smaller than this value counts as a\n"
+        "spike.",
+    "Точки на месте того, что исправить нельзя или не разрешено.\n"
+    "Поля те же, что у слоя находок инструмента 1.02.":
+        "Points where something cannot be fixed or is not allowed to be\n"
+        "fixed. The fields are the same as in the findings layer of tool\n"
+        "1.02.",
+    "Полигональный или линейный слой.\n"
+    "Слой не изменяется, результат пишется в новый слой.":
+        "A polygon or line layer. The layer is not modified, the result goes\n"
+        "to a new layer.",
+    "Предельное отклонение упрощённой линии от исходной.\n"
+    "Ноль означает, что ничего не прореживается.":
+        "The maximum deviation of the simplified line from the original. Zero\n"
+        "means nothing is thinned out.",
+    "Дуглас-Пекер меряет отклонение вершины от хорды. Он держит углы\n"
+    "и характерные изломы, но на плавной кривой оставляет грани.\n"
+    "Висвалингам меряет площадь треугольника из трёх соседних\n"
+    "вершин. На плавных линиях результат мягче, зато острый угол\n"
+    "из коротких рёбер может срезаться.\n"
+    "Для границ блоков и выработок подходит первый, для изолиний\n"
+    "и гидросети второй.":
+        "Douglas-Peucker measures the deviation of a vertex from the chord.\n"
+        "It keeps corners and characteristic bends, but leaves facets on a\n"
+        "smooth curve. Visvalingam measures the area of the triangle formed\n"
+        "by three neighbouring vertices. On smooth lines the result is\n"
+        "softer, but a sharp corner made of short edges may be cut off. The\n"
+        "first suits borders of blocks and workings, the second suits\n"
+        "isolines and river networks.",
+    "Защита коротких участков границы. Ноль отключает её.":
+        "Protection of short border segments. Zero switches it off.",
+    "Срезание углов по схеме Чайкина после прореживания.\n"
+    "Линия остаётся внутри исходной, поэтому выбросов и новых\n"
+    "самопересечений не возникает. Сглаживание идёт по тем же дугам,\n"
+    "поэтому общая граница соседей остаётся общей.\n"
+    "Каждый проход примерно удваивает количество вершин, обычно хватает\n"
+    "одного или двух.":
+        "Corner cutting by the Chaikin scheme after thinning. The line stays\n"
+        "inside the original, so no overshoots or new self-intersections\n"
+        "appear. Smoothing runs along the same arcs, so the shared border of\n"
+        "neighbours stays shared. Each pass roughly doubles the number of\n"
+        "vertices, one or two passes are usually enough.",
+    "Вершины, отстоящие меньше этой величины, считаются одной.\n"
+    "Нужно, когда соседи записаны с разной точностью координат.\n"
+    "Это не допуск упрощения, задавать метры здесь не следует.":
+        "Vertices closer than this value count as one. Needed when neighbours\n"
+        "are stored with different coordinate precision. This is not the\n"
+        "simplification tolerance, do not set metres here.",
+    "Границы объектов разных групп общими не считаются.\n"
+    "Нужно, когда в одном слое лежат несколько покрытий.":
+        "Borders between features of different groups do not count as shared.\n"
+        "Needed when several coverages lie in one layer.",
+    "Прореживание идёт по плановым координатам, отметка переносится\n"
+    "с оставшихся вершин.":
+        "Thinning works on plan coordinates, the elevation is carried over\n"
+        "from the remaining vertices.",
+    "Новый слой с упрощённой геометрией и атрибутами исходного.":
+        "A new layer with the simplified geometry and the attributes of the\n"
+        "source.",
+    "Полигональный слой покрытия. Слой не изменяется.":
+        "The polygon coverage layer. The layer is not modified.",
+    "Значение этого поля у обоих соседей попадёт в атрибуты линии.\n"
+    "Для геологических границ это пласт слева и пласт справа.":
+        "The value of this field on both neighbours goes into the attributes\n"
+        "of the line. For geological borders this is the seam on the left and\n"
+        "the seam on the right.",
+    "Вершина, лежащая на ребре соседа ближе этой величины, получает\n"
+    "узел перед разбором. Без этого общая граница не опознаётся.\n"
+    "У соседей разная вершинность, и участок выходит двумя линиями.\n"
+    "Вершины при этом не двигаются. Ноль отключает.":
+        "A vertex lying on a neighbour's edge closer than this value gets a\n"
+        "node before the analysis. Without it the shared border is not\n"
+        "recognised. The neighbours have different vertices, and the segment\n"
+        "comes out as two lines. Vertices do not move. Zero switches it off.",
+    "Координаты соседей могут быть записаны с разной точностью.\n"
+    "Величина нужна, чтобы такие вершины считались одной. Это не допуск.\n"
+    "Увеличивать её до метров не следует.":
+        "Neighbour coordinates may be stored with different precision. The\n"
+        "value makes such vertices count as one. It is not a tolerance. Do\n"
+        "not raise it to metres.",
+    "Линейный слой границ. Общая граница двух соседей\n"
+    "выходит одной линией.":
+        "A line layer of borders. The shared border of two neighbours comes\n"
+        "out as one line.",
+    "Узлы достраиваются перед разбором, иначе общая граница\n"
+    "не опознаётся. Вершины при этом не двигаются.":
+        "Nodes are added before the analysis, otherwise the shared border is\n"
+        "not recognised. Vertices do not move.",
+    "Слой точек узлов покрытия. Узел - это конец дуги.":
+        "A point layer of coverage nodes. A node is an end of an arc.",
+    "Линейный слой дуг. Дуга - участок границы между двумя узлами\n"
+    "с одними и теми же соседями слева и справа.":
+        "A line layer of arcs. An arc is a border segment between two nodes\n"
+        "with the same neighbours on the left and on the right.",
+    "Максимальное расстояние, на которое разрешено сдвинуть вершину.\n"
+    "Он же радиус поиска соседних рёбер для вставки узлов.\n"
+    "Берите чуть больше реальной величины расхождений и заметно меньше\n"
+    "длины самого короткого осмысленного ребра.":
+        "The maximum distance a vertex is allowed to move. It is also the\n"
+        "search radius for neighbouring edges when inserting nodes. Take a\n"
+        "little more than the real size of the discrepancies and clearly less\n"
+        "than the length of the shortest meaningful edge.",
+    "Полная сшивка закрывает зазоры и согласует узлы.\n"
+    "Только вставка узлов не меняет ни одной существующей координаты,\n"
+    "это безопасный первый проход для контроля объёма правок.":
+        "Full snapping closes gaps and reconciles nodes. Node insertion only\n"
+        "does not change any existing coordinate, it is a safe first pass for\n"
+        "checking the amount of edits.",
+    "Слой, который трогать нельзя. Его вершины становятся опорными,\n"
+    "входной слой подтягивается к ним. Сам эталон не изменяется.":
+        "A layer that must not be touched. Its vertices become anchors, and\n"
+        "the input layer is pulled to them. The reference itself is not\n"
+        "modified.",
+    "Определяет, чьи вершины остаются на месте при слиянии.\n"
+    "Обычно на месте оставляют крупный объект,\n"
+    "а мелкий подтянуть к нему.":
+        "Defines whose vertices stay in place when merging. Usually the large\n"
+        "feature stays in place and the small one is pulled to it.",
+    "Интерполяция сохраняет форму ребра в разрезе.\n"
+    "Второй вариант нужен, когда узлы должны совпасть и по высоте.":
+        "Interpolation keeps the shape of the edge in section. The second\n"
+        "option is needed when nodes must match in height too.",
+    "Нужно для перехлёстов, где рёбра пересекаются крест-накрест,\n"
+    "а общих вершин нет. Вставка узлов по вершинам такой случай\n"
+    "не закрывает, потому что вставлять там нечего.":
+        "Needed for crossings where edges cross each other and have no shared\n"
+        "vertices. Node insertion by vertices does not close such a case,\n"
+        "because there is nothing to insert there.",
+    "У объекта, чья ширина меньше допуска, противоположные берега\n"
+    "слиплись бы, и он схлопнулся бы сам в себя. С этой галочкой он\n"
+    "остаётся нетронутым и служит опорой. Соседи подтягиваются к нему.\n"
+    "Без неё такие объекты теряются целиком.":
+        "A feature narrower than the tolerance would have its opposite banks\n"
+        "stuck together, and it would collapse into itself. With this\n"
+        "checkbox it stays untouched and serves as an anchor. The neighbours\n"
+        "are pulled to it. Without it such features are lost entirely.",
+    "Слияние вершин выворачивает форму, если объект уже допуска.\n"
+    "Противоположные берега слипаются. Первый вариант пробует исправить,\n"
+    "а если правка съедает больше четверти площади, возвращает объект\n"
+    "в исходный вид. Второй сразу возвращает исходный, тогда границы\n"
+    "такого объекта останутся несогласованными. Третий пишет как вышло.":
+        "Vertex merging turns the shape inside out if a feature is narrower\n"
+        "than the tolerance. The opposite banks stick together. The first\n"
+        "option tries to repair, and if the repair takes more than a quarter\n"
+        "of the area, it restores the feature to its original state. The\n"
+        "second restores the original at once, and the borders of such a\n"
+        "feature stay inconsistent. The third writes the result as it came\n"
+        "out.",
+    "Считает количество некорректных геометрий на входе и на выходе.\n"
+    "На больших слоях проверка занимает заметное время.":
+        "Counts invalid geometries at the input and at the output. On large\n"
+        "layers the check takes noticeable time.",
+    "Новый слой со сшитой геометрией и атрибутами исходного.":
+        "A new layer with the snapped geometry and the attributes of the\n"
+        "source.",
+    "Точка на месте каждой правки. Поле kind называет вид правки,\n"
+    "поле dist хранит смещение.":
+        "A point at the place of each edit. The kind field names the kind of\n"
+        "edit, the dist field holds the displacement.",
+    "Источник узлов для входного слоя. Не изменяется и в результат\n"
+    "не попадает. Нужен, когда вершины одного слоя лежат на рёбрах другого.":
+        "The source of nodes for the input layer. It is not modified and does\n"
+        "not go into the result. Needed when the vertices of one layer lie on\n"
+        "the edges of another.",
+    "Защита от ложных срабатываний, а не допуск поиска.\n"
+    "Узел ставится, только если вершина лежит на ребре ближе\n"
+    "этой величины. Значение отвечает точности координат.\n"
+    "Задавать метры здесь не следует.":
+        "Protection against false positives, not a search tolerance. A node\n"
+        "is placed only when a vertex lies on an edge closer than this value.\n"
+        "The value matches the coordinate precision. Do not set metres here.",
+    "Точка пересечения лежит на обоих рёбрах, поэтому такая вставка\n"
+    "тоже не меняет ни формы, ни площади.":
+        "The crossing point lies on both edges, so such an insertion does not\n"
+        "change the shape or the area either.",
+    "Вставленный узел сам иногда ложится на ребро третьего объекта,\n"
+    "поэтому проходы повторяются, пока узлы находятся. На согласованном\n"
+    "покрытии хватает двух-трёх. Если предел достигнут, значит слой\n"
+    "не является покрытием. Причина обычно в наложении объектов.":
+        "An inserted node sometimes lands on an edge of a third feature\n"
+        "itself, so the passes repeat while nodes are found. On a consistent\n"
+        "coverage two or three are enough. If the limit is reached, the layer\n"
+        "is not a coverage. The usual cause is overlapping features.",
+    "Новый слой со вставленными узлами и атрибутами исходного.\n"
+    "Вставка узлов не меняет ни форму, ни площадь.":
+        "A new layer with the inserted nodes and the attributes of the\n"
+        "source. Node insertion changes neither the shape nor the area.",
+    "Точка на месте каждого вставленного узла.\n"
+    "Поле dist хранит отклонение вершины от ребра.":
+        "A point at the place of each inserted node. The dist field holds the\n"
+        "offset of the vertex from the edge.",
 }
