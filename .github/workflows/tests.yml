@@ -8,8 +8,10 @@ on:
 
 jobs:
   unittest:
-    runs-on: ubuntu-latest
+    # Ubuntu 26.04 не даёт Python 3.9, а 3.9 нужен ради QGIS 3.16.
+    runs-on: ubuntu-24.04
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.9", "3.12"]
     steps:
