@@ -634,14 +634,72 @@ class TestCrossingMemoryBudget(unittest.TestCase):
         self.assertEqual(caught.exception.vertices, 2)
         self.assertGreater(caught.exception.needed, caught.exception.available)
 
-    def test_pairs_are_counted_too(self):
-        """Бюджета на сегменты хватает, на пары ячеек уже нет."""
+    def test_budget_counts_segments(self):
+        """Ровно на сегменты бюджета хватает, на байт меньше уже нет."""
         import topo_core
         segments = 2 * topo_core.CROSSING_SEGMENT_BYTES
-        with self.assertRaises(topo_core.CrossingMemoryError) as caught:
+        res = clean_topology(self.crossing(), tolerance=0.01, mode=MODE_INSERT,
+                             memory_budget=segments)
+        self.assertEqual(res["stats"]["nodes_crossing"], 2)
+        with self.assertRaises(topo_core.CrossingMemoryError):
             clean_topology(self.crossing(), tolerance=0.01, mode=MODE_INSERT,
-                           memory_budget=segments)
-        self.assertGreater(caught.exception.needed, segments)
+                           memory_budget=segments - 1)
+
+
+class TestCrossingAcceptedOnce(unittest.TestCase):
+    """
+    Пересечение принимается один раз, сколько бы общих ячеек ни было у пары.
+
+    Множества проверенных пар больше нет, пара проверяется в каждой общей
+    ячейке. Пересечение принимается только в первой из них. Без этого одна
+    и та же точка уходила бы во вставку столько раз, сколько у пары общих
+    ячеек, а счётчик неустойчивых пересечений рос бы так же.
+    """
+
+    def scene(self):
+        # Две длинные почти параллельные линии крест-накрест. Кольцо из
+        # тысячи коротких рёбер вдали делает ячейку сетки мелкой, и у пары
+        # линий оказывается много общих ячеек.
+        a = [(0.0, 0.0), (100.0, 1.0)]
+        b = [(0.0, 1.0), (100.0, 0.0)]
+        dense = [(1000.0 + 0.1 * i, 1000.0) for i in range(1000)]
+        return [a, b, dense]
+
+    def test_pair_has_many_common_cells(self):
+        """Без этого тест ничего не проверяет."""
+        import topo_core
+        norm = [topo_core._norm(r) for r in self.scene()]
+        cell = max(0.01, topo_core._mean_segment_length(norm))
+        ox, oy = topo_core._origin_of(norm)
+        grid = topo_core._SegmentGrid(cell, ox, oy)
+        a = grid.cells_of(0.0, 0.0, 100.0, 1.0)
+        b = set(grid.cells_of(0.0, 1.0, 100.0, 0.0))
+        self.assertGreater(len([c for c in a if c in b]), 5)
+
+    def test_each_segment_gets_one_insert(self):
+        import topo_core
+        seen = []
+        original = topo_core._apply_inserts
+
+        def spy(norm, inserts, events, kind):
+            seen.append({k: len(v) for k, v in inserts.items()})
+            return original(norm, inserts, events, kind)
+
+        topo_core._apply_inserts = spy
+        try:
+            res = clean_topology(self.scene(), tolerance=0.01, mode=MODE_INSERT)
+        finally:
+            topo_core._apply_inserts = original
+        crossing = [s for s in seen if s][0]
+        self.assertEqual(crossing, {(0, 0): 1, (1, 0): 1})
+        self.assertEqual(res["stats"]["nodes_crossing"], 2)
+
+
+class TestCrossingMemoryBudgetMore(unittest.TestCase):
+    """Продолжение проверок бюджета памяти."""
+
+    def crossing(self):
+        return [[(0, 0), (10, 0)], [(5, -5), (5, 5)]]
 
     def test_enough_budget_gives_the_same_result(self):
         free = clean_topology(self.crossing(), tolerance=0.01, mode=MODE_INSERT)

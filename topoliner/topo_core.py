@@ -462,6 +462,41 @@ class _SegmentGrid:
             else:
                 bucket.append(key)
 
+    def cells_of(self, x1, y1, x2, y2):
+        """Ячейки отрезка в том порядке, в каком их обходит add."""
+        cell = self.cell
+        ax = x1 - self.origin_x
+        ay = y1 - self.origin_y
+        bx = x2 - self.origin_x
+        by = y2 - self.origin_y
+        cx = int(ax // cell)
+        cy = int(ay // cell)
+        if cx == int(bx // cell) and cy == int(by // cell):
+            return [(cx, cy)]
+        return _cells_along_segment(ax, ay, bx, by, cell)
+
+    def first_common_cell(self, key_a, key_b, coords_of):
+        """
+        Общая ячейка двух отрезков, которая раньше всех попала в сетку.
+
+        coords_of(ключ) даёт координаты отрезка (x1, y1, x2, y2). Ячейки
+        словаря обходятся в порядке появления. Ячейка появляется, когда её
+        впервые задевает отрезок, а отрезки добавляются по порядку. Поэтому
+        порядок появления ячейки - это пара из первого отрезка в её списке
+        и места ячейки на этом отрезке.
+        """
+        mine = self.cells_of(*coords_of(key_a))
+        theirs = set(self.cells_of(*coords_of(key_b)))
+        common = [c for c in mine if c in theirs]
+        if len(common) == 1:
+            return common[0]
+
+        def appearance(c):
+            creator = self.cells[c][0]
+            return (creator, self.cells_of(*coords_of(creator)).index(c))
+
+        return min(common, key=appearance)
+
     def query(self, x, y):
         cell = self.cell
         cx = int((x - self.origin_x) // cell)
@@ -648,11 +683,9 @@ def _mean_segment_length(norm):
 # Цена шага узлов в пересечениях в памяти. Замер 14 ноября 2026 года
 # на Python из состава QGIS 4.2.3, решётка из 1.44 млн сегментов
 # и смешанное покрытие из 1.49 млн сегментов. Сетка сегментов, копия
-# координат и сетка вершин заняли 582 и 757 байт на сегмент, множество
-# проверенных пар - 74 и 108 байт на пару ячейки. Берётся верхний замер
-# с запасом.
+# координат и сетка вершин заняли 725 и 561 байт на сегмент. Берётся
+# верхний замер с запасом. Пары ячеек памяти не занимают, их не хранят.
 CROSSING_SEGMENT_BYTES = 760
-CROSSING_PAIR_BYTES = 110
 # Доля свободной памяти, которую шаг может занять. Остальное оставлено
 # QGIS и самому слою. При нехватке памяти на всей машине Python из
 # состава QGIS падает с нарушением доступа, а не с MemoryError.
@@ -755,15 +788,6 @@ def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=Fals
             segs[(ri, si)] = (x1, y1, z1, x2, y2, z2)
             grid.add((ri, si), x1, y1, x2, y2)
 
-    if budget is not None:
-        pairs = 0
-        for bucket in grid.cells.values():
-            k = len(bucket)
-            pairs += k * (k - 1) // 2
-        needed = count * CROSSING_SEGMENT_BYTES + pairs * CROSSING_PAIR_BYTES
-        if needed > budget:
-            raise CrossingMemoryError(count, needed, budget)
-
     own = _RingVertexGrid(max(tolerance, 1e-9), ox, oy)
     for ri, (coords, _closed) in enumerate(norm):
         if coords is None or ri in frozen:
@@ -771,20 +795,25 @@ def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=Fals
         for vx, vy, _vz in coords:
             own.add(ri, vx, vy)
 
+    def coords_of(key):
+        x1, y1, _z1, x2, y2, _z2 = segs[key]
+        return x1, y1, x2, y2
+
+    # Пара отрезков, лежащих в нескольких общих ячейках, встречается в каждой
+    # из них. Прежде проверенные пары копились в множестве, и на слое
+    # в миллион вершин оно занимало больше гигабайта. Теперь пара
+    # проверяется в каждой общей ячейке заново, это только время, а найденное
+    # пересечение принимается в одной ячейке - той, которую обход встречает
+    # первой. Так узлы, события, их порядок и счётчики остаются прежними.
     inserts = {}
     unstable = 0
-    checked = set()
-    for bucket in grid.cells.values():
+    for here, bucket in grid.cells.items():
         if len(bucket) < 2:
             continue
         for a in range(len(bucket)):
             ka = bucket[a]
             for b in range(a + 1, len(bucket)):
                 kb = bucket[b]
-                pair = (ka, kb) if ka <= kb else (kb, ka)
-                if pair in checked:
-                    continue
-                checked.add(pair)
                 # Соседние сегменты одного кольца имеют общую вершину.
                 if ka[0] == kb[0] and abs(ka[1] - kb[1]) <= 1:
                     continue
@@ -793,6 +822,8 @@ def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=Fals
                 hit = _segment_crossing(x1, y1, x2, y2, x3, y3, x4, y4,
                                         near_vertex=tolerance)
                 if hit is None:
+                    continue
+                if grid.first_common_cell(ka, kb, coords_of) != here:
                     continue
                 px, py, t, u = hit
                 za = None if (z1 is None or z2 is None) else z1 + (z2 - z1) * t
