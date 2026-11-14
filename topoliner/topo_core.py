@@ -682,10 +682,10 @@ def _mean_segment_length(norm):
 
 # Цена шага узлов в пересечениях в памяти. Замер 14 ноября 2026 года
 # на Python из состава QGIS 4.2.3, решётка из 1.44 млн сегментов
-# и смешанное покрытие из 1.49 млн сегментов. Сетка сегментов, копия
-# координат и сетка вершин заняли 725 и 561 байт на сегмент. Берётся
-# верхний замер с запасом. Пары ячеек памяти не занимают, их не хранят.
-CROSSING_SEGMENT_BYTES = 760
+# и смешанное покрытие из 1.49 млн сегментов. Сетка сегментов и сетка
+# вершин заняли 517 и 355 байт на сегмент. Берётся верхний замер
+# с запасом. Пары ячеек и копии координат памяти не занимают, их не хранят.
+CROSSING_SEGMENT_BYTES = 560
 # Доля свободной памяти, которую шаг может занять. Остальное оставлено
 # QGIS и самому слою. При нехватке памяти на всей машине Python из
 # состава QGIS падает с нарушением доступа, а не с MemoryError.
@@ -776,16 +776,17 @@ def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=Fals
     cell = max(tolerance, _mean_segment_length(norm), 1e-9)
     ox, oy = _origin_of(norm)
     grid = _SegmentGrid(cell, ox, oy)
-    segs = {}
+    # Координаты сегмента не копируются, а берутся из norm по номеру кольца
+    # и сегмента. Копия занимала около трети памяти шага. norm до конца
+    # обхода не меняется, вставки применяются после.
     for ri, (coords, closed) in enumerate(norm):
         if coords is None or ri in frozen:
             continue
         n = len(coords)
         last = n if closed else n - 1
         for si in range(last):
-            x1, y1, z1 = coords[si]
-            x2, y2, z2 = coords[(si + 1) % n]
-            segs[(ri, si)] = (x1, y1, z1, x2, y2, z2)
+            x1, y1, _z1 = coords[si]
+            x2, y2, _z2 = coords[(si + 1) % n]
             grid.add((ri, si), x1, y1, x2, y2)
 
     own = _RingVertexGrid(max(tolerance, 1e-9), ox, oy)
@@ -796,7 +797,9 @@ def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=Fals
             own.add(ri, vx, vy)
 
     def coords_of(key):
-        x1, y1, _z1, x2, y2, _z2 = segs[key]
+        coords = norm[key[0]][0]
+        x1, y1, _z1 = coords[key[1]]
+        x2, y2, _z2 = coords[(key[1] + 1) % len(coords)]
         return x1, y1, x2, y2
 
     # Пара отрезков, лежащих в нескольких общих ячейках, встречается в каждой
@@ -817,8 +820,14 @@ def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=Fals
                 # Соседние сегменты одного кольца имеют общую вершину.
                 if ka[0] == kb[0] and abs(ka[1] - kb[1]) <= 1:
                     continue
-                x1, y1, z1, x2, y2, z2 = segs[ka]
-                x3, y3, z3, x4, y4, z4 = segs[kb]
+                ca = norm[ka[0]][0]
+                ia = ka[1]
+                x1, y1, z1 = ca[ia]
+                x2, y2, z2 = ca[ia + 1] if ia + 1 < len(ca) else ca[0]
+                cb = norm[kb[0]][0]
+                ib = kb[1]
+                x3, y3, z3 = cb[ib]
+                x4, y4, z4 = cb[ib + 1] if ib + 1 < len(cb) else cb[0]
                 hit = _segment_crossing(x1, y1, x2, y2, x3, y3, x4, y4,
                                         near_vertex=tolerance)
                 if hit is None:
