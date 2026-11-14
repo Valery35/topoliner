@@ -668,6 +668,20 @@ EN = {
     "Значение с одной стороны": "Value on one side",
     "Значение с другой стороны": "Value on the other side",
 
+    # Остановка шага узлов в пересечениях по памяти
+    "Шаг узлов в точках пересечения рёбер остановлен до начала, "
+    "QGIS мог бы упасть. На слое %d вершин, шагу нужно около %.1f ГБ "
+    "памяти, доступно %.1f ГБ. Разрежьте слой на части и обработайте "
+    "их по очереди. В инструментах 1.05 и 1.06 можно выключить "
+    "«Ставить узлы в точках пересечения рёбер». Меньший допуск "
+    "помогает, только если он больше средней длины ребра.":
+        "The step that puts nodes at edge crossings was stopped before it "
+        "started, QGIS could have crashed. The layer has %d vertices, the "
+        "step needs about %.1f GB of memory, %.1f GB is available. Split "
+        "the layer into parts and process them one by one. Tools 1.05 and "
+        "1.06 can switch off \"Insert nodes at edge intersections\". A smaller "
+        "tolerance helps only when it is larger than the mean edge length.",
+
     # Подсказки полей и прочие строки диалогов Processing
     "Полигональный слой, который проверяется.\n"
     "Слой не изменяется, находки пишутся в отдельный слой точек.":

@@ -610,3 +610,84 @@ class TestDetectOnly(unittest.TestCase):
     def test_normal_mode_still_builds_rings(self):
         full = clean_topology(self.scene(), tolerance=1e-6, mode=MODE_INSERT)
         self.assertEqual(len(full["rings"]), 3)
+
+
+class TestCrossingMemoryBudget(unittest.TestCase):
+    """
+    Шаг узлов в пересечениях останавливается, если не помещается в память.
+
+    14 ноября 2026 года QGIS 4.2.3 упал на очистке 1.03 в этом шаге
+    с нарушением доступа. Python из состава QGIS при нехватке памяти
+    на всей машине падает так, а не с MemoryError. Шаг оценивает память
+    заранее и останавливается с понятной причиной.
+    """
+
+    def crossing(self):
+        """Две линии крест-накрест, узел ставится в точку пересечения."""
+        return [[(0, 0), (10, 0)], [(5, -5), (5, 5)]]
+
+    def test_tiny_budget_stops_before_work(self):
+        import topo_core
+        with self.assertRaises(topo_core.CrossingMemoryError) as caught:
+            clean_topology(self.crossing(), tolerance=0.01, mode=MODE_INSERT,
+                           memory_budget=1)
+        self.assertEqual(caught.exception.vertices, 2)
+        self.assertGreater(caught.exception.needed, caught.exception.available)
+
+    def test_pairs_are_counted_too(self):
+        """Бюджета на сегменты хватает, на пары ячеек уже нет."""
+        import topo_core
+        segments = 2 * topo_core.CROSSING_SEGMENT_BYTES
+        with self.assertRaises(topo_core.CrossingMemoryError) as caught:
+            clean_topology(self.crossing(), tolerance=0.01, mode=MODE_INSERT,
+                           memory_budget=segments)
+        self.assertGreater(caught.exception.needed, segments)
+
+    def test_enough_budget_gives_the_same_result(self):
+        free = clean_topology(self.crossing(), tolerance=0.01, mode=MODE_INSERT)
+        ample = clean_topology(self.crossing(), tolerance=0.01, mode=MODE_INSERT,
+                               memory_budget=10 ** 9)
+        self.assertEqual(free["rings"], ample["rings"])
+        self.assertEqual(free["stats"]["nodes_crossing"], 2)
+        self.assertEqual(ample["stats"]["nodes_crossing"], 2)
+
+    def test_no_crossings_no_check(self):
+        res = clean_topology(self.crossing(), tolerance=0.01, mode=MODE_INSERT,
+                             node_crossings=False, memory_budget=1)
+        self.assertEqual(res["stats"]["nodes_crossing"], 0)
+
+    def test_available_memory_is_known_here(self):
+        import topo_core
+        free = topo_core.available_memory()
+        self.assertTrue(free is None or free > 0)
+
+    def test_message_names_the_numbers(self):
+        import i18n
+        import qgis_helpers
+        import topo_core
+        why = topo_core.CrossingMemoryError(1234567, 3 * 2 ** 30, 2 ** 30)
+        try:
+            i18n.set_language("ru")
+            ru = qgis_helpers.memory_message(why)
+            i18n.set_language("en")
+            en = qgis_helpers.memory_message(why)
+        finally:
+            i18n.set_language("ru")
+        self.assertIn("1234567", ru)
+        self.assertIn("3.0", ru)
+        self.assertIn("1.0", ru)
+        self.assertIn("1234567", en)
+        self.assertNotRegex(en, "[А-Яа-я]")
+
+    def test_wrapper_turns_it_into_a_processing_error(self):
+        import qgis_helpers
+        import topo_core
+
+        class Tool:
+            @qgis_helpers.no_warnings
+            def processAlgorithm(self, parameters, context, feedback):
+                raise topo_core.CrossingMemoryError(10, 2 ** 31, 2 ** 30)
+
+        with self.assertRaises(qgis_helpers.QgsProcessingException) as caught:
+            Tool().processAlgorithm({}, None, None)
+        self.assertIn("10", str(caught.exception))

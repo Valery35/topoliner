@@ -645,15 +645,101 @@ def _mean_segment_length(norm):
     return (total / n) if n else 0.0
 
 
-def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=False):
+# Цена шага узлов в пересечениях в памяти. Замер 14 ноября 2026 года
+# на Python из состава QGIS 4.2.3, решётка из 1.44 млн сегментов
+# и смешанное покрытие из 1.49 млн сегментов. Сетка сегментов, копия
+# координат и сетка вершин заняли 582 и 757 байт на сегмент, множество
+# проверенных пар - 74 и 108 байт на пару ячейки. Берётся верхний замер
+# с запасом.
+CROSSING_SEGMENT_BYTES = 760
+CROSSING_PAIR_BYTES = 110
+# Доля свободной памяти, которую шаг может занять. Остальное оставлено
+# QGIS и самому слою. При нехватке памяти на всей машине Python из
+# состава QGIS падает с нарушением доступа, а не с MemoryError.
+CROSSING_MEMORY_SHARE = 0.8
+
+
+class CrossingMemoryError(MemoryError):
+    """
+    Шаг узлов в пересечениях не помещается в свободную память.
+
+    Шаг останавливается до того, как занять память. Иначе QGIS падает
+    целиком, и человек не узнаёт причину.
+    """
+
+    def __init__(self, vertices, needed, available):
+        super().__init__(vertices, needed, available)
+        self.vertices = vertices
+        self.needed = needed
+        self.available = available
+
+
+def available_memory():
+    """Свободная физическая память в байтах или None, если узнать нельзя."""
+    import sys
+    if sys.platform.startswith("win"):
+        import ctypes
+
+        class _Status(ctypes.Structure):
+            _fields_ = [("dwLength", ctypes.c_ulong),
+                        ("dwMemoryLoad", ctypes.c_ulong),
+                        ("ullTotalPhys", ctypes.c_ulonglong),
+                        ("ullAvailPhys", ctypes.c_ulonglong),
+                        ("ullTotalPageFile", ctypes.c_ulonglong),
+                        ("ullAvailPageFile", ctypes.c_ulonglong),
+                        ("ullTotalVirtual", ctypes.c_ulonglong),
+                        ("ullAvailVirtual", ctypes.c_ulonglong),
+                        ("ullAvailExtendedVirtual", ctypes.c_ulonglong)]
+
+        status = _Status()
+        status.dwLength = ctypes.sizeof(status)
+        if not ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)):
+            return None
+        return int(status.ullAvailPhys)
+    try:
+        with open("/proc/meminfo", encoding="ascii") as handle:
+            for text in handle:
+                if text.startswith("MemAvailable:"):
+                    return int(text.split()[1]) * 1024
+    except OSError:
+        return None
+    return None
+
+
+def _crossing_budget(memory_budget):
+    """Сколько байт может занять шаг. None - без ограничения."""
+    if memory_budget is not None:
+        return memory_budget
+    free = available_memory()
+    if free is None:
+        return None
+    return int(free * CROSSING_MEMORY_SHARE)
+
+
+def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=False,
+                    memory_budget=None):
     """
     Вставляет узлы в точках пересечения рёбер.
 
     Нужен для перехлёстов, где рёбра пересекаются крест-накрест, но общих
     вершин нет. Вставка узлов по вершинам такой случай не закрывает,
     потому что вставлять там нечего.
+
+    memory_budget  сколько байт может занять шаг. По умолчанию доля
+                 свободной памяти машины. Если оценка больше, шаг
+                 останавливается с CrossingMemoryError до того, как занять
+                 память.
     """
     frozen = frozen or set()
+    budget = _crossing_budget(memory_budget)
+    count = 0
+    for ri, (coords, closed) in enumerate(norm):
+        if coords is None or ri in frozen:
+            continue
+        count += len(coords) if closed else len(coords) - 1
+    if budget is not None and count * CROSSING_SEGMENT_BYTES > budget:
+        raise CrossingMemoryError(count, count * CROSSING_SEGMENT_BYTES, budget)
+
     cell = max(tolerance, _mean_segment_length(norm), 1e-9)
     ox, oy = _origin_of(norm)
     grid = _SegmentGrid(cell, ox, oy)
@@ -668,6 +754,15 @@ def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=Fals
             x2, y2, z2 = coords[(si + 1) % n]
             segs[(ri, si)] = (x1, y1, z1, x2, y2, z2)
             grid.add((ri, si), x1, y1, x2, y2)
+
+    if budget is not None:
+        pairs = 0
+        for bucket in grid.cells.values():
+            k = len(bucket)
+            pairs += k * (k - 1) // 2
+        needed = count * CROSSING_SEGMENT_BYTES + pairs * CROSSING_PAIR_BYTES
+        if needed > budget:
+            raise CrossingMemoryError(count, needed, budget)
 
     own = _RingVertexGrid(max(tolerance, 1e-9), ox, oy)
     for ri, (coords, _closed) in enumerate(norm):
@@ -734,7 +829,8 @@ def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=Fals
 
 def clean_topology(rings, tolerance, mode=MODE_BOTH, fixed_rings=None,
                    z_insert=Z_INTERPOLATE, node_crossings=True, frozen=None,
-                   project_onto_edge=False, detect_only=False, progress=None):
+                   project_onto_edge=False, detect_only=False, progress=None,
+                   memory_budget=None):
     """
     Сшивает набор колец.
 
@@ -763,6 +859,8 @@ def clean_topology(rings, tolerance, mode=MODE_BOTH, fixed_rings=None,
                  противоположные берега слиплись бы, и оно схлопнулось бы
                  само в себя. Лучше оставить его как есть, чем потерять.
     progress     необязательный вызываемый объект progress(доля от 0 до 1)
+    memory_budget  сколько байт может занять шаг узлов в пересечениях,
+                 по умолчанию доля свободной памяти. См. _node_crossings.
 
     Возвращает словарь:
         rings   список той же длины, элемент None если кольцо выродилось
@@ -866,7 +964,7 @@ def clean_topology(rings, tolerance, mode=MODE_BOTH, fixed_rings=None,
     # ── Шаг 2а. Узлы в точках пересечения рёбер ──────────────────────────
     if do_insert and node_crossings:
         crossing_nodes, unstable = _node_crossings(
-            norm, tolerance, events, frozen, project_onto_edge)
+            norm, tolerance, events, frozen, project_onto_edge, memory_budget)
         stats["nodes_crossing"] = crossing_nodes
         stats["crossings_unstable"] = unstable
         stats["nodes_inserted"] += stats["nodes_crossing"]

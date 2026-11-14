@@ -30,12 +30,23 @@ import os
 import warnings
 
 try:  # внутри плагина QGIS
-    from qgis.core import QgsProcessingLayerPostProcessorInterface
+    from qgis.core import (QgsProcessingException,
+                           QgsProcessingLayerPostProcessorInterface)
 except ImportError:  # headless-тесты
     QgsProcessingLayerPostProcessorInterface = object
 
-__all__ = ["fields_from", "make_field", "no_warnings", "set_field_aliases",
-           "write_field_aliases"]
+    class QgsProcessingException(Exception):
+        """Заменитель исключения Processing для тестов без QGIS."""
+
+try:  # внутри плагина QGIS
+    from .i18n import tr
+    from .topo_core import CrossingMemoryError
+except ImportError:  # headless-тесты
+    from i18n import tr
+    from topo_core import CrossingMemoryError
+
+__all__ = ["fields_from", "make_field", "memory_message", "no_warnings",
+           "set_field_aliases", "write_field_aliases"]
 
 # Виды полей выходных слоёв и имена их типов в QMetaType и в QVariant.
 FIELD_KINDS = {"int": ("Int", "Int"), "long": ("LongLong", "LongLong"),
@@ -190,6 +201,19 @@ def write_field_aliases(algorithm, feedback=None):
                     "Псевдонимы в файл не записаны: %s" % why)
 
 
+def memory_message(why):
+    """Текст для человека о шаге, которому не хватит памяти."""
+    gib = float(2 ** 30)
+    return tr(
+        "Шаг узлов в точках пересечения рёбер остановлен до начала, "
+        "QGIS мог бы упасть. На слое %d вершин, шагу нужно около %.1f ГБ "
+        "памяти, доступно %.1f ГБ. Разрежьте слой на части и обработайте "
+        "их по очереди. В инструментах 1.05 и 1.06 можно выключить "
+        "«Ставить узлы в точках пересечения рёбер». Меньший допуск "
+        "помогает, только если он больше средней длины ребра."
+    ) % (why.vertices, why.needed / gib, why.available / gib)
+
+
 def no_warnings(method):
     """
     Обёртка processAlgorithm: предупреждения Python на время прогона
@@ -199,11 +223,18 @@ def no_warnings(method):
     из QGIS, GDAL и NumPy, роняет программу через обработчик
     предупреждений QGIS. Случаев было три, каждый раз новый вызов.
     Обёртка закрывает весь род, а не очередной вызов.
+
+    Заодно она переводит остановку шага узлов в пересечениях по памяти
+    в сообщение Processing. Без этого слой, которому не хватает памяти,
+    роняет QGIS целиком, и человек не узнаёт причину.
     """
     def run(self, *args, **kwargs):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            return method(self, *args, **kwargs)
+            try:
+                return method(self, *args, **kwargs)
+            except CrossingMemoryError as why:
+                raise QgsProcessingException(memory_message(why)) from why
     run.__name__ = method.__name__
     run.__doc__ = method.__doc__
     return run
