@@ -1437,6 +1437,10 @@
     {
      "ru": "Колец уже допуска: %d. У такого кольца противоположные берега слипнутся, и оно схлопнется само в себя. Включите защиту узких объектов либо возьмите допуск меньше %s.",
      "en": "Rings narrower than the tolerance: %d. The opposite banks of such a ring would stick together and it would collapse into itself. Enable the protection of narrow objects or use a tolerance below %s."
+    },
+    {
+     "ru": " и ещё %d",
+     "en": " and %d more"
     }
    ]
   },
@@ -1672,6 +1676,10 @@
     {
      "ru": "Площадь изменилась на %s. Инструмент обещает не менять её вовсе, поэтому проверьте отклонение от ребра. Скорее всего оно завышено.",
      "en": "The area changed by %s. The tool promises not to change it at all, so check the deviation from the edge. It is most likely too large."
+    },
+    {
+     "ru": " и ещё %d",
+     "en": " and %d more"
     }
    ]
   },
