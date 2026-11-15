@@ -702,14 +702,20 @@ def fix_items(backend, items, tolerance, area_threshold, options=None, progress=
             stats["vertices_moved"] = res["stats"]["vertices_moved"]
             stats["nodes_inserted"] = res["stats"]["nodes_inserted"]
             stats["max_move"] = res["stats"]["max_move"]
+            out_rings = res["rings"]
             for pos, t in enumerate(order):
                 i, j, k = addr[t]
-                ring = res["rings"][pos]
+                ring = out_rings[pos]
+                # Кольцо результата и прежнее кольцо освобождаются сразу.
+                # Иначе до конца шага в памяти лежат обе копии всех колец.
+                out_rings[pos] = None
+                flat[t] = None
                 if ring is None:
                     all_parts[i][j][k] = None
                 else:
                     trimmed = [(p[0], p[1]) for p in ring[:-1]]
                     all_parts[i][j][k] = trimmed
+            out_rings = None
             # Убираем выпавшие кольца и части без внешнего кольца.
             for i, parts in enumerate(all_parts):
                 new_parts = []
@@ -727,6 +733,8 @@ def fix_items(backend, items, tolerance, area_threshold, options=None, progress=
     out = []
     for i, parts in enumerate(all_parts):
         g = from_parts(backend, parts)
+        # Кортежи объекта ушли в геометрию и больше не нужны.
+        all_parts[i] = None
         if g is None or backend.is_empty(g):
             out.append(None)
             continue

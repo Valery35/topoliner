@@ -29,6 +29,7 @@ topo_core
 import bisect
 import math
 from array import array
+from itertools import repeat
 
 __all__ = [
     "clean_topology",
@@ -543,6 +544,183 @@ def _is_degenerate(coords, closed):
 
 
 # ────────────────────────────────────────────────────────────────────────────
+# Плоская запись колец
+# ────────────────────────────────────────────────────────────────────────────
+#
+# Внутри сшивки кольцо хранится не списком кортежей, а массивами чисел:
+# (xs, ys, zs, ids, closed). xs и ys - массивы array("d"). zs - список Z
+# или None, если Z нет ни у одной вершины. ids - номера вершин-лидеров
+# слияния или None, если слияния не было, у вершины без лидера стоит -1.
+# У выпавшего кольца xs равен None. Кортеж из трёх чисел с самими числами
+# занимает около 120 байт на вершину, массивы 16. На слое в 9.4 млн вершин
+# кортежи давали больше половины пика памяти сшивки. Кортежи остаются
+# на входе и на выходе clean_topology.
+
+_ID_SIZE = array("l").itemsize
+
+
+def _flat(coords):
+    """Кольцо из кортежей в плоскую запись. Замыкание снимается, как в _norm."""
+    n = len(coords)
+    closed = False
+    if n >= 2:
+        a = coords[0]
+        b = coords[-1]
+        if (abs(float(a[0]) - float(b[0])) <= EPS
+                and abs(float(a[1]) - float(b[1])) <= EPS):
+            closed = True
+            n -= 1
+    xs = array("d", bytes(8 * n))
+    ys = array("d", bytes(8 * n))
+    zs = None
+    for i in range(n):
+        c = coords[i]
+        xs[i] = float(c[0])
+        ys[i] = float(c[1])
+        if len(c) >= 3 and c[2] is not None:
+            if zs is None:
+                zs = [None] * n
+            zs[i] = float(c[2])
+    return (xs, ys, zs, None, closed)
+
+
+def _flat_origin(norm):
+    """Левый нижний угол охвата, см. _origin_of."""
+    min_x = min_y = None
+    for xs, ys, _zs, _ids, _closed in norm:
+        if not xs:
+            continue
+        x = min(xs)
+        y = min(ys)
+        if min_x is None or x < min_x:
+            min_x = x
+        if min_y is None or y < min_y:
+            min_y = y
+    return (0.0 if min_x is None else min_x, 0.0 if min_y is None else min_y)
+
+
+def _flat_mean_segment_length(norm):
+    """Средняя длина ребра, см. _mean_segment_length. Порядок сложения тот же."""
+    total = 0.0
+    n = 0
+    hypot = math.hypot
+    for xs, ys, _zs, _ids, closed in norm:
+        if not xs:
+            continue
+        m = len(xs)
+        last = m if closed else m - 1
+        for i in range(last):
+            j = i + 1 if i + 1 < m else 0
+            total += hypot(xs[j] - xs[i], ys[j] - ys[i])
+            n += 1
+    return (total / n) if n else 0.0
+
+
+def _flat_drop_repeats(ring):
+    """Снимает подряд идущие совпадающие вершины, см. _drop_repeats."""
+    xs, ys, zs, ids, closed = ring
+    n = len(xs)
+    if n == 0:
+        return ring
+    keep = [0]
+    qx = xs[0]
+    qy = ys[0]
+    for i in range(1, n):
+        px = xs[i]
+        py = ys[i]
+        if abs(px - qx) > EPS or abs(py - qy) > EPS:
+            keep.append(i)
+            qx = px
+            qy = py
+    if closed:
+        while len(keep) > 1:
+            a = keep[0]
+            b = keep[-1]
+            if abs(xs[a] - xs[b]) <= EPS and abs(ys[a] - ys[b]) <= EPS:
+                keep.pop()
+            else:
+                break
+    if len(keep) == n:
+        return ring
+    return (array("d", [xs[i] for i in keep]),
+            array("d", [ys[i] for i in keep]),
+            None if zs is None else [zs[i] for i in keep],
+            None if ids is None else array("l", [ids[i] for i in keep]),
+            closed)
+
+
+class _LeaderGrid:
+    """
+    Сетка вершин-лидеров слияния. Отвечает так же, как _PointGrid.
+
+    Ячейки те же, floor(x / cell), и обходятся в том же порядке, номера
+    внутри ячейки идут по порядку добавления. Поэтому из равноудалённых
+    лидеров выбирается тот же. Разница только в хранении. Координаты
+    лежат массивами, ключ ячейки - одно целое, а в ячейке с одним лидером
+    вместо списка лежит сам номер. В _PointGrid ключ-кортеж и список
+    на каждого лидера занимали около 250 байт.
+    """
+
+    def __init__(self, cell, max_abs_y):
+        self.cell = cell if cell > 0 else 1.0
+        # Ширина строки ключа с запасом под любой номер ячейки по y.
+        self.half = int(math.floor(max_abs_y / self.cell)) + 2
+        self.width = 2 * self.half + 1
+        self.cells = {}
+        self.xs = array("d")
+        self.ys = array("d")
+
+    def add(self, x, y):
+        idx = len(self.xs)
+        self.xs.append(x)
+        self.ys.append(y)
+        key = (int(math.floor(x / self.cell)) * self.width
+               + int(math.floor(y / self.cell)) + self.half)
+        bucket = self.cells.get(key)
+        if bucket is None:
+            self.cells[key] = idx
+        elif isinstance(bucket, int):
+            self.cells[key] = [bucket, idx]
+        else:
+            bucket.append(idx)
+        return idx
+
+    def nearest(self, x, y, radius):
+        """Индекс ближайшей точки в радиусе или None."""
+        cell = self.cell
+        cx = int(math.floor(x / cell))
+        cy = int(math.floor(y / cell))
+        best = None
+        best_d2 = radius * radius
+        span = max(1, int(math.ceil(radius / cell)))
+        get = self.cells.get
+        xs = self.xs
+        ys = self.ys
+        width = self.width
+        half = self.half
+        for i in range(cx - span, cx + span + 1):
+            row = i * width + half
+            for j in range(cy - span, cy + span + 1):
+                # За пределами строки ключ попал бы в соседнюю строку.
+                # Лидеров там нет, ячейку можно пропустить.
+                if j < -half or j > half:
+                    continue
+                bucket = get(row + j)
+                if bucket is None:
+                    continue
+                if isinstance(bucket, int):
+                    bucket = (bucket,)
+                for idx in bucket:
+                    ddx = xs[idx] - x
+                    ddy = ys[idx] - y
+                    d2 = ddx * ddx + ddy * ddy
+                    if d2 <= best_d2:
+                        best_d2 = d2
+                        best = idx
+        return best, math.sqrt(best_d2) if best is not None else 0.0
+
+
+# ────────────────────────────────────────────────────────────────────────────
 # Основная функция
 # ────────────────────────────────────────────────────────────────────────────
 
@@ -592,10 +770,15 @@ def _apply_inserts(norm, inserts, events, kind):
     for (ri, si), items in inserts.items():
         by_ring.setdefault(ri, []).append((si, items))
     for ri, seg_items in by_ring.items():
-        coords, closed = norm[ri]
-        if coords is None:
+        xs, ys, zs, ids, closed = norm[ri]
+        if xs is None:
             continue
-        coords = list(coords)
+        # Кольцо в плоской записи: вставка идёт в списки, потом обратно
+        # в массивы.
+        lx = xs.tolist()
+        ly = ys.tolist()
+        lz = None if zs is None else list(zs)
+        lid = None if ids is None else ids.tolist()
         for si, items in sorted(seg_items, key=lambda p: -p[0]):
             items.sort(key=lambda p: p[0])
             add = []
@@ -607,9 +790,18 @@ def _apply_inserts(norm, inserts, events, kind):
                 events.append((px, py, kind, dist, ri))
                 prev_t = t
             if add:
-                coords[si + 1:si + 1] = add
+                at = si + 1
+                lx[at:at] = [p[0] for p in add]
+                ly[at:at] = [p[1] for p in add]
+                if lz is None and any(p[2] is not None for p in add):
+                    lz = [None] * (len(lx) - len(add))
+                if lz is not None:
+                    lz[at:at] = [p[2] for p in add]
+                if lid is not None:
+                    lid[at:at] = [-1] * len(add)
                 count += len(add)
-        norm[ri] = (coords, closed)
+        norm[ri] = (array("d", lx), array("d", ly), lz,
+                    None if lid is None else array("l", lid), closed)
     return count
 
 
@@ -747,15 +939,15 @@ def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=Fals
     frozen = frozen or set()
     budget = _crossing_budget(memory_budget)
     count = 0
-    for ri, (coords, closed) in enumerate(norm):
-        if coords is None or ri in frozen:
+    for ri, (xs, _ys, _zs, _ids, closed) in enumerate(norm):
+        if xs is None or ri in frozen:
             continue
-        count += len(coords) if closed else len(coords) - 1
+        count += len(xs) if closed else len(xs) - 1
     if budget is not None and count * CROSSING_SEGMENT_BYTES > budget:
         raise CrossingMemoryError(count, count * CROSSING_SEGMENT_BYTES, budget)
 
-    cell = max(tolerance, _mean_segment_length(norm), 1e-9)
-    ox, oy = _origin_of(norm)
+    cell = max(tolerance, _flat_mean_segment_length(norm), 1e-9)
+    ox, oy = _flat_origin(norm)
     grid = _SegmentGrid(cell, ox, oy)
 
     # Сегменты нумеруются сквозь все кольца по порядку, поэтому порядок
@@ -766,17 +958,17 @@ def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=Fals
     owners = []
     total = 0
     max_cy = 0
-    for ri, (coords, closed) in enumerate(norm):
-        if coords is None or ri in frozen:
+    for ri, (xs, ys, _zs, _ids, closed) in enumerate(norm):
+        if xs is None or ri in frozen:
             continue
-        n = len(coords)
+        n = len(xs)
         last = n if closed else n - 1
         if last <= 0:
             continue
         starts.append(total)
         owners.append(ri)
         total += last
-        for _x, y, _z in coords:
+        for y in ys:
             cy = int((y - oy) // cell)
             if cy > max_cy:
                 max_cy = cy
@@ -789,10 +981,10 @@ def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=Fals
         return owners[k], g - starts[k]
 
     def coords_of(key):
-        coords = norm[key[0]][0]
-        x1, y1, _z1 = coords[key[1]]
-        x2, y2, _z2 = coords[(key[1] + 1) % len(coords)]
-        return x1, y1, x2, y2
+        xs, ys = norm[key[0]][0], norm[key[0]][1]
+        i = key[1]
+        j = (i + 1) % len(xs)
+        return xs[i], ys[i], xs[j], ys[j]
 
     # Вместо словаря ячеек со списками ключей и сетки всех вершин - один
     # список целых чисел «код ячейки × количество сегментов + номер
@@ -802,15 +994,14 @@ def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=Fals
     entries = []
     append = entries.append
     for k, ri in enumerate(owners):
-        coords = norm[ri][0]
-        n = len(coords)
+        xs, ys = norm[ri][0], norm[ri][1]
+        n = len(xs)
         first = starts[k]
         last = (starts[k + 1] if k + 1 < len(starts) else total) - first
         for si in range(last):
-            x1, y1, _z1 = coords[si]
-            x2, y2, _z2 = coords[(si + 1) % n]
+            sj = (si + 1) % n
             g = first + si
-            for cx, cy in grid.cells_of(x1, y1, x2, y2):
+            for cx, cy in grid.cells_of(xs[si], ys[si], xs[sj], ys[sj]):
                 append((cx * rows + cy) * total + g)
     entries.sort()
 
@@ -827,7 +1018,7 @@ def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=Fals
     def has_own_vertex(ri, x, y):
         """Есть ли у кольца своя вершина не дальше допуска."""
         r2 = tolerance * tolerance
-        for vx, vy, _vz in norm[ri][0]:
+        for vx, vy in zip(norm[ri][0], norm[ri][1]):
             dx = vx - x
             dy = vy - y
             if dx * dx + dy * dy <= r2:
@@ -863,18 +1054,24 @@ def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=Fals
                 # Соседние сегменты одного кольца имеют общую вершину.
                 if ka[0] == kb[0] and abs(ka[1] - kb[1]) <= 1:
                     continue
-                ca = norm[ka[0]][0]
+                ra = norm[ka[0]]
                 ia = ka[1]
-                x1, y1, z1 = ca[ia]
-                x2, y2, z2 = ca[ia + 1] if ia + 1 < len(ca) else ca[0]
-                cb = norm[kb[0]][0]
+                ja = ia + 1 if ia + 1 < len(ra[0]) else 0
+                x1, y1 = ra[0][ia], ra[1][ia]
+                x2, y2 = ra[0][ja], ra[1][ja]
+                rb = norm[kb[0]]
                 ib = kb[1]
-                x3, y3, z3 = cb[ib]
-                x4, y4, z4 = cb[ib + 1] if ib + 1 < len(cb) else cb[0]
+                jb = ib + 1 if ib + 1 < len(rb[0]) else 0
+                x3, y3 = rb[0][ib], rb[1][ib]
+                x4, y4 = rb[0][jb], rb[1][jb]
                 hit = _segment_crossing(x1, y1, x2, y2, x3, y3, x4, y4,
                                         near_vertex=tolerance)
                 if hit is None:
                     continue
+                zsa = ra[2]
+                z1, z2 = (None, None) if zsa is None else (zsa[ia], zsa[ja])
+                zsb = rb[2]
+                z3, z4 = (None, None) if zsb is None else (zsb[ib], zsb[jb])
                 theirs = set(grid.cells_of(x3, y3, x4, y4))
                 common = [c for c in grid.cells_of(x1, y1, x2, y2) if c in theirs]
                 if len(common) > 1 and min(common, key=appearance) != here:
@@ -914,7 +1111,9 @@ def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=Fals
                     item_b = (u, bx_, by_, zb, 0.0)
                 accepted.append((rank, a, b, ka, item_a, kb, item_b))
         i = j
+    # Ссылка append тоже держит список, без неё он не освобождается.
     del entries
+    append = None
 
     accepted.sort(key=lambda h: (h[0], h[1], h[2]))
     inserts = {}
@@ -945,39 +1144,45 @@ def _segment_index(norm, frozen, cell, origin_x, origin_y):
     owners = []
     total = 0
     max_cy = 0
-    for ri, (coords, closed) in enumerate(norm):
-        if coords is None or ri in frozen:
+    for ri, (xs, ys, _zs, _ids, closed) in enumerate(norm):
+        if xs is None or ri in frozen:
             continue
-        n = len(coords)
+        n = len(xs)
         last = n if closed else n - 1
         if last <= 0:
             continue
         starts.append(total)
         owners.append(ri)
         total += last
-        for _x, y, _z in coords:
+        for y in ys:
             cy = int((y - origin_y) // cell)
             if cy > max_cy:
                 max_cy = cy
     if total == 0:
         return lambda x, y: ()
     rows = max_cy + 1
-    owner_of = array("l", bytes(array("l").itemsize * total))
+    owner_of = array("l", bytes(_ID_SIZE * total))
     entries = []
     append = entries.append
     for k, ri in enumerate(owners):
-        coords = norm[ri][0]
-        n = len(coords)
+        xs, ys = norm[ri][0], norm[ri][1]
+        n = len(xs)
         first = starts[k]
         last = (starts[k + 1] if k + 1 < len(starts) else total) - first
         for si in range(last):
-            x1, y1, _z1 = coords[si]
-            x2, y2, _z2 = coords[(si + 1) % n]
+            sj = (si + 1) % n
             g = first + si
             owner_of[g] = k
-            for cx, cy in grid.cells_of(x1, y1, x2, y2):
+            for cx, cy in grid.cells_of(xs[si], ys[si], xs[sj], ys[sj]):
                 append((cx * rows + cy) * total + g)
     entries.sort()
+    # Список целых занимает 40 байт на запись, массив 8. Индекс живёт весь
+    # обход вершин, поэтому после сортировки он переводится в массив.
+    # Код, не влезающий в 64 бита, оставляет список. Ссылка append держит
+    # список и снимается, иначе он не освободится.
+    append = None
+    if entries[-1] < 2 ** 63:
+        entries = array("q", entries)
     left = bisect.bisect_left
 
     def query(x, y):
@@ -1028,10 +1233,11 @@ def _own_vertex_lookup(norm, tolerance):
     def has_own_vertex(ri, x, y):
         sorted_ring = cache.get(ri)
         if sorted_ring is None:
-            coords = norm[ri][0] or []
-            order = sorted(coords, key=lambda p: p[0])
-            sorted_ring = (array("d", [p[0] for p in order]),
-                           array("d", [p[1] for p in order]))
+            rxs = norm[ri][0] or array("d")
+            rys = norm[ri][1] or array("d")
+            order = sorted(range(len(rxs)), key=rxs.__getitem__)
+            sorted_ring = (array("d", [rxs[k] for k in order]),
+                           array("d", [rys[k] for k in order]))
             cache[ri] = sorted_ring
         xs, ys = sorted_ring
         k = left(xs, x - reach)
@@ -1099,13 +1305,13 @@ def clean_topology(rings, tolerance, mode=MODE_BOTH, fixed_rings=None,
     fixed_rings = fixed_rings or []
     frozen = set(frozen or ())
 
-    norm = [_norm(r) for r in rings]
-    norm_fixed = [_norm(r) for r in fixed_rings]
+    norm = [_flat(r) for r in rings]
+    norm_fixed = [_flat(r) for r in fixed_rings]
 
     stats = {
         "rings_in": len(rings),
         "rings_fixed": len(fixed_rings),
-        "vertices_in": sum(len(c) for c, _ in norm),
+        "vertices_in": sum(len(r[0]) for r in norm),
         "clusters": 0,
         "vertices_moved": 0,
         "max_move": 0.0,
@@ -1125,64 +1331,80 @@ def clean_topology(rings, tolerance, mode=MODE_BOTH, fixed_rings=None,
             progress(fraction)
 
     # ── Шаг 1. Слияние вершин ────────────────────────────────────────────
+    leaders = 0
     if do_merge:
-        grid = _PointGrid(tolerance)
+        max_abs_y = 0.0
+        for r in norm_fixed + norm:
+            if r[1]:
+                max_abs_y = max(max_abs_y, abs(min(r[1])), abs(max(r[1])))
+        grid = _LeaderGrid(tolerance, max_abs_y)
+        gxs = grid.xs
+        gys = grid.ys
 
         # Эталон первым: его вершины гарантированно становятся лидерами.
-        for coords, _closed in norm_fixed:
-            for x, y, _z in coords:
+        for xs, ys, _zs, _ids, _closed in norm_fixed:
+            for k in range(len(xs)):
+                x = xs[k]
+                y = ys[k]
                 idx, _d = grid.nearest(x, y, tolerance)
                 if idx is None:
                     grid.add(x, y)
 
         # Неизменяемые кольца обходятся до остальных: их вершины становятся
         # опорой, к которой притягиваются соседи, а сами они не двигаются.
+        # Каждая вершина помнит номер своего лидера. По нему шаг 3
+        # отличает уже просмотренные точки без словаря всех координат.
         for ri in frozen:
             if ri < len(norm):
-                for x, y, _z in norm[ri][0]:
-                    grid.add(x, y)
+                xs, ys, zs, _ids, closed = norm[ri]
+                ids = array("l", bytes(_ID_SIZE * len(xs)))
+                for k in range(len(xs)):
+                    ids[k] = grid.add(xs[k], ys[k])
+                norm[ri] = (xs, ys, zs, ids, closed)
 
-        moved = []
         total = max(1, len(norm))
-        for ri, (coords, closed) in enumerate(norm):
+        for ri in range(len(norm)):
             if ri in frozen:
-                moved.append((list(coords), closed))
                 continue
-            new_coords = []
-            for x, y, z in coords:
+            xs, ys, zs, _ids, closed = norm[ri]
+            ids = array("l", bytes(_ID_SIZE * len(xs)))
+            # Массивы кольца свои, взятые из входа копией, поэтому лидер
+            # пишется прямо в них.
+            for k in range(len(xs)):
+                x = xs[k]
+                y = ys[k]
                 idx, dist = grid.nearest(x, y, tolerance)
                 if idx is None:
-                    grid.add(x, y)
-                    new_coords.append((x, y, z))
+                    ids[k] = grid.add(x, y)
                 else:
-                    lx, ly = grid.xs[idx], grid.ys[idx]
+                    lx = gxs[idx]
+                    ly = gys[idx]
                     if dist > EPS:
                         stats["vertices_moved"] += 1
                         stats["sum_move"] += dist
                         if dist > stats["max_move"]:
                             stats["max_move"] = dist
                         events.append((lx, ly, "move", dist, ri))
-                    new_coords.append((lx, ly, z))
-            moved.append((new_coords, closed))
+                    xs[k] = lx
+                    ys[k] = ly
+                    ids[k] = idx
+            norm[ri] = (xs, ys, zs, ids, closed)
             if ri % 512 == 0:
                 tick(0.45 * ri / total)
-        norm = moved
-        stats["clusters"] = len(grid.xs)
+        leaders = len(gxs)
+        stats["clusters"] = leaders
         # Сетка слияния дальше не нужна. Без этого она жила до конца сшивки
         # и занимала около пятой части пика памяти в шаге 3.
-        del grid, moved
+        del grid, gxs, gys
     tick(0.45)
 
     # ── Шаг 2. Чистка дублей и отбраковка вырожденных колец ──────────────
-    cleaned = []
-    for coords, closed in norm:
-        coords = _drop_repeats(coords, closed)
-        if _is_degenerate(coords, closed):
+    for ri in range(len(norm)):
+        ring = _flat_drop_repeats(norm[ri])
+        if _is_degenerate(ring[0], ring[4]):
             stats["rings_degenerate"] += 1
-            cleaned.append((None, closed))
-        else:
-            cleaned.append((coords, closed))
-    norm = cleaned
+            ring = (None, None, None, None, ring[4])
+        norm[ri] = ring
     tick(0.5)
 
     # ── Шаг 2а. Узлы в точках пересечения рёбер ──────────────────────────
@@ -1196,45 +1418,70 @@ def clean_topology(rings, tolerance, mode=MODE_BOTH, fixed_rings=None,
 
     # ── Шаг 3. Вставка узлов по вершинам ─────────────────────────────────
     if do_insert:
-        # Точки-кандидаты: все вершины эталона и все вершины рабочих колец,
-        # без повторов по координатам.
-        pts = {}
-        for coords, _closed in norm_fixed:
-            for x, y, z in coords:
-                pts.setdefault((x, y), z)
-        for coords, _closed in norm:
-            if coords is None:
-                continue
-            for x, y, z in coords:
-                pts.setdefault((x, y), z)
-
         # Индекс сегментов только по рабочим кольцам: эталон не меняем.
         # Ячейка не меньше допуска, иначе запрос по соседним девяти ячейкам
         # перестанет покрывать радиус поиска. Брать её крупнее допуска можно
         # и нужно: при мелком допуске длинное ребро иначе дробится на сотни
         # ячеек, и построение индекса становится дороже самого поиска.
-        ox, oy = _origin_of(norm)
-        query = _segment_index(norm, frozen, max(tolerance, _mean_segment_length(norm)),
-                               ox, oy)
+        ox, oy = _flat_origin(norm)
+        query = _segment_index(norm, frozen,
+                               max(tolerance, _flat_mean_segment_length(norm)), ox, oy)
         tick(0.65)
 
         # Собственные вершины колец: узел не нужен там, где вершина уже есть.
         has_own_vertex = _own_vertex_lookup(norm, tolerance)
 
-        # Кандидаты на вставку, сгруппированные по сегменту.
+        # Точки-кандидаты: все вершины эталона и все вершины рабочих колец,
+        # без повторов по координатам, в порядке первого появления. Вершины
+        # с одним лидером слияния совпадают по координатам, их повтор
+        # отмечается байтом на лидера. Прочие точки, это эталон и узлы
+        # пересечений, идут через множество координат. Точка, которая
+        # совпала с уже просмотренной, но попала в другой разряд, обходится
+        # ещё раз. Повтор даёт те же кандидаты с тем же t позже первых,
+        # и вставка отбрасывает их как совпадающие. Результат тот же, что
+        # у словаря всех координат, который занимал около 100 байт на точку.
+        seen = bytearray(leaders)
+        seen_xy = set()
         inserts = {}
         tol2 = tolerance * tolerance
-        total = max(1, len(pts))
-        for k, (vx, vy) in enumerate(pts.keys()):
-            pz = pts[(vx, vy)]
+        total = max(1, sum(len(r[0]) for r in norm_fixed)
+                    + sum(len(r[0]) for r in norm if r[0] is not None))
+        def candidates():
+            k = -1
+            for rxs, rys, rzs, rids, _closed in norm_fixed + norm:
+                if rxs is None:
+                    continue
+                for v in range(len(rxs)):
+                    k += 1
+                    if k % 1024 == 0:
+                        tick(0.65 + 0.25 * k / total)
+                    vx = rxs[v]
+                    vy = rys[v]
+                    lid = -1 if rids is None else rids[v]
+                    if lid >= 0:
+                        if seen[lid]:
+                            continue
+                        seen[lid] = 1
+                    else:
+                        key = (vx, vy)
+                        if key in seen_xy:
+                            continue
+                        seen_xy.add(key)
+                    yield vx, vy, (None if rzs is None else rzs[v])
+
+        for vx, vy, pz in candidates():
             for (ri, si) in query(vx, vy):
                 px, py = vx, vy
-                coords, closed = norm[ri]
-                if coords is None:
+                ring = norm[ri]
+                xs = ring[0]
+                if xs is None:
                     continue
-                n = len(coords)
-                x1, y1, z1 = coords[si]
-                x2, y2, z2 = coords[(si + 1) % n]
+                ys = ring[1]
+                sj = (si + 1) % len(xs)
+                x1 = xs[si]
+                y1 = ys[si]
+                x2 = xs[sj]
+                y2 = ys[sj]
                 # Узел не нужен, если в пределах допуска у ребра уже есть
                 # вершина. Порог именно допуск, а не машинный эпсилон: иначе
                 # вставка порождает рёбра длиной в доли нанометра, которые
@@ -1266,6 +1513,8 @@ def clean_topology(rings, tolerance, mode=MODE_BOTH, fixed_rings=None,
                     # Точка на прямой ребра: форма не меняется вовсе.
                     px = x1 + t * (x2 - x1)
                     py = y1 + t * (y2 - y1)
+                zs = ring[2]
+                z1, z2 = (None, None) if zs is None else (zs[si], zs[sj])
                 if z_insert == Z_FROM_VERTEX and pz is not None:
                     nz = pz
                 elif z1 is None or z2 is None:
@@ -1273,10 +1522,13 @@ def clean_topology(rings, tolerance, mode=MODE_BOTH, fixed_rings=None,
                 else:
                     nz = z1 + (z2 - z1) * t
                 inserts.setdefault((ri, si), []).append((t, px, py, nz, dist))
-            if k % 1024 == 0:
-                tick(0.65 + 0.25 * k / total)
+        seen = seen_xy = None
 
         stats["nodes_inserted"] += _apply_inserts(norm, inserts, events, "insert")
+        # Индекс отрезков, вершины колец по x и кандидаты дальше не нужны.
+        # Без этого они жили до выхода из функции и вместе с кортежами
+        # результата давали пик памяти всей сшивки.
+        query = has_own_vertex = inserts = None
     tick(0.92)
 
     if detect_only:
@@ -1285,15 +1537,18 @@ def clean_topology(rings, tolerance, mode=MODE_BOTH, fixed_rings=None,
 
     # ── Шаг 4. Финальная сборка ──────────────────────────────────────────
     out_rings = []
-    for i, (coords, closed) in enumerate(norm):
-        if coords is None:
+    for i in range(len(norm)):
+        if norm[i][0] is None:
             out_rings.append(None)
             continue
-        coords = _drop_repeats(coords, closed)
-        if _is_degenerate(coords, closed):
+        xs, ys, zs, _ids, closed = _flat_drop_repeats(norm[i])
+        # Кольцо уходит в результат, плоская запись дальше не нужна.
+        norm[i] = (None, None, None, None, closed)
+        if _is_degenerate(xs, closed):
             stats["rings_degenerate"] += 1
             out_rings.append(None)
             continue
+        coords = list(zip(xs, ys, repeat(None) if zs is None else zs))
         src, src_closed = _norm(rings[i])
         if closed:
             coords = coords + [coords[0]]

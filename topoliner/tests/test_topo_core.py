@@ -733,7 +733,10 @@ class TestCompactIndexesMatchGrids(unittest.TestCase):
                     x1, y1, _ = coords[si]
                     x2, y2, _ = coords[(si + 1) % n]
                     grid.add((ri, si), x1, y1, x2, y2)
-            query = topo_core._segment_index(norm, frozen, cell, ox, oy)
+            flat = [topo_core._flat(r) for r in self.scene(seed)]
+            self.assertEqual(topo_core._flat_origin(flat), (ox, oy))
+            self.assertEqual(max(0.5, topo_core._flat_mean_segment_length(flat)), cell)
+            query = topo_core._segment_index(flat, frozen, cell, ox, oy)
             rng = random.Random(seed)
             for _ in range(300):
                 x, y = rng.uniform(-10, 110), rng.uniform(-10, 110)
@@ -749,13 +752,34 @@ class TestCompactIndexesMatchGrids(unittest.TestCase):
             for ri, (coords, _closed) in enumerate(norm):
                 for vx, vy, _ in coords:
                     own.add(ri, vx, vy)
-            has = topo_core._own_vertex_lookup(norm, tol)
+            has = topo_core._own_vertex_lookup(
+                [topo_core._flat(r) for r in self.scene(seed)], tol)
             rng = random.Random(seed)
             for _ in range(500):
                 ri = rng.randrange(len(norm))
                 vx, vy, _ = rng.choice(norm[ri][0])
                 x, y = vx + rng.uniform(-3, 3), vy + rng.uniform(-3, 3)
                 self.assertEqual(has(ri, x, y), own.has_vertex(ri, x, y, tol))
+
+    def test_leader_grid_matches_point_grid(self):
+        # Сетка лидеров слияния обязана выбирать того же лидера, что
+        # прежняя, в том числе из равноудалённых и при отрицательных
+        # координатах.
+        import random
+        import topo_core
+        for seed in range(5):
+            rng = random.Random(seed)
+            tol = rng.choice([0.5, 1.0, 3.0])
+            old = topo_core._PointGrid(tol)
+            new = topo_core._LeaderGrid(tol, 60.0)
+            for _ in range(3000):
+                # Координаты на решётке шага 0.5 дают много равных расстояний.
+                x = rng.randint(-100, 100) * 0.5
+                y = rng.randint(-100, 100) * 0.5
+                a = old.nearest(x, y, tol)
+                self.assertEqual(new.nearest(x, y, tol), a)
+                if a[0] is None or rng.random() < 0.2:
+                    self.assertEqual(new.add(x, y), old.add(x, y))
 
 
 class TestCrossingMemoryBudgetMore(unittest.TestCase):
