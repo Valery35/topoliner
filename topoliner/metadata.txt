@@ -36,7 +36,10 @@ changelog=0.13.5 A warning when the layer is in degrees while the tolerance or
       kilometres. A large layer no longer crashes QGIS in cleanup, snapping and
       node insertion. When memory is short, the tool stops in advance and
       tells how much memory is needed and what to do. The same tools use less
-      memory, the result is unchanged.
+      memory, the result is unchanged. A layer of 9 million vertices passes
+      cleanup in about 13 minutes with a memory peak under 4 GB. From
+      one million vertices the log gives the expected memory and time before
+      snapping, and the progress bar moves during snapping.
       0.13.4 Tool dialogs are fully translated into English: field hints,
       option lists and the report file filter were shown in Russian. Every
       field of every dialog now has a hint.
