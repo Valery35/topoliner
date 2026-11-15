@@ -121,7 +121,7 @@ TEXTS = {
                "while remaining a consequence of vertex movement. An overlap is "
                "therefore judged by width, not by area."),
 
-"tools.eyebrow":("Девять инструментов", "Nine tools"),
+"tools.eyebrow":("Одиннадцать инструментов", "Eleven tools"),
 "tools.h2":   ("Порядок в панели повторяет рабочий процесс",
                "The order in the panel follows the workflow"),
 "tools.sub":  ("Проверить, почистить, при необходимости сшить отдельно, "
@@ -221,6 +221,35 @@ TEXTS = {
                "objects lost during cleanup. An edit taking more than a quarter of "
                "the area is cancelled, and an object narrower than the tolerance "
                "stays unchanged and serves as an anchor for its neighbours."),
+
+"nav.rustgis": ("RustGIS", "RustGIS"),
+"rg.eyebrow": ("Без QGIS", "Without QGIS"),
+"rg.h2":      ("Topoliner для RustGIS", "Topoliner for RustGIS"),
+"rg.sub":     ("Те же одиннадцать инструментов работают в RustGIS, настольной ГИС "
+               "на Rust. Расчёты повторяют модуль QGIS и сверены со всеми его "
+               "прогонами на двух языках. QGIS для этого не нужен.",
+               "The same eleven tools run in RustGIS, a desktop GIS written in "
+               "Rust. The calculations repeat the QGIS plugin and are checked "
+               "against all of its runs in two languages. QGIS is not needed."),
+"rg.c1.h":    ("Что умеет", "What it does"),
+"rg.c1.p":    ("Проверка и очистка полигонов и линий, сшивка узлов и вершин, "
+               "вставка недостающих узлов, контроль сборки по атрибуту, ввод "
+               "контуров в покрытие, топологическое упрощение, границы полигонов "
+               "линиями и модель покрытия. Исходный слой не изменяется.",
+               "Checking and cleaning polygons and lines, node and vertex "
+               "snapping, insertion of missing nodes, assembly check by "
+               "attribute, contours into a coverage, topology-preserving "
+               "simplification, polygon borders as lines and the coverage model. "
+               "The source layer is not changed."),
+"rg.c2.h":    ("Чем отличается от модуля", "How it differs from the plugin"),
+"rg.c2.p":    ("Работает внутри RustGIS, у расширения своя вкладка ленты. "
+               "Ставится из файла, пункт Install From File в окне Plugin Manager. "
+               "Нужен RustGIS 0.6.0 или новее и Windows.",
+               "It runs inside RustGIS and has its own ribbon tab. It is installed "
+               "from a file, the Install From File item in the Plugin Manager "
+               "window. RustGIS 0.6.0 or newer and Windows are required."),
+"rg.release": ("Выпуск 0.1.0", "Release 0.1.0"),
+"rg.code":    ("Исходный код расширения", "Extension source code"),
 
 "docs.eyebrow":("Документация", "Documentation"),
 "docs.h2":    ("Руководство в комплекте, на двух языках",
@@ -386,6 +415,7 @@ figcaption{margin-top:10px;font-size:14px;color:var(--ink-soft)}
         <a href="#idea" data-i18n="nav.idea"></a>
         <a href="#tools" data-i18n="nav.tools"></a>
         <a href="#cases" data-i18n="nav.cases"></a>
+        <a href="#rustgis" data-i18n="nav.rustgis"></a>
         <a href="#docs" data-i18n="nav.docs"></a>
       </nav>
       <div class="lang">
@@ -454,6 +484,26 @@ figcaption{margin-top:10px;font-size:14px;color:var(--ink-soft)}
       <div class="fact"><b>68</b><span data-i18n="fact1"></span></div>
       <div class="fact"><b>166 &rarr; 41</b><span data-i18n="fact2"></span></div>
       <div class="fact"><b>0</b><span data-i18n="fact3"></span></div>
+    </div>
+  </div>
+</section>
+
+<section id="rustgis">
+  <div class="wrap">
+    <div class="eyebrow" data-i18n="rg.eyebrow"></div>
+    <h2 data-i18n="rg.h2"></h2>
+    <p class="sub" data-i18n="rg.sub"></p>
+    <div class="pair">
+      <div class="card"><h3 data-i18n="rg.c1.h"></h3>
+        <p data-i18n="rg.c1.p"></p></div>
+      <div class="card"><h3 data-i18n="rg.c2.h"></h3>
+        <p data-i18n="rg.c2.p"></p></div>
+    </div>
+    <div class="cta">
+      <a class="btn btn-main" data-i18n="rg.release"
+         href="https://github.com/Valery35/topoliner-rustgis/releases/tag/rustgis-v0.1.0"></a>
+      <a class="btn btn-ghost" data-i18n="rg.code"
+         href="https://github.com/Valery35/topoliner-rustgis"></a>
     </div>
   </div>
 </section>
