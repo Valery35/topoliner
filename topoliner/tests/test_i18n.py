@@ -386,6 +386,39 @@ class TestDegreeWarning(unittest.TestCase):
         self.assertEqual(missing, [], "Нет предупреждения о градусах: %r" % missing)
 
 
+class TestLogStringsTranslated(unittest.TestCase):
+    """
+    Русская строка в сообщении журнала идёт только через tr().
+
+    15 ноября 2026 года прогон 1.05 на английском интерфейсе вывел перечень
+    идентификаторов с хвостом « и ещё 33». Строка стояла вне tr().
+    """
+
+    def test_no_bare_russian_in_feedback(self):
+        import ast
+        import re
+        cyr = re.compile("[А-Яа-яЁё]")
+        found = []
+        for fname in sorted(os.listdir(PLUGIN)):
+            if not fname.endswith(".py"):
+                continue
+            with open(os.path.join(PLUGIN, fname), encoding="utf-8") as fh:
+                tree = ast.parse(fh.read())
+            for call in ast.walk(tree):
+                if not (isinstance(call, ast.Call) and isinstance(call.func, ast.Attribute)
+                        and call.func.attr in ("pushInfo", "pushWarning", "reportError")):
+                    continue
+                inside_tr = set()
+                for node in ast.walk(call):
+                    if (isinstance(node, ast.Call) and getattr(node.func, "id", "") == "tr"):
+                        inside_tr.update(id(n) for n in ast.walk(node))
+                for node in ast.walk(call):
+                    if (isinstance(node, ast.Constant) and isinstance(node.value, str)
+                            and cyr.search(node.value) and id(node) not in inside_tr):
+                        found.append("%s:%d %r" % (fname, node.lineno, node.value[:40]))
+        self.assertEqual(found, [], "Русская строка журнала вне tr(): %r" % found)
+
+
 class TestSnapForecast(unittest.TestCase):
     """
     Оценка памяти и времени сшивки на крупном слое.

@@ -650,7 +650,7 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
 
             feedback.pushInfo(tr("  идентификаторы: %s%s") % (
                 ", ".join(str(i) for i in broken[:10]),
-                " и ещё %d" % (len(broken) - 10) if len(broken) > 10 else ""))
+                tr(" и ещё %d") % (len(broken) - 10) if len(broken) > 10 else ""))
         if do_validate:
             feedback.pushInfo(
                 tr("Некорректных геометрий до/после: %d / %d") % (invalid_before, invalid_after)
@@ -1041,7 +1041,7 @@ class InsertNodesAlgorithm(QgsProcessingAlgorithm):
                 tr("Объектов возвращено к исходному виду: %d. Вставка узла вывернула "
                    "их геометрию, узлы для них не добавлены. Идентификаторы: %s%s")
                 % (len(reverted), ", ".join(str(i) for i in reverted[:10]),
-                   " и ещё %d" % (len(reverted) - 10) if len(reverted) > 10 else ""))
+                   tr(" и ещё %d") % (len(reverted) - 10) if len(reverted) > 10 else ""))
             for line in reasons:
                 feedback.pushInfo("  " + line)
             feedback.pushInfo(

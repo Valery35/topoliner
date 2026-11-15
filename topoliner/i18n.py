@@ -710,6 +710,9 @@ EN = {
         "1.06 can switch off \"Insert nodes at edge intersections\". A smaller "
         "tolerance helps only when it is larger than the mean edge length.",
 
+    # Хвост перечня идентификаторов в журнале 1.05 и 1.06
+    " и ещё %d": " and %d more",
+
     # Оценка памяти и времени сшивки на крупном слое
     "Крупный слой, %d вершин. По замеру прогон займёт около %s ГБ "
     "памяти и около %s мин.":

@@ -179,7 +179,8 @@ def print_summary(feedback, summary):
         feedback.pushInfo(tr("Нарушений не найдено."))
         return
     feedback.pushInfo("%-40s %8s %8s %12s %12s"
-                      % ("нарушение", "чинится", "решать", "медиана", "максимум"))
+                      % (tr("нарушение"), tr("чинится"), tr("решать"),
+                         tr("медиана"), tr("максимум")))
     order = sorted(summary.items(), key=lambda kv: -(kv[1]["auto"] + kv[1]["review"]))
     for kind, slot in order:
         feedback.pushInfo("%-40s %8d %8d %12.4f %12.4f" % (
