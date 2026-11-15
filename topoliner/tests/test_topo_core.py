@@ -695,6 +695,69 @@ class TestCrossingAcceptedOnce(unittest.TestCase):
         self.assertEqual(res["stats"]["nodes_crossing"], 2)
 
 
+class TestCompactIndexesMatchGrids(unittest.TestCase):
+    """
+    Сжатые индексы шага 3 отвечают так же, как прежние сетки.
+
+    Шаг 3 сшивки держал словарь ячеек отрезков и сетку всех вершин слоя,
+    это была половина пика памяти. Сжатые замены обязаны давать тот же
+    ответ, и для отрезков - в том же порядке обхода, от него зависит
+    порядок вставок.
+    """
+
+    def scene(self, seed):
+        import random
+        rng = random.Random(seed)
+        rings = []
+        for _ in range(40):
+            cx, cy = rng.uniform(0, 100), rng.uniform(0, 100)
+            k = rng.randint(3, 15)
+            ring = [(cx + rng.uniform(-8, 8), cy + rng.uniform(-8, 8)) for _ in range(k)]
+            rings.append(ring + [ring[0]] if rng.random() < 0.7 else ring)
+        return rings
+
+    def test_segment_query_matches_grid(self):
+        import random
+        import topo_core
+        for seed in range(5):
+            norm = [topo_core._norm(r) for r in self.scene(seed)]
+            frozen = {1, 7}
+            ox, oy = topo_core._origin_of(norm)
+            cell = max(0.5, topo_core._mean_segment_length(norm))
+            grid = topo_core._SegmentGrid(cell, ox, oy)
+            for ri, (coords, closed) in enumerate(norm):
+                if ri in frozen:
+                    continue
+                n = len(coords)
+                for si in range(n if closed else n - 1):
+                    x1, y1, _ = coords[si]
+                    x2, y2, _ = coords[(si + 1) % n]
+                    grid.add((ri, si), x1, y1, x2, y2)
+            query = topo_core._segment_index(norm, frozen, cell, ox, oy)
+            rng = random.Random(seed)
+            for _ in range(300):
+                x, y = rng.uniform(-10, 110), rng.uniform(-10, 110)
+                self.assertEqual(list(query(x, y)), list(grid.query(x, y)))
+
+    def test_own_vertex_matches_grid(self):
+        import random
+        import topo_core
+        for seed in range(5):
+            norm = [topo_core._norm(r) for r in self.scene(seed)]
+            tol = 2.5
+            own = topo_core._RingVertexGrid(tol, *topo_core._origin_of(norm))
+            for ri, (coords, _closed) in enumerate(norm):
+                for vx, vy, _ in coords:
+                    own.add(ri, vx, vy)
+            has = topo_core._own_vertex_lookup(norm, tol)
+            rng = random.Random(seed)
+            for _ in range(500):
+                ri = rng.randrange(len(norm))
+                vx, vy, _ = rng.choice(norm[ri][0])
+                x, y = vx + rng.uniform(-3, 3), vy + rng.uniform(-3, 3)
+                self.assertEqual(has(ri, x, y), own.has_vertex(ri, x, y, tol))
+
+
 class TestCrossingMemoryBudgetMore(unittest.TestCase):
     """Продолжение проверок бюджета памяти."""
 

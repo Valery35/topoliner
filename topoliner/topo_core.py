@@ -28,6 +28,7 @@ topo_core
 
 import bisect
 import math
+from array import array
 
 __all__ = [
     "clean_topology",
@@ -925,6 +926,128 @@ def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=Fals
     return _apply_inserts(norm, inserts, events, "cross"), unstable
 
 
+def _segment_index(norm, frozen, cell, origin_x, origin_y):
+    """
+    Поиск отрезков рабочих колец около точки, без словаря ячеек.
+
+    Возвращает query(x, y) - множество ключей (кольцо, сегмент) из соседних
+    девяти ячеек. Ответ совпадает с прежним _SegmentGrid.query до порядка
+    обхода множества: ячейки опрашиваются в том же порядке, отрезки ячейки
+    идут в порядке добавления, и множество собирается так же.
+
+    Отрезки лежат одним отсортированным списком целых «код ячейки ×
+    количество отрезков + сквозной номер отрезка». Словарь ячеек со списками
+    кортежей занимал четверть пика памяти сшивки.
+    """
+    grid = _SegmentGrid(cell, origin_x, origin_y)
+    cell = grid.cell
+    starts = []
+    owners = []
+    total = 0
+    max_cy = 0
+    for ri, (coords, closed) in enumerate(norm):
+        if coords is None or ri in frozen:
+            continue
+        n = len(coords)
+        last = n if closed else n - 1
+        if last <= 0:
+            continue
+        starts.append(total)
+        owners.append(ri)
+        total += last
+        for _x, y, _z in coords:
+            cy = int((y - origin_y) // cell)
+            if cy > max_cy:
+                max_cy = cy
+    if total == 0:
+        return lambda x, y: ()
+    rows = max_cy + 1
+    owner_of = array("l", bytes(array("l").itemsize * total))
+    entries = []
+    append = entries.append
+    for k, ri in enumerate(owners):
+        coords = norm[ri][0]
+        n = len(coords)
+        first = starts[k]
+        last = (starts[k + 1] if k + 1 < len(starts) else total) - first
+        for si in range(last):
+            x1, y1, _z1 = coords[si]
+            x2, y2, _z2 = coords[(si + 1) % n]
+            g = first + si
+            owner_of[g] = k
+            for cx, cy in grid.cells_of(x1, y1, x2, y2):
+                append((cx * rows + cy) * total + g)
+    entries.sort()
+    left = bisect.bisect_left
+
+    def query(x, y):
+        cx = int((x - origin_x) // cell)
+        cy = int((y - origin_y) // cell)
+        out = None
+        for i in (cx - 1, cx, cx + 1):
+            if i < 0:
+                continue
+            for j in (cy - 1, cy, cy + 1):
+                if j < 0 or j >= rows:
+                    continue
+                base = (i * rows + j) * total
+                lo = left(entries, base)
+                hi = left(entries, base + total, lo)
+                if lo == hi:
+                    continue
+                bucket = []
+                for p in range(lo, hi):
+                    g = entries[p] - base
+                    k = owner_of[g]
+                    bucket.append((owners[k], g - starts[k]))
+                if out is None:
+                    out = set(bucket)
+                else:
+                    out.update(bucket)
+        return () if out is None else out
+
+    return query
+
+
+def _own_vertex_lookup(norm, tolerance):
+    """
+    Есть ли у кольца своя вершина не дальше допуска.
+
+    Возвращает has_own_vertex(ri, x, y). Ответ совпадает с прежней сеткой
+    вершин с радиусом поиска в допуск: проверяется то же условие на тех же
+    разностях координат. Вершины кольца упорядочены по x и лежат двумя
+    массивами чисел. Массивы строятся для кольца при первом вопросе о нём.
+    Сетка всех вершин слоя занимала четверть пика памяти сшивки.
+    """
+    r2 = tolerance * tolerance
+    # Отбор по x берётся с запасом, а точная проверка та же, что прежде.
+    reach = 2.0 * tolerance
+    cache = {}
+    left = bisect.bisect_left
+
+    def has_own_vertex(ri, x, y):
+        sorted_ring = cache.get(ri)
+        if sorted_ring is None:
+            coords = norm[ri][0] or []
+            order = sorted(coords, key=lambda p: p[0])
+            sorted_ring = (array("d", [p[0] for p in order]),
+                           array("d", [p[1] for p in order]))
+            cache[ri] = sorted_ring
+        xs, ys = sorted_ring
+        k = left(xs, x - reach)
+        end = len(xs)
+        limit = x + reach
+        while k < end and xs[k] <= limit:
+            dx = xs[k] - x
+            dy = ys[k] - y
+            if dx * dx + dy * dy <= r2:
+                return True
+            k += 1
+        return False
+
+    return has_own_vertex
+
+
 def clean_topology(rings, tolerance, mode=MODE_BOTH, fixed_rings=None,
                    z_insert=Z_INTERPOLATE, node_crossings=True, frozen=None,
                    project_onto_edge=False, detect_only=False, progress=None,
@@ -1045,6 +1168,9 @@ def clean_topology(rings, tolerance, mode=MODE_BOTH, fixed_rings=None,
                 tick(0.45 * ri / total)
         norm = moved
         stats["clusters"] = len(grid.xs)
+        # Сетка слияния дальше не нужна. Без этого она жила до конца сшивки
+        # и занимала около пятой части пика памяти в шаге 3.
+        del grid, moved
     tick(0.45)
 
     # ── Шаг 2. Чистка дублей и отбраковка вырожденных колец ──────────────
@@ -1088,25 +1214,12 @@ def clean_topology(rings, tolerance, mode=MODE_BOTH, fixed_rings=None,
         # и нужно: при мелком допуске длинное ребро иначе дробится на сотни
         # ячеек, и построение индекса становится дороже самого поиска.
         ox, oy = _origin_of(norm)
-        seg_grid = _SegmentGrid(max(tolerance, _mean_segment_length(norm)), ox, oy)
-        for ri, (coords, closed) in enumerate(norm):
-            if coords is None or ri in frozen:
-                continue
-            n = len(coords)
-            last = n if closed else n - 1
-            for si in range(last):
-                x1, y1, _z1 = coords[si]
-                x2, y2, _z2 = coords[(si + 1) % n]
-                seg_grid.add((ri, si), x1, y1, x2, y2)
+        query = _segment_index(norm, frozen, max(tolerance, _mean_segment_length(norm)),
+                               ox, oy)
         tick(0.65)
 
         # Собственные вершины колец: узел не нужен там, где вершина уже есть.
-        own = _RingVertexGrid(max(tolerance, 1e-9), ox, oy)
-        for ri, (coords, _closed) in enumerate(norm):
-            if coords is None:
-                continue
-            for vx, vy, _vz in coords:
-                own.add(ri, vx, vy)
+        has_own_vertex = _own_vertex_lookup(norm, tolerance)
 
         # Кандидаты на вставку, сгруппированные по сегменту.
         inserts = {}
@@ -1114,7 +1227,7 @@ def clean_topology(rings, tolerance, mode=MODE_BOTH, fixed_rings=None,
         total = max(1, len(pts))
         for k, (vx, vy) in enumerate(pts.keys()):
             pz = pts[(vx, vy)]
-            for (ri, si) in seg_grid.query(vx, vy):
+            for (ri, si) in query(vx, vy):
                 px, py = vx, vy
                 coords, closed = norm[ri]
                 if coords is None:
@@ -1146,7 +1259,7 @@ def clean_topology(rings, tolerance, mode=MODE_BOTH, fixed_rings=None,
                 if t <= 0.0 or t >= 1.0:
                     continue
                 # Точка уже есть среди вершин этого кольца: узла достаточно.
-                if own.has_vertex(ri, px, py, tolerance):
+                if has_own_vertex(ri, px, py):
                     continue
                 dist = math.sqrt(dist2)
                 if project_onto_edge:
