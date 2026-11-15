@@ -3,7 +3,7 @@ name=Topoliner
 qgisMinimumVersion=3.16
 qgisMaximumVersion=4.99
 description=Topology check, cleanup and coverage model for polygon and line layers: snapping, missing nodes, dangles and overshoots, assembly check, topology-preserving simplification
-version=0.13.4
+version=0.13.5
 author=ООО «Информ++»
 email=xbbster@gmail.com
 about=Brings polygon coverages into order. Finds topology violations and separates
@@ -31,7 +31,11 @@ icon=icons/icon.png
 experimental=False
 deprecated=False
 hasProcessingProvider=yes
-changelog=0.13.4 Tool dialogs are fully translated into English: field hints,
+changelog=0.13.5 A large layer no longer crashes QGIS in cleanup, snapping and
+      node insertion. When memory is short, the tool stops in advance and
+      tells how much memory is needed and what to do. The same tools use less
+      memory, the result is unchanged.
+      0.13.4 Tool dialogs are fully translated into English: field hints,
       option lists and the report file filter were shown in Russian. Every
       field of every dialog now has a hint.
       0.13.3 Support development link in the About window and at
