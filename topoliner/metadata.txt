@@ -31,7 +31,9 @@ icon=icons/icon.png
 experimental=False
 deprecated=False
 hasProcessingProvider=yes
-changelog=0.13.5 A large layer no longer crashes QGIS in cleanup, snapping and
+changelog=0.13.5 A warning when the layer is in degrees while the tolerance or
+      the area threshold look like metres, with the value converted to
+      kilometres. A large layer no longer crashes QGIS in cleanup, snapping and
       node insertion. When memory is short, the tool stops in advance and
       tells how much memory is needed and what to do. The same tools use less
       memory, the result is unchanged.
