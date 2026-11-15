@@ -386,6 +386,68 @@ class TestDegreeWarning(unittest.TestCase):
         self.assertEqual(missing, [], "Нет предупреждения о градусах: %r" % missing)
 
 
+class TestSnapForecast(unittest.TestCase):
+    """
+    Оценка памяти и времени сшивки на крупном слое.
+
+    Весь слой муниципальных районов, 9.35 млн вершин, 15 ноября 2026 года
+    проходил 1.03 за 13 минут при пике 3.7 ГБ. Человек должен знать это
+    до сшивки, чтобы закрыть лишнее. Ниже миллиона вершин журнал молчит.
+    """
+
+    GB = 2 ** 30
+
+    def test_threshold(self):
+        import qgis_helpers
+        self.assertEqual(qgis_helpers.forecast_texts(999999, 8 * self.GB), [])
+        texts = qgis_helpers.forecast_texts(1000000, 8 * self.GB)
+        self.assertEqual([kind for kind, _ in texts], ["info"])
+
+    def test_author_layer(self):
+        import qgis_helpers
+        try:
+            i18n.set_language("ru")
+            ru = qgis_helpers.forecast_texts(9353992, 6 * self.GB)
+            i18n.set_language("en")
+            en = qgis_helpers.forecast_texts(9353992, 6 * self.GB)
+        finally:
+            i18n.set_language("ru")
+        self.assertEqual(ru, [("info", "Крупный слой, 9353992 вершин. По замеру "
+                               "прогон займёт около 3.049 ГБ памяти и около 14 мин. "
+                               "Свободно 6 ГБ.")])
+        self.assertNotRegex(en[0][1], "[А-Яа-я]")
+
+    def test_warning_when_memory_short(self):
+        import qgis_helpers
+        texts = qgis_helpers.forecast_texts(9353992, 3 * self.GB)
+        self.assertEqual([kind for kind, _ in texts], ["info", "warning"])
+        unknown = qgis_helpers.forecast_texts(9353992, None)
+        self.assertEqual([kind for kind, _ in unknown], ["info"])
+        self.assertNotIn("Свободно", unknown[0][1])
+
+    def test_four_snapping_tools_call_forecast(self):
+        """1.03, 1.04, 1.05 и 1.06 пишут оценку перед сшивкой."""
+        import ast
+        found = set()
+        for fname in sorted(os.listdir(PLUGIN)):
+            if not fname.endswith(".py"):
+                continue
+            with open(os.path.join(PLUGIN, fname), encoding="utf-8") as fh:
+                tree = ast.parse(fh.read())
+            for cls in [n for n in tree.body if isinstance(n, ast.ClassDef)]:
+                funcs = {f.name: f for f in cls.body if isinstance(f, ast.FunctionDef)}
+                if "processAlgorithm" not in funcs or "name" not in funcs:
+                    continue
+                returns = [n.value.value for n in ast.walk(funcs["name"])
+                           if isinstance(n, ast.Return) and isinstance(n.value, ast.Constant)]
+                calls = [n for n in ast.walk(funcs["processAlgorithm"])
+                         if isinstance(n, ast.Call)
+                         and getattr(n.func, "id", "") == "snap_forecast"]
+                if calls and returns:
+                    found.add(returns[0])
+        self.assertEqual(found, {"topologyfix", "linefix", "topologyclean", "insertnodes"})
+
+
 class TestCodeHygiene(unittest.TestCase):
     """Требования линтера каталога QGIS.
 

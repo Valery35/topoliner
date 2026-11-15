@@ -33,7 +33,7 @@ from qgis.core import (
 
 from .help_texts import help_for
 from .i18n import tr
-from .qgis_helpers import no_warnings, warn_if_degrees
+from .qgis_helpers import no_warnings, snap_forecast, warn_if_degrees
 from .rounding import fmt, nice
 from . import field_aliases
 from .qgis_helpers import make_field, set_field_aliases, write_field_aliases
@@ -508,6 +508,7 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
         def progress(fraction):
             feedback.setProgress(10.0 + 70.0 * fraction)
 
+        snap_forecast(feedback, sum(len(ring) for ring in ordered_rings))
         result = clean_topology(
             ordered_rings,
             tolerance=tolerance,
@@ -878,6 +879,7 @@ class InsertNodesAlgorithm(QgsProcessingAlgorithm):
 
         feedback.pushInfo(tr("Колец %d, вершин %d, отклонение %g")
                           % (len(rings), vertices_before, eps))
+        snap_forecast(feedback, vertices_before)
 
         # Вставленный узел сам может лечь на ребро третьего объекта, поэтому
         # одного прохода мало. Повторяем, пока узлы находятся.

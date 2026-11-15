@@ -41,15 +41,15 @@ except ImportError:  # headless-тесты
 try:  # внутри плагина QGIS
     from .i18n import tr
     from .rounding import fmt
-    from .topo_core import CrossingMemoryError
+    from .topo_core import CrossingMemoryError, available_memory
 except ImportError:  # headless-тесты
     from i18n import tr
     from rounding import fmt
-    from topo_core import CrossingMemoryError
+    from topo_core import CrossingMemoryError, available_memory
 
-__all__ = ["degree_findings", "degree_message", "fields_from", "make_field",
-           "memory_message", "no_warnings", "set_field_aliases",
-           "warn_if_degrees", "write_field_aliases"]
+__all__ = ["degree_findings", "degree_message", "fields_from", "forecast_texts",
+           "make_field", "memory_message", "no_warnings", "set_field_aliases",
+           "snap_forecast", "warn_if_degrees", "write_field_aliases"]
 
 # Виды полей выходных слоёв и имена их типов в QMetaType и в QVariant.
 FIELD_KINDS = {"int": ("Int", "Int"), "long": ("LongLong", "LongLong"),
@@ -215,6 +215,61 @@ def memory_message(why):
         "«Ставить узлы в точках пересечения рёбер». Меньший допуск "
         "помогает, только если он больше средней длины ребра."
     ) % (why.vertices, why.needed / gib, why.available / gib)
+
+
+# Оценка сшивки на крупном слое. Замер 15 ноября 2026 года, очистка 1.03
+# на слое муниципальных районов, 9.35 млн вершин, Python из состава
+# QGIS 4.2.3. Пик памяти 3677 МБ при 626 МБ после загрузки слоя, это 342
+# байта на вершину, взято с запасом. Время 801 с, это 86 мкс на вершину.
+FORECAST_VERTICES = 1000000
+FORECAST_BYTES_PER_VERTEX = 350
+FORECAST_SECONDS_PER_VERTEX = 90e-6
+# Доля свободной памяти, выше которой оценка идёт предупреждением.
+FORECAST_MEMORY_SHARE = 0.8
+
+
+def forecast_texts(vertices, available):
+    """
+    Сообщения журнала об оценке памяти и времени сшивки.
+
+    Возвращает список пар (вид, текст), вид "info" или "warning". Ниже
+    FORECAST_VERTICES вершин список пуст. available - свободная память
+    в байтах или None, если её не узнать.
+    """
+    if vertices < FORECAST_VERTICES:
+        return []
+    gib = float(2 ** 30)
+    needed = vertices * FORECAST_BYTES_PER_VERTEX
+    minutes = max(1.0, vertices * FORECAST_SECONDS_PER_VERTEX / 60.0)
+    if available is None:
+        text = tr(
+            "Крупный слой, %d вершин. По замеру прогон займёт около %s ГБ "
+            "памяти и около %s мин."
+        ) % (vertices, fmt(needed / gib), fmt(round(minutes)))
+    else:
+        text = tr(
+            "Крупный слой, %d вершин. По замеру прогон займёт около %s ГБ "
+            "памяти и около %s мин. Свободно %s ГБ."
+        ) % (vertices, fmt(needed / gib), fmt(round(minutes)), fmt(available / gib))
+    out = [("info", text)]
+    if available is not None and needed > FORECAST_MEMORY_SHARE * available:
+        out.append(("warning", tr(
+            "Памяти может не хватить. Прогон можно отменить, закрыть другие "
+            "программы и проекты и запустить снова.")))
+    return out
+
+
+def snap_forecast(feedback, vertices):
+    """Пишет в журнал оценку памяти и времени сшивки на крупном слое."""
+    if feedback is None:
+        return []
+    texts = forecast_texts(vertices, available_memory())
+    for kind, text in texts:
+        if kind == "warning":
+            feedback.pushWarning(text)
+        else:
+            feedback.pushInfo(text)
+    return texts
 
 
 # Параметры, заданные в единицах длины и площади слоя.

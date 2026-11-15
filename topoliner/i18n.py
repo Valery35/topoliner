@@ -710,6 +710,20 @@ EN = {
         "1.06 can switch off \"Insert nodes at edge intersections\". A smaller "
         "tolerance helps only when it is larger than the mean edge length.",
 
+    # Оценка памяти и времени сшивки на крупном слое
+    "Крупный слой, %d вершин. По замеру прогон займёт около %s ГБ "
+    "памяти и около %s мин.":
+        "Large layer, %d vertices. By measurement the run will take about "
+        "%s GB of memory and about %s min.",
+    "Крупный слой, %d вершин. По замеру прогон займёт около %s ГБ "
+    "памяти и около %s мин. Свободно %s ГБ.":
+        "Large layer, %d vertices. By measurement the run will take about "
+        "%s GB of memory and about %s min. %s GB is free.",
+    "Памяти может не хватить. Прогон можно отменить, закрыть другие "
+    "программы и проекты и запустить снова.":
+        "Memory may run short. The run can be cancelled, other programs "
+        "and projects closed, and the run started again.",
+
     # Подсказки полей и прочие строки диалогов Processing
     "Полигональный слой, который проверяется.\n"
     "Слой не изменяется, находки пишутся в отдельный слой точек.":

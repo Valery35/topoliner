@@ -34,7 +34,7 @@ from .audit_algorithms import finding_fields, write_findings
 from .branding import banner, help_footer, help_url
 from .help_texts import help_for
 from .i18n import tr
-from .qgis_helpers import no_warnings, warn_if_degrees
+from .qgis_helpers import no_warnings, snap_forecast, warn_if_degrees
 from .rounding import fmt
 
 
@@ -405,6 +405,8 @@ class LineFixAlgorithm(QgsProcessingAlgorithm):
             raise QgsProcessingException("Во входном слое нет линий.")
 
         feedback.pushInfo(tr("Линий: %d, допуск %g") % (len(items), tolerance))
+        if options["snap"]:
+            snap_forecast(feedback, sum(len(coords) for _fid, coords in items))
 
         new_items, stats, left = lc.fix_lines(
             items, tolerance=tolerance, min_length=min_length, options=options,

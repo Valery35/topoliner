@@ -684,7 +684,14 @@ a cadastral layer of 11,866 objects, 15,700 rings and 726,000 vertices.
 | 2.01 Topology-preserving simplification, tolerance 5 | 7 s |
 | 2.03 Coverage topology model | 96 s |
 
-For layers of millions of vertices, process them in parts.
+A layer of municipal districts with 9.35 million vertices passes cleanup
+1.03 in 13 minutes with a memory peak of 3.7 GB. From one million vertices,
+tools 1.03, 1.04, 1.05 and 1.06 write an estimate of memory and time to the
+log before snapping. The estimate comes from this measurement. The time
+depends on the processor. The memory of QGIS itself and of the project
+layers adds to the memory of the run. If the log warns that memory may run
+short, the run can be cancelled, other programs and projects closed, or the
+layer split into parts.
 
 **The magnitude of the coordinates affects precision.** In systems where
 coordinates run into millions of metres, such as Web Mercator, a double

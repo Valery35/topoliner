@@ -86,7 +86,7 @@ def main():
     # ShapelyBackend нужен только тестам и в QGIS не создаётся.
     allowed = {"qgis", "PyQt5", "math", "os", "sys", "re", "json", "ast",
                "collections", "zipfile", "shutil", "configparser", "warnings",
-               "itertools", "bisect", "heapq", "time"}
+               "itertools", "bisect", "heapq", "time", "array"}
     for folder, dirs, files in os.walk(os.path.join(ROOT, PLUGIN)):
         dirs[:] = [d for d in dirs if d not in ("tests", "__pycache__")]
         for name in files:

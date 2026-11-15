@@ -37,7 +37,7 @@ from .qgis_helpers import (
 )
 from . import field_aliases
 from .i18n import tr
-from .qgis_helpers import no_warnings, warn_if_degrees
+from .qgis_helpers import no_warnings, snap_forecast, warn_if_degrees
 from .rounding import fmt, nice
 from .branding import banner, help_footer, help_url
 from .geom_backend import QgisBackend
@@ -645,6 +645,10 @@ class TopologyFixAlgorithm(QgsProcessingAlgorithm):
         feedback.pushInfo(banner())
         feedback.pushInfo(tr("Объектов: %d, допуск %g, порог площади %g")
                           % (len(items), tolerance, area))
+        if options["snap"]:
+            snap_forecast(feedback, sum(
+                g.constGet().nCoordinates() for _fid, g in items
+                if g is not None and not g.isNull()))
 
         names = fields_from(self, parameters, self.FIELDS, context)
         keys = read_group_keys(source, names, feedback)
