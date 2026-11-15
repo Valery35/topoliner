@@ -22,6 +22,28 @@
 
 ## Журнал публикаций
 
+### Topoliner 0.13.5, 15 ноября 2026 года
+
+- GitHub - https://github.com/Valery35/topoliner/releases/tag/0.13.5
+- Каталог QGIS - https://plugins.qgis.org/plugins/topoliner/version/0.13.5/,
+  версия сохранена, страница отвечает 200
+- Dropbox - три архива в `Dropbox\ИИ\Topoliner` обновлены, суммы совпадают.
+  Прежние сборки 0.13.4 ушли в `arhiv\0.13.4`
+- Установка - QGIS 4.2.3 автора, профиль default, прежняя установка
+  сохранена в `C:\Users\ValH\topoliner_backup_20261115_191607`, плагин
+  перезагружен через мост, 11 инструментов. Оценка в журнале проверена
+  прогоном 1.05 без окна в окружении QGIS, на русском и английском
+- Сайт informpp.ru - лендинг на GitHub Pages отдаёт 0.13.5
+- Telegram - пост по выпуску GitHub готовит бот, публикует автор
+- ВК - https://vk.ru/wall-241229428_79
+- Mastodon - https://en.osm.town/@Vaery35/117620853591549480
+- X - https://x.com/Valery35/status/2121969332658090403
+- LinkedIn - <https://www.linkedin.com/feed/update/urn:li:activity:7527735242653298688/>
+- Facebook - https://www.facebook.com/valery35/posts/pfbid0uRBv4grSWA5JaMYrkzyciZpsRsCpm2VPjtpUG3d2CLZ5R2SoD6qXB1Gcm5fnfHLYl
+- Тексты - `site/posts_0.13.5.md` и `site/posts_0.13.5_social.md`. Статья ВК
+  не публиковалась, выпуск не крупный. Площадки группы «иногда»
+  не публиковались
+
 ### Topoliner 0.13.4, 13 ноября 2026 года
 
 - GitHub - https://github.com/Valery35/topoliner/releases/tag/0.13.4
