@@ -714,6 +714,9 @@ def fix_items(backend, items, tolerance, area_threshold, options=None, progress=
                         continue
                     new_parts.append([r for r in rings if r is not None])
                 all_parts[i] = new_parts
+        # Результат сшивки и копии колец дальше не нужны. Без этого они
+        # жили до конца функции, вместе с объединением в шаге щелей.
+        flat = addr = res = order = None
     tick(0.45)
 
     # ── Шаг 4. Сборка и корректность ─────────────────────────────────────
@@ -748,6 +751,9 @@ def fix_items(backend, items, tolerance, area_threshold, options=None, progress=
                 g = fixed
                 stats["made_valid"] += 1
         out.append(g)
+    # Части объектов собраны в геометрии, координаты кортежами больше
+    # не нужны.
+    all_parts = None
     tick(0.55)
 
     # ── Шаг 5. Микрообъекты ──────────────────────────────────────────────
