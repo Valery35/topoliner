@@ -26,6 +26,7 @@ topo_core
 всегда лидеры (эталонная граница, которую нельзя трогать).
 """
 
+import bisect
 import math
 
 __all__ = [
@@ -475,28 +476,6 @@ class _SegmentGrid:
             return [(cx, cy)]
         return _cells_along_segment(ax, ay, bx, by, cell)
 
-    def first_common_cell(self, key_a, key_b, coords_of):
-        """
-        Общая ячейка двух отрезков, которая раньше всех попала в сетку.
-
-        coords_of(ключ) даёт координаты отрезка (x1, y1, x2, y2). Ячейки
-        словаря обходятся в порядке появления. Ячейка появляется, когда её
-        впервые задевает отрезок, а отрезки добавляются по порядку. Поэтому
-        порядок появления ячейки - это пара из первого отрезка в её списке
-        и места ячейки на этом отрезке.
-        """
-        mine = self.cells_of(*coords_of(key_a))
-        theirs = set(self.cells_of(*coords_of(key_b)))
-        common = [c for c in mine if c in theirs]
-        if len(common) == 1:
-            return common[0]
-
-        def appearance(c):
-            creator = self.cells[c][0]
-            return (creator, self.cells_of(*coords_of(creator)).index(c))
-
-        return min(common, key=appearance)
-
     def query(self, x, y):
         cell = self.cell
         cx = int((x - self.origin_x) // cell)
@@ -682,10 +661,11 @@ def _mean_segment_length(norm):
 
 # Цена шага узлов в пересечениях в памяти. Замер 14 ноября 2026 года
 # на Python из состава QGIS 4.2.3, решётка из 1.44 млн сегментов
-# и смешанное покрытие из 1.49 млн сегментов. Сетка сегментов и сетка
-# вершин заняли 517 и 355 байт на сегмент. Берётся верхний замер
-# с запасом. Пары ячеек и копии координат памяти не занимают, их не хранят.
-CROSSING_SEGMENT_BYTES = 560
+# и смешанное покрытие из 1.49 млн сегментов. Отсортированный список
+# «ячейка - сегмент» занял 130 и 119 байт на сегмент. Берётся верхний
+# замер с запасом. Пары ячеек, копии координат и сетка всех вершин памяти
+# не занимают, их не хранят.
+CROSSING_SEGMENT_BYTES = 140
 # Доля свободной памяти, которую шаг может занять. Остальное оставлено
 # QGIS и самому слою. При нехватке памяти на всей машине Python из
 # состава QGIS падает с нарушением доступа, а не с MemoryError.
@@ -776,25 +756,36 @@ def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=Fals
     cell = max(tolerance, _mean_segment_length(norm), 1e-9)
     ox, oy = _origin_of(norm)
     grid = _SegmentGrid(cell, ox, oy)
-    # Координаты сегмента не копируются, а берутся из norm по номеру кольца
-    # и сегмента. Копия занимала около трети памяти шага. norm до конца
-    # обхода не меняется, вставки применяются после.
+
+    # Сегменты нумеруются сквозь все кольца по порядку, поэтому порядок
+    # номеров совпадает с порядком пар (кольцо, сегмент). Координаты
+    # не копируются, а берутся из norm. norm до конца обхода не меняется,
+    # вставки применяются после.
+    starts = []
+    owners = []
+    total = 0
+    max_cy = 0
     for ri, (coords, closed) in enumerate(norm):
         if coords is None or ri in frozen:
             continue
         n = len(coords)
         last = n if closed else n - 1
-        for si in range(last):
-            x1, y1, _z1 = coords[si]
-            x2, y2, _z2 = coords[(si + 1) % n]
-            grid.add((ri, si), x1, y1, x2, y2)
-
-    own = _RingVertexGrid(max(tolerance, 1e-9), ox, oy)
-    for ri, (coords, _closed) in enumerate(norm):
-        if coords is None or ri in frozen:
+        if last <= 0:
             continue
-        for vx, vy, _vz in coords:
-            own.add(ri, vx, vy)
+        starts.append(total)
+        owners.append(ri)
+        total += last
+        for _x, y, _z in coords:
+            cy = int((y - oy) // cell)
+            if cy > max_cy:
+                max_cy = cy
+    if total == 0:
+        return _apply_inserts(norm, {}, events, "cross"), 0
+    rows = max_cy + 1
+
+    def ring_seg(g):
+        k = bisect.bisect_right(starts, g) - 1
+        return owners[k], g - starts[k]
 
     def coords_of(key):
         coords = norm[key[0]][0]
@@ -802,17 +793,68 @@ def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=Fals
         x2, y2, _z2 = coords[(key[1] + 1) % len(coords)]
         return x1, y1, x2, y2
 
-    # Пара отрезков, лежащих в нескольких общих ячейках, встречается в каждой
-    # из них. Прежде проверенные пары копились в множестве, и на слое
-    # в миллион вершин оно занимало больше гигабайта. Теперь пара
-    # проверяется в каждой общей ячейке заново, это только время, а найденное
-    # пересечение принимается в одной ячейке - той, которую обход встречает
-    # первой. Так узлы, события, их порядок и счётчики остаются прежними.
-    inserts = {}
+    # Вместо словаря ячеек со списками ключей и сетки всех вершин - один
+    # список целых чисел «код ячейки × количество сегментов + номер
+    # сегмента», отсортированный. Отрезки одной ячейки идут в нём подряд
+    # и по возрастанию номера. На слое в 1.5 млн сегментов словари занимали
+    # больше половины памяти шага.
+    entries = []
+    append = entries.append
+    for k, ri in enumerate(owners):
+        coords = norm[ri][0]
+        n = len(coords)
+        first = starts[k]
+        last = (starts[k + 1] if k + 1 < len(starts) else total) - first
+        for si in range(last):
+            x1, y1, _z1 = coords[si]
+            x2, y2, _z2 = coords[(si + 1) % n]
+            g = first + si
+            for cx, cy in grid.cells_of(x1, y1, x2, y2):
+                append((cx * rows + cy) * total + g)
+    entries.sort()
+
+    def creator(code):
+        """Первый отрезок ячейки, тот, что создал её в прежнем обходе."""
+        pos = bisect.bisect_left(entries, code * total)
+        return entries[pos] - code * total
+
+    def appearance(c):
+        """Место ячейки в прежнем порядке обхода словаря ячеек."""
+        g = creator(c[0] * rows + c[1])
+        return (g, grid.cells_of(*coords_of(ring_seg(g))).index(c))
+
+    def has_own_vertex(ri, x, y):
+        """Есть ли у кольца своя вершина не дальше допуска."""
+        r2 = tolerance * tolerance
+        for vx, vy, _vz in norm[ri][0]:
+            dx = vx - x
+            dy = vy - y
+            if dx * dx + dy * dy <= r2:
+                return True
+        return False
+
+    # Пара отрезков с несколькими общими ячейками встречается в каждой из
+    # них. Найденное пересечение принимается в одной ячейке - той, что
+    # раньше всех появлялась в прежнем обходе. Принятые пересечения потом
+    # упорядочиваются по тому же обходу. Так узлы, события, их порядок
+    # и счётчики остаются прежними.
+    accepted = []
     unstable = 0
-    for here, bucket in grid.cells.items():
-        if len(bucket) < 2:
+    i = 0
+    size = len(entries)
+    while i < size:
+        code = entries[i] // total
+        base = code * total
+        end = base + total
+        j = i + 1
+        while j < size and entries[j] < end:
+            j += 1
+        if j - i < 2:
+            i = j
             continue
+        here = (code // rows, code % rows)
+        bucket = [ring_seg(entries[p] - base) for p in range(i, j)]
+        rank = None
         for a in range(len(bucket)):
             ka = bucket[a]
             for b in range(a + 1, len(bucket)):
@@ -832,7 +874,9 @@ def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=Fals
                                         near_vertex=tolerance)
                 if hit is None:
                     continue
-                if grid.first_common_cell(ka, kb, coords_of) != here:
+                theirs = set(grid.cells_of(x3, y3, x4, y4))
+                common = [c for c in grid.cells_of(x1, y1, x2, y2) if c in theirs]
+                if len(common) > 1 and min(common, key=appearance) != here:
                     continue
                 px, py, t, u = hit
                 za = None if (z1 is None or z2 is None) else z1 + (z2 - z1) * t
@@ -859,11 +903,25 @@ def _node_crossings(norm, tolerance, events, frozen=None, project_onto_edge=Fals
                 if math.hypot(ax - bx_, ay - by_) > tolerance:
                     unstable += 1
                     continue
-                if not own.has_vertex(ka[0], ax, ay, tolerance):
-                    inserts.setdefault(ka, []).append((t, ax, ay, za, 0.0))
-                if not own.has_vertex(kb[0], bx_, by_, tolerance):
-                    inserts.setdefault(kb, []).append((u, bx_, by_, zb, 0.0))
+                if rank is None:
+                    rank = appearance(here)
+                item_a = None
+                item_b = None
+                if not has_own_vertex(ka[0], ax, ay):
+                    item_a = (t, ax, ay, za, 0.0)
+                if not has_own_vertex(kb[0], bx_, by_):
+                    item_b = (u, bx_, by_, zb, 0.0)
+                accepted.append((rank, a, b, ka, item_a, kb, item_b))
+        i = j
+    del entries
 
+    accepted.sort(key=lambda h: (h[0], h[1], h[2]))
+    inserts = {}
+    for _rank, _a, _b, ka, item_a, kb, item_b in accepted:
+        if item_a is not None:
+            inserts.setdefault(ka, []).append(item_a)
+        if item_b is not None:
+            inserts.setdefault(kb, []).append(item_b)
     return _apply_inserts(norm, inserts, events, "cross"), unstable
 
 
