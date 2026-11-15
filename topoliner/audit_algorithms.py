@@ -37,7 +37,7 @@ from .qgis_helpers import (
 )
 from . import field_aliases
 from .i18n import tr
-from .qgis_helpers import no_warnings
+from .qgis_helpers import no_warnings, warn_if_degrees
 from .rounding import fmt, nice
 from .branding import banner, help_footer, help_url
 from .geom_backend import QgisBackend
@@ -322,6 +322,7 @@ class TopologyAuditAlgorithm(QgsProcessingAlgorithm):
         source = self.parameterAsSource(parameters, self.INPUT, context)
         if source is None:
             raise QgsProcessingException("Не удалось прочитать входной слой.")
+        warn_if_degrees(self, parameters, context, source, feedback)
         tolerance = self.parameterAsDouble(parameters, self.TOLERANCE, context)
         area = self.parameterAsDouble(parameters, self.AREA, context)
 
@@ -597,6 +598,7 @@ class TopologyFixAlgorithm(QgsProcessingAlgorithm):
         source = self.parameterAsSource(parameters, self.INPUT, context)
         if source is None:
             raise QgsProcessingException("Не удалось прочитать входной слой.")
+        warn_if_degrees(self, parameters, context, source, feedback)
 
         tolerance = self.parameterAsDouble(parameters, self.TOLERANCE, context)
         area = self.parameterAsDouble(parameters, self.AREA, context)
@@ -874,6 +876,7 @@ class AssemblyCheckAlgorithm(QgsProcessingAlgorithm):
         source = self.parameterAsSource(parameters, self.INPUT, context)
         if source is None:
             raise QgsProcessingException("Не удалось прочитать входной слой.")
+        warn_if_degrees(self, parameters, context, source, feedback)
         names = fields_from(self, parameters, self.FIELDS, context)
         if not names:
             raise QgsProcessingException("Укажите хотя бы одно поле группировки.")

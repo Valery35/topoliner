@@ -40,13 +40,16 @@ except ImportError:  # headless-тесты
 
 try:  # внутри плагина QGIS
     from .i18n import tr
+    from .rounding import fmt
     from .topo_core import CrossingMemoryError
 except ImportError:  # headless-тесты
     from i18n import tr
+    from rounding import fmt
     from topo_core import CrossingMemoryError
 
-__all__ = ["fields_from", "make_field", "memory_message", "no_warnings",
-           "set_field_aliases", "write_field_aliases"]
+__all__ = ["degree_findings", "degree_message", "fields_from", "make_field",
+           "memory_message", "no_warnings", "set_field_aliases",
+           "warn_if_degrees", "write_field_aliases"]
 
 # Виды полей выходных слоёв и имена их типов в QMetaType и в QVariant.
 FIELD_KINDS = {"int": ("Int", "Int"), "long": ("LongLong", "LongLong"),
@@ -212,6 +215,143 @@ def memory_message(why):
         "«Ставить узлы в точках пересечения рёбер». Меньший допуск "
         "помогает, только если он больше средней длины ребра."
     ) % (why.vertices, why.needed / gib, why.available / gib)
+
+
+# Параметры, заданные в единицах длины и площади слоя.
+LENGTH_PARAMETERS = ("TOLERANCE", "MIN_LENGTH", "EPS", "NODE_EPS", "GRID",
+                     "MAX_GAP")
+AREA_PARAMETERS = ("AREA", "CAVITY")
+# Метров в одном градусе дуги меридиана, средний радиус Земли.
+METERS_PER_DEGREE = 111320.0
+# Вершин, по которым мерится медиана длины ребра. Медиана устойчива уже
+# на тысячах рёбер, а чтение всего слоя на миллионах вершин стоит времени.
+SAMPLE_VERTICES = 200000
+
+
+def degree_findings(values, median_edge):
+    """
+    Величины, которые в градусах похожи на метры.
+
+    values - список (имя, значение, вид), вид "length" или "area".
+    median_edge - медиана длины ребра слоя в градусах.
+
+    Граница взята из замера на слое муниципальных районов 15 ноября 2026
+    года. Медиана ребра там 0.00048 градуса. Допуск 2, заданный как метры,
+    больше неё в 4000 раз. Допуск 0.00002 градуса, это около 2 м, меньше
+    неё в 24 раза. Допуск больше медианы ребра в любых единицах сводит
+    соседние вершины одного кольца, это записано в журнале решённых
+    вопросов. Для площади граница - квадрат медианы.
+    """
+    if not median_edge or median_edge <= 0:
+        return []
+    found = []
+    for name, value, kind in values:
+        if not value or value <= 0:
+            continue
+        limit = median_edge if kind == "length" else median_edge ** 2
+        if value > limit:
+            found.append((name, value, kind))
+    return found
+
+
+def degree_message(name, value, kind, latitude, median_edge):
+    """Предупреждение о величине в градусах, с переводом в метры."""
+    import math
+    cos_lat = max(math.cos(math.radians(latitude)), 1e-6)
+    if kind == "length":
+        north = value * METERS_PER_DEGREE
+        east = north * cos_lat
+        return tr(
+            "Слой в географической системе координат, его единицы - градусы. "
+            "Величина «%s» равна %g градуса, на широте %.0f° это около "
+            "%s по меридиану и %s по параллели. Медиана длины ребра слоя "
+            "%g градуса, величина больше неё. Так обычно задают метры. "
+            "Перепроецируйте слой в метрическую систему координат и задайте "
+            "величины в метрах. Прогон продолжается."
+        ) % (name, value, latitude, _meters(north), _meters(east), median_edge)
+    square = value * METERS_PER_DEGREE ** 2 * cos_lat
+    return tr(
+        "Слой в географической системе координат, его единицы - градусы. "
+        "Величина «%s» равна %g квадратного градуса, на широте %.0f° это "
+        "около %s. Так обычно задают квадратные метры. Перепроецируйте слой "
+        "в метрическую систему координат и задайте величины в метрах. "
+        "Прогон продолжается."
+    ) % (name, value, latitude, _square_meters(square))
+
+
+def _meters(value):
+    if value >= 1000.0:
+        return tr("%s км") % fmt(value / 1000.0)
+    return tr("%s м") % fmt(value)
+
+
+def _square_meters(value):
+    if value >= 1e6:
+        return tr("%s км²") % fmt(value / 1e6)
+    return tr("%s м²") % fmt(value)
+
+
+def median_edge_degrees(source):
+    """Медиана длины ребра по первым SAMPLE_VERTICES вершинам слоя."""
+    lengths = []
+    for feature in source.getFeatures():
+        geometry = feature.geometry()
+        if geometry is None or geometry.isNull():
+            continue
+        for part in geometry.constParts():
+            rings = ([part.exteriorRing()]
+                     + [part.interiorRing(i) for i in range(part.numInteriorRings())]
+                     if hasattr(part, "exteriorRing") else [part])
+            for ring in rings:
+                previous = None
+                for point in ring.vertices():
+                    if previous is not None:
+                        lengths.append(((point.x() - previous.x()) ** 2
+                                        + (point.y() - previous.y()) ** 2) ** 0.5)
+                    previous = point
+        if len(lengths) >= SAMPLE_VERTICES:
+            break
+    lengths = [d for d in lengths if d > 0]
+    if not lengths:
+        return None
+    lengths.sort()
+    return lengths[len(lengths) // 2]
+
+
+def warn_if_degrees(algorithm, parameters, context, source, feedback):
+    """
+    Предупредить, если слой в градусах, а величины похожи на метры.
+
+    Прогон не останавливается, решает человек. Величины берутся из
+    параметров алгоритма по именам из LENGTH_PARAMETERS и AREA_PARAMETERS.
+    """
+    if source is None or feedback is None:
+        return []
+    crs = source.sourceCrs()
+    if not crs.isValid() or not crs.isGeographic():
+        return []
+    values = []
+    for definition in algorithm.parameterDefinitions():
+        name = definition.name()
+        if name in LENGTH_PARAMETERS:
+            kind = "length"
+        elif name in AREA_PARAMETERS:
+            kind = "area"
+        else:
+            continue
+        value = algorithm.parameterAsDouble(parameters, name, context)
+        values.append((definition.description(), value, kind))
+    if not values:
+        return []
+    median = median_edge_degrees(source)
+    found = degree_findings(values, median)
+    extent = source.sourceExtent()
+    latitude = (extent.yMinimum() + extent.yMaximum()) / 2.0
+    messages = [degree_message(name, value, kind, latitude, median)
+                for name, value, kind in found]
+    for text in messages:
+        feedback.pushWarning(text)
+    return messages
 
 
 def no_warnings(method):

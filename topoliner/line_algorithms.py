@@ -34,7 +34,7 @@ from .audit_algorithms import finding_fields, write_findings
 from .branding import banner, help_footer, help_url
 from .help_texts import help_for
 from .i18n import tr
-from .qgis_helpers import no_warnings
+from .qgis_helpers import no_warnings, warn_if_degrees
 from .rounding import fmt
 
 
@@ -214,6 +214,7 @@ class LineAuditAlgorithm(QgsProcessingAlgorithm):
         source = self.parameterAsSource(parameters, self.INPUT, context)
         if source is None:
             raise QgsProcessingException("Не удалось прочитать входной слой.")
+        warn_if_degrees(self, parameters, context, source, feedback)
 
         tolerance = self.parameterAsDouble(parameters, self.TOLERANCE, context)
         min_length = self.parameterAsDouble(parameters, self.MIN_LENGTH, context)
@@ -384,6 +385,7 @@ class LineFixAlgorithm(QgsProcessingAlgorithm):
         source = self.parameterAsSource(parameters, self.INPUT, context)
         if source is None:
             raise QgsProcessingException("Не удалось прочитать входной слой.")
+        warn_if_degrees(self, parameters, context, source, feedback)
 
         tolerance = self.parameterAsDouble(parameters, self.TOLERANCE, context)
         min_length = self.parameterAsDouble(parameters, self.MIN_LENGTH, context)

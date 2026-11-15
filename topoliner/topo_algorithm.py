@@ -33,7 +33,7 @@ from qgis.core import (
 
 from .help_texts import help_for
 from .i18n import tr
-from .qgis_helpers import no_warnings
+from .qgis_helpers import no_warnings, warn_if_degrees
 from .rounding import fmt, nice
 from . import field_aliases
 from .qgis_helpers import make_field, set_field_aliases, write_field_aliases
@@ -377,6 +377,7 @@ class TopologyCleanAlgorithm(QgsProcessingAlgorithm):
         source = self.parameterAsSource(parameters, self.INPUT, context)
         if source is None:
             raise QgsProcessingException("Не удалось прочитать входной слой.")
+        warn_if_degrees(self, parameters, context, source, feedback)
 
         tolerance = self.parameterAsDouble(parameters, self.TOLERANCE, context)
         mode = MODES[self.parameterAsEnum(parameters, self.MODE, context)]
@@ -819,6 +820,7 @@ class InsertNodesAlgorithm(QgsProcessingAlgorithm):
         source = self.parameterAsSource(parameters, self.INPUT, context)
         if source is None:
             raise QgsProcessingException("Не удалось прочитать входной слой.")
+        warn_if_degrees(self, parameters, context, source, feedback)
         eps = self.parameterAsDouble(parameters, self.EPS, context)
         do_cross = self.parameterAsBoolean(parameters, self.CROSSINGS, context)
         reference = self.parameterAsSource(parameters, self.REFERENCE, context)

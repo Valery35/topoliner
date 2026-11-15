@@ -668,6 +668,34 @@ EN = {
     "Значение с одной стороны": "Value on one side",
     "Значение с другой стороны": "Value on the other side",
 
+    # Слой в градусах, величины похожи на метры
+    "Слой в географической системе координат, его единицы - градусы. "
+    "Величина «%s» равна %g градуса, на широте %.0f° это около "
+    "%s по меридиану и %s по параллели. Медиана длины ребра слоя "
+    "%g градуса, величина больше неё. Так обычно задают метры. "
+    "Перепроецируйте слой в метрическую систему координат и задайте "
+    "величины в метрах. Прогон продолжается.":
+        "The layer is in a geographic coordinate system, its units are "
+        "degrees. The value \"%s\" is %g degrees, at latitude %.0f° that is "
+        "about %s along a meridian and %s along a parallel. The median edge "
+        "length of the layer is %g degrees, and the value is larger. This is "
+        "how metres are usually set. Reproject the layer to a metric "
+        "coordinate system and set the values in metres. The run goes on.",
+    "Слой в географической системе координат, его единицы - градусы. "
+    "Величина «%s» равна %g квадратного градуса, на широте %.0f° это "
+    "около %s. Так обычно задают квадратные метры. Перепроецируйте слой "
+    "в метрическую систему координат и задайте величины в метрах. "
+    "Прогон продолжается.":
+        "The layer is in a geographic coordinate system, its units are "
+        "degrees. The value \"%s\" is %g square degrees, at latitude %.0f° "
+        "that is about %s. This is how square metres are usually set. "
+        "Reproject the layer to a metric coordinate system and set the "
+        "values in metres. The run goes on.",
+    "%s км": "%s km",
+    "%s м": "%s m",
+    "%s км²": "%s km²",
+    "%s м²": "%s m²",
+
     # Остановка шага узлов в пересечениях по памяти
     "Шаг узлов в точках пересечения рёбер остановлен до начала, "
     "QGIS мог бы упасть. На слое %d вершин, шагу нужно около %.1f ГБ "

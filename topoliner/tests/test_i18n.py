@@ -308,6 +308,84 @@ class TestParameterDialogs(unittest.TestCase):
                     yield from self.statements(inner)
 
 
+class TestDegreeWarning(unittest.TestCase):
+    """
+    Слой в градусах, а величины заданы как метры.
+
+    15 ноября 2026 года 1.03 запускали на слое в EPSG:4326 с допуском 2
+    и порогом площади 1. Это 2 градуса, около 200 км, и квадратный градус.
+    Прогон не останавливается, но журнал предупреждает и переводит
+    величину в метры.
+    """
+
+    MEDIAN = 0.00048  # медиана ребра на том слое, градусы
+
+    def test_author_values_are_flagged(self):
+        import qgis_helpers
+        found = qgis_helpers.degree_findings(
+            [("Допуск", 2.0, "length"), ("Порог площади", 1.0, "area")],
+            self.MEDIAN)
+        self.assertEqual([f[0] for f in found], ["Допуск", "Порог площади"])
+
+    def test_degree_values_pass(self):
+        """Около 2 м и около 1 м² в градусах предупреждения не дают."""
+        import qgis_helpers
+        found = qgis_helpers.degree_findings(
+            [("Допуск", 0.00002, "length"), ("Порог площади", 1e-10, "area"),
+             ("Порог длины", 0.0, "length")], self.MEDIAN)
+        self.assertEqual(found, [])
+
+    def test_unknown_median_gives_nothing(self):
+        import qgis_helpers
+        self.assertEqual(qgis_helpers.degree_findings(
+            [("Допуск", 2.0, "length")], None), [])
+
+    def test_message_converts_to_meters(self):
+        import qgis_helpers
+        try:
+            i18n.set_language("ru")
+            ru = qgis_helpers.degree_message("Допуск", 2.0, "length", 60.0, self.MEDIAN)
+            area = qgis_helpers.degree_message("Порог", 1.0, "area", 60.0, self.MEDIAN)
+            i18n.set_language("en")
+            en = qgis_helpers.degree_message("Tolerance", 2.0, "length", 60.0, self.MEDIAN)
+        finally:
+            i18n.set_language("ru")
+        self.assertIn("222.6 км", ru)   # 2 градуса по меридиану
+        self.assertIn("111.3 км", ru)   # по параллели на широте 60
+        self.assertIn("6196 км²", area)
+        self.assertIn("222.6 km", en)
+        self.assertNotRegex(en, "[А-Яа-я]")
+
+    def test_every_tool_with_a_tolerance_warns(self):
+        """Каждый processAlgorithm инструмента с допуском зовёт warn_if_degrees."""
+        import ast
+        import qgis_helpers
+        names = set(qgis_helpers.LENGTH_PARAMETERS) | set(qgis_helpers.AREA_PARAMETERS)
+        missing = []
+        checked = 0
+        for fname in sorted(os.listdir(PLUGIN)):
+            if not fname.endswith(".py"):
+                continue
+            with open(os.path.join(PLUGIN, fname), encoding="utf-8") as fh:
+                tree = ast.parse(fh.read())
+            for cls in [n for n in tree.body if isinstance(n, ast.ClassDef)]:
+                consts = {t.id for item in cls.body if isinstance(item, ast.Assign)
+                          for t in item.targets if isinstance(t, ast.Name)}
+                if not consts & names:
+                    continue
+                process = [f for f in cls.body if isinstance(f, ast.FunctionDef)
+                           and f.name == "processAlgorithm"]
+                if not process:
+                    continue
+                checked += 1
+                calls = [n for n in ast.walk(process[0]) if isinstance(n, ast.Call)
+                         and getattr(n.func, "id", "") == "warn_if_degrees"]
+                if not calls:
+                    missing.append("%s:%s" % (fname, cls.name))
+        self.assertEqual(checked, 11)
+        self.assertEqual(missing, [], "Нет предупреждения о градусах: %r" % missing)
+
+
 class TestCodeHygiene(unittest.TestCase):
     """Требования линтера каталога QGIS.
 

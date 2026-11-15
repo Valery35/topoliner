@@ -33,7 +33,7 @@ from .cut import (MODE_CLIP, MODE_INSET, MODE_OVERLAY,
 from .cut_edit import inherited_values, key_fields
 from .help_texts import help_for
 from .i18n import tr
-from .qgis_helpers import no_warnings
+from .qgis_helpers import no_warnings, warn_if_degrees
 from .rounding import fmt
 from .branding import banner, help_footer, help_url
 from .geom_backend import QgisBackend
@@ -218,6 +218,7 @@ class CutIntoCoverageAlgorithm(QgsProcessingAlgorithm):
         source = self.parameterAsSource(parameters, self.INPUT, context)
         if source is None:
             raise QgsProcessingException("Не удалось прочитать покрытие.")
+        warn_if_degrees(self, parameters, context, source, feedback)
         cutter = self.parameterAsSource(parameters, self.CUT, context)
         if cutter is None:
             raise QgsProcessingException("Не удалось прочитать слой контуров.")

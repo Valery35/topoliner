@@ -31,7 +31,7 @@ from .qgis_helpers import (
 )
 from . import field_aliases
 from .i18n import tr
-from .qgis_helpers import no_warnings
+from .qgis_helpers import no_warnings, warn_if_degrees
 from .rounding import fmt, nice
 
 from . import boundaries, coverage
@@ -167,6 +167,7 @@ class TopologySimplifyAlgorithm(QgsProcessingAlgorithm):
         source = self.parameterAsSource(parameters, self.INPUT, context)
         if source is None:
             raise QgsProcessingException("Не удалось прочитать входной слой.")
+        warn_if_degrees(self, parameters, context, source, feedback)
 
         tolerance = self.parameterAsDouble(parameters, self.TOLERANCE, context)
         grid = self.parameterAsDouble(parameters, self.GRID, context)
@@ -413,6 +414,7 @@ class BoundariesAlgorithm(QgsProcessingAlgorithm):
         source = self.parameterAsSource(parameters, self.INPUT, context)
         if source is None:
             raise QgsProcessingException("Не удалось прочитать входной слой.")
+        warn_if_degrees(self, parameters, context, source, feedback)
 
         field_names = fields_from(self, parameters, self.FIELD, context)
         field = field_names[0] if field_names else None
@@ -596,6 +598,7 @@ class CoverageAlgorithm(QgsProcessingAlgorithm):
         source = self.parameterAsSource(parameters, self.INPUT, context)
         if source is None:
             raise QgsProcessingException("Не удалось прочитать входной слой.")
+        warn_if_degrees(self, parameters, context, source, feedback)
 
         node_eps = self.parameterAsDouble(parameters, self.NODE_EPS, context)
         grid = self.parameterAsDouble(parameters, self.GRID, context)
