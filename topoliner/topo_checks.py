@@ -673,6 +673,7 @@ def fix_items(backend, items, tolerance, area_threshold, options=None, progress=
                 all_parts[idx] = drop_tiny(
                     clean_vertices(to_parts(backend, fixed)))
                 stats["made_valid"] += 1
+    tick(0.22)
 
     # ── Шаг 3. Сшивка ────────────────────────────────────────────────────
     if opt["snap"]:
@@ -692,9 +693,12 @@ def fix_items(backend, items, tolerance, area_threshold, options=None, progress=
                     if ring_width(flat[t]) < tolerance:
                         frozen.add(pos)
             stats["rings_frozen"] = len(frozen)
+            tick(0.25)
+            # Сшивка идёт долго, на крупном слое это минуты. Ход внутри неё
+            # виден на шкале, а не одним скачком от начала к концу шага.
             res = clean_topology(
                 [flat[t] for t in order], tolerance=tolerance, mode=MODE_BOTH,
-                frozen=frozen)
+                frozen=frozen, progress=lambda f: tick(0.25 + 0.17 * f))
             stats["vertices_moved"] = res["stats"]["vertices_moved"]
             stats["nodes_inserted"] = res["stats"]["nodes_inserted"]
             stats["max_move"] = res["stats"]["max_move"]
