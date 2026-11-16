@@ -36,11 +36,7 @@ class TestSentenceSplit(unittest.TestCase):
             body = self.ct.clean_markdown(fh.read())
         return self.ct.sentence_lengths(body), self.ct.sentence_stats(body)
 
-    # Беда ядра measure.py (fe65aa4), а не ожидания: word_count дробит номер
-    # версии «0.13.5» на три слова, и предложение выходит в 7 слов вместо 5.
-    # Ожидание посчитано вручную и верно. Ждём исправления ядра. Когда его
-    # исправят, тест даст неожиданный успех, и обёртку пора снять.
-    @unittest.expectedFailure
+    # Номер версии одно слово - исправлено в ядре, коммит aaf87ab.
     def test_link_and_version_stay_whole(self):
         # Значок не проза. Адрес ссылки не слово. 0.13.5 - одно слово.
         lengths, stats = self.lengths("sentences_links.md")
@@ -48,12 +44,7 @@ class TestSentenceSplit(unittest.TestCase):
         self.assertAlmostEqual(stats[0], 20 / 3.0, places=6)
         self.assertEqual(stats[1], 3)
 
-    # Беда ядра measure.py (fe65aa4), а не ожидания: после «.)» перед цифрой
-    # ядро предложение не делит, второе и третье сливаются в одно на 11 слов.
-    # Закрывающая скобка после точки конец предложения не отменяет, прежнее
-    # деление плагина это делало верно. Ждём исправления ядра, неожиданный
-    # успех скажет, что обёртку пора снять.
-    @unittest.expectedFailure
+    # Деление после «.)» перед цифрой - исправлено в ядре, коммит aaf87ab.
     def test_bracket_and_digit_start_a_sentence(self):
         # Закрывающая скобка остаётся при своём предложении, перед скобкой
         # и перед цифрой предложение делится.
@@ -114,11 +105,11 @@ class TestSentenceSplit(unittest.TestCase):
         self.assertTrue(os.path.exists(self.ct.git_path()))
 
 
-# Сумма копии ядра measure.py из agents-md-document-project, коммит fe65aa4.
+# Сумма копии ядра measure.py из agents-md-document-project, коммит aaf87ab.
 # Сторож ловит правку копии у нас. Расхождение с источником он не ловит:
 # источника при прогоне тестов нет. Новая версия ядра приходит копированием
 # вместе с новой суммой здесь.
-MEASURE_SHA256 = "9553d7cb4709b8f8caee7ab521dcde7db068497f7284d3546a1af3d714d87aab"
+MEASURE_SHA256 = "053e3d1a990820268131ba2aafb3658a7b94ce9f1919c1357cfbb5ec1c6bad49"
 
 
 @unittest.skipUnless(os.path.isfile(os.path.join(TOOLS, "measure.py")),
