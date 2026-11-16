@@ -41,7 +41,18 @@ STOP_WHOLE = ("прямо",)
 COLON_OK = re.compile(r"(https?:|file:|mailto:|\d:\d|::|:\s*$|:\s*\*\*|:`)")
 
 LONG_DASH = re.compile(r"[\u2013\u2014]")
-SENTENCE = re.compile(r"[^.!?]+[.!?]")
+# \u041a\u043e\u043d\u0435\u0446 \u043f\u0440\u0435\u0434\u043b\u043e\u0436\u0435\u043d\u0438\u044f - \u0437\u043d\u0430\u043a \u043a\u043e\u043d\u0446\u0430, \u0437\u0430 \u043d\u0438\u043c \u0437\u0430\u043a\u0440\u044b\u0432\u0430\u044e\u0449\u0438\u0435 \u0441\u043a\u043e\u0431\u043a\u0438 \u0438 \u043a\u0430\u0432\u044b\u0447\u043a\u0438
+# \u0438 \u0434\u0430\u043b\u044c\u0448\u0435 \u043f\u0440\u043e\u0431\u0435\u043b \u0441 \u0437\u0430\u0433\u043b\u0430\u0432\u043d\u043e\u0439 \u0431\u0443\u043a\u0432\u043e\u0439, \u0446\u0438\u0444\u0440\u043e\u0439, \u043e\u0442\u043a\u0440\u044b\u0432\u0430\u044e\u0449\u0435\u0439 \u0441\u043a\u043e\u0431\u043a\u043e\u0439 \u0438\u043b\u0438
+# \u043a\u0430\u0432\u044b\u0447\u043a\u043e\u0439, \u043b\u0438\u0431\u043e \u043a\u043e\u043d\u0435\u0446 \u0442\u0435\u043a\u0441\u0442\u0430. \u0422\u043e\u0447\u043a\u0430 \u0432\u043d\u0443\u0442\u0440\u0438 \u0430\u0434\u0440\u0435\u0441\u0430 \u0438 \u0447\u0438\u0441\u043b\u0430 \u0432\u0438\u0434\u0430 0.13.5
+# \u043f\u0440\u043e\u0431\u0435\u043b\u043e\u043c \u043d\u0435 \u043f\u0440\u043e\u0434\u043e\u043b\u0436\u0430\u0435\u0442\u0441\u044f \u0438 \u043f\u0440\u0435\u0434\u043b\u043e\u0436\u0435\u043d\u0438\u0435 \u043d\u0435 \u0440\u0432\u0451\u0442. \u0417\u0430\u043a\u0440\u044b\u0432\u0430\u044e\u0449\u0430\u044f \u0441\u043a\u043e\u0431\u043a\u0430
+# \u043e\u0441\u0442\u0430\u0451\u0442\u0441\u044f \u043f\u0440\u0438 \u0441\u0432\u043e\u0451\u043c \u043f\u0440\u0435\u0434\u043b\u043e\u0436\u0435\u043d\u0438\u0438.
+SENTENCE_END = re.compile(
+    r"[.!?\u2026]+[)\]\u00bb\"\u201d*_]*"
+    r"(?=\s+[*_`(\[\u00ab\"\u201c]*[A-Z\u0410-\u042f\u04010-9]|\s*$)")
+# \u0410\u0431\u0437\u0430\u0446 \u0438 \u043f\u0443\u043d\u043a\u0442 \u043f\u0435\u0440\u0435\u0447\u043d\u044f \u0437\u0430\u043a\u0430\u043d\u0447\u0438\u0432\u0430\u044e\u0442 \u043f\u0440\u0435\u0434\u043b\u043e\u0436\u0435\u043d\u0438\u0435, \u0434\u0430\u0436\u0435 \u0431\u0435\u0437 \u0442\u043e\u0447\u043a\u0438.
+BLOCK_START = re.compile(r"^\s*$|^\s*(?:[-*+]|\d+[.)])\s+")
+# \u0421\u0441\u044b\u043b\u043a\u0430 markdown \u0441\u0447\u0438\u0442\u0430\u0435\u0442\u0441\u044f \u0441\u0432\u043e\u0438\u043c \u0442\u0435\u043a\u0441\u0442\u043e\u043c: \u0430\u0434\u0440\u0435\u0441 \u043d\u0435 \u0441\u043b\u043e\u0432\u043e.
+LINK = re.compile(r"!?\[([^\]]*)\]\([^)]*\)")
 
 
 def markdown_files():
@@ -175,10 +186,54 @@ def check_prose(where, text, problems, russian=True):
                              "«число» вместо «количества»"))
 
 
-def sentence_stats(text):
+def blocks(text):
+    """Абзацы и пункты перечня: пустая строка и маркер пункта их делят."""
+    out, current = [], []
+    for line in text.split("\n"):
+        if BLOCK_START.match(line):
+            if current:
+                out.append(" ".join(current))
+            current = []
+            line = BLOCK_START.sub("", line)
+        if line.strip():
+            current.append(line.strip())
+    if current:
+        out.append(" ".join(current))
+    return out
+
+
+def sentences(text):
+    """
+    Предложения текста. Внутри абзаца или пункта перечня граница - знак
+    конца перед заглавной, цифрой или скобкой. Хвост абзаца без знака
+    конца, например строка перечня, считается отдельным предложением.
+    """
     plain = re.sub(r"<[^>]+>", " ", text)
-    plain = re.sub(r"\s+", " ", plain)
-    lengths = [len(s.split()) for s in SENTENCE.findall(plain) if s.strip()]
+    plain = LINK.sub(r"\1", plain)
+    out = []
+    for block in blocks(plain):
+        block = re.sub(r"\s+", " ", block)
+        start = 0
+        for match in SENTENCE_END.finditer(block):
+            piece = block[start:match.end()].strip()
+            if piece:
+                out.append(piece)
+            start = match.end()
+        tail = block[start:].strip()
+        if tail:
+            out.append(tail)
+    return out
+
+
+def sentence_lengths(text):
+    """Длины предложений в словах. Слово - то, что разделено пробелами
+    и содержит букву или цифру."""
+    return [len([w for w in s.split() if re.search(r"\w", w)])
+            for s in sentences(text)]
+
+
+def sentence_stats(text):
+    lengths = [n for n in sentence_lengths(text) if n]
     if not lengths:
         return 0.0, 0, 0, 0
     mean = sum(lengths) / len(lengths)
