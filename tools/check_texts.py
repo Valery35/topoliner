@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Проверка текстов по требованиям из AGENTS.md.
+Проверка текстов по своду C:\\Dev\\workplace\\TEXTS.md.
 
 Смотрит на всё, что читает человек: файлы markdown, справки инструментов
-и подсказки полей в вызовах setHelp.
+и подсказки полей в вызовах setHelp. У подсказки, переведённой в i18n.py,
+проверяется и английская пара.
 
     python tools/check_texts.py
     python tools/check_texts.py --new      только изменённое относительно HEAD
@@ -12,16 +13,32 @@
 Проверка машинная и находок не исправляет. Каждая находка это файл, строка,
 цитата и суть расхождения.
 
-Сам AGENTS.md из лексической проверки исключён. В нём стоит список стоп-слов,
-и каждое слово этого списка обернулось бы находкой на себя же.
+Деление на предложения, длину предложения, нормы длины по языкам, ритм
+и стоп-слова считает ядро tools/measure.py. Это копия measure.py из
+хранилища github.com/Valery35/agents-md-document-project (лицензия MIT),
+коммит fe65aa4. Один код меряет тексты всей линейки, продукты зовут его
+по-своему. Копия не правится. Сторож sha256 в tests/test_check_texts.py
+ловит правку копии у нас. Расхождение копии с источником он не ловит,
+источник при прогоне тестов недоступен. Новая версия ядра приносится
+копированием с новой суммой в стороже.
 
-Ограничение деления на предложения: сокращение с точкой перед заглавной
-буквой («г. Майкоп») считается концом предложения. В документах плагина
-таких мест на 16 ноября 2026 года не было. Если появятся, длины рядом
-с ними будут занижены.
+Своё у плагина: сбор текстов из кода, ключ --new по git diff, английская
+пара подсказки, пунктуация по строкам с номерами, «прямо» и «число»
+вместо «количества». Этих двух проверок в ядре нет.
+
+Сам AGENTS.md из лексической проверки исключён, как и прежде.
+
+Исключения продукта - TERMS. Сюда вносится стоп-слово ядра, которое
+у Topoliner стало именем разряда и стоит в журнале, руководстве
+и подсказке поля. Вносится только по решению автора, по своду
+C:\\Dev\\workplace\\TEXTS.md термин продукта сильнее стоп-слова, но
+исключение заводит автор. Список пуст. «Молча» («исправлено молча»)
+ждёт решения автора и не внесено, поэтому до его ответа проверка
+комплекта находит «молча» и чистой не считается.
 """
 
 import ast
+import glob
 import html
 import os
 import re
@@ -31,34 +48,17 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PLUGIN = os.path.join(ROOT, "topoliner")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import measure  # noqa: E402
 
-STOP_WORDS = (
-    "честный", "честнее", "честно", "врать", "врёт", "главные грабли", "софт",
-    "кучка", "гладь", "скучный", "лаг", "членение", "наблюдённый",
-    "предъявить", "соблазн", "лесенка", "сходит с рук", "деваться некуда",
-    "вперемешку", "крутить параметры", "руками", "кучу", "под рукой",
-    "мелочь",
-)
-# Слова, которые ловятся только целиком: у них есть законные
+# Слова сверх ядра. «Прямо» ловится только целиком: у него есть законные
 # родственники (прямой, прямого, напрямую).
 STOP_WHOLE = ("прямо",)
 
-# Двоеточие допустимо перед списком, в ссылках, во времени и в названиях.
-COLON_OK = re.compile(r"(https?:|file:|mailto:|\d:\d|::|:\s*$|:\s*\*\*|:`)")
+# Исключения продукта из стоп-слов ядра, по решению автора. См. шапку.
+TERMS = ()
 
 LONG_DASH = re.compile(r"[\u2013\u2014]")
-# \u041a\u043e\u043d\u0435\u0446 \u043f\u0440\u0435\u0434\u043b\u043e\u0436\u0435\u043d\u0438\u044f - \u0437\u043d\u0430\u043a \u043a\u043e\u043d\u0446\u0430, \u0437\u0430 \u043d\u0438\u043c \u0437\u0430\u043a\u0440\u044b\u0432\u0430\u044e\u0449\u0438\u0435 \u0441\u043a\u043e\u0431\u043a\u0438 \u0438 \u043a\u0430\u0432\u044b\u0447\u043a\u0438
-# \u0438 \u0434\u0430\u043b\u044c\u0448\u0435 \u043f\u0440\u043e\u0431\u0435\u043b \u0441 \u0437\u0430\u0433\u043b\u0430\u0432\u043d\u043e\u0439 \u0431\u0443\u043a\u0432\u043e\u0439, \u0446\u0438\u0444\u0440\u043e\u0439, \u043e\u0442\u043a\u0440\u044b\u0432\u0430\u044e\u0449\u0435\u0439 \u0441\u043a\u043e\u0431\u043a\u043e\u0439 \u0438\u043b\u0438
-# \u043a\u0430\u0432\u044b\u0447\u043a\u043e\u0439, \u043b\u0438\u0431\u043e \u043a\u043e\u043d\u0435\u0446 \u0442\u0435\u043a\u0441\u0442\u0430. \u0422\u043e\u0447\u043a\u0430 \u0432\u043d\u0443\u0442\u0440\u0438 \u0430\u0434\u0440\u0435\u0441\u0430 \u0438 \u0447\u0438\u0441\u043b\u0430 \u0432\u0438\u0434\u0430 0.13.5
-# \u043f\u0440\u043e\u0431\u0435\u043b\u043e\u043c \u043d\u0435 \u043f\u0440\u043e\u0434\u043e\u043b\u0436\u0430\u0435\u0442\u0441\u044f \u0438 \u043f\u0440\u0435\u0434\u043b\u043e\u0436\u0435\u043d\u0438\u0435 \u043d\u0435 \u0440\u0432\u0451\u0442. \u0417\u0430\u043a\u0440\u044b\u0432\u0430\u044e\u0449\u0430\u044f \u0441\u043a\u043e\u0431\u043a\u0430
-# \u043e\u0441\u0442\u0430\u0451\u0442\u0441\u044f \u043f\u0440\u0438 \u0441\u0432\u043e\u0451\u043c \u043f\u0440\u0435\u0434\u043b\u043e\u0436\u0435\u043d\u0438\u0438.
-SENTENCE_END = re.compile(
-    r"[.!?\u2026]+[)\]\u00bb\"\u201d*_]*"
-    r"(?=\s+[*_`(\[\u00ab\"\u201c]*[A-Z\u0410-\u042f\u04010-9]|\s*$)")
-# \u0410\u0431\u0437\u0430\u0446 \u0438 \u043f\u0443\u043d\u043a\u0442 \u043f\u0435\u0440\u0435\u0447\u043d\u044f \u0437\u0430\u043a\u0430\u043d\u0447\u0438\u0432\u0430\u044e\u0442 \u043f\u0440\u0435\u0434\u043b\u043e\u0436\u0435\u043d\u0438\u0435, \u0434\u0430\u0436\u0435 \u0431\u0435\u0437 \u0442\u043e\u0447\u043a\u0438.
-BLOCK_START = re.compile(r"^\s*$|^\s*(?:[-*+]|\d+[.)])\s+")
-# \u0421\u0441\u044b\u043b\u043a\u0430 markdown \u0441\u0447\u0438\u0442\u0430\u0435\u0442\u0441\u044f \u0441\u0432\u043e\u0438\u043c \u0442\u0435\u043a\u0441\u0442\u043e\u043c: \u0430\u0434\u0440\u0435\u0441 \u043d\u0435 \u0441\u043b\u043e\u0432\u043e.
-LINK = re.compile(r"!?\[([^\]]*)\]\([^)]*\)")
 
 
 def markdown_files():
@@ -147,6 +147,18 @@ def clean_markdown(text):
     return "\n".join(lines)
 
 
+def html_to_text(text):
+    """Справка в разметке HTML - в строки прозы для ядра.
+
+    Блочный тег закрывает абзац, строчный заменяется пробелом, сущность
+    становится знаком.
+    """
+    text = re.sub(r"(?i)<\s*(br|/p|p|/li|li|/ul|ul|/ol|ol|/h\d|h\d)\b[^>]*>",
+                  "\n\n", text)
+    text = re.sub(r"<[^>]+>", " ", text)
+    return html.unescape(text)
+
+
 def colon_is_fine(before, after):
     """Двоеточие перед списком, в подписи, в соотношении и в адресе."""
     if not after.strip():
@@ -160,8 +172,37 @@ def colon_is_fine(before, after):
     return False
 
 
-def check_prose(where, text, problems, russian=True):
-    """Пунктуация и лексика в одном куске текста."""
+def language(text, default="ru"):
+    """Язык куска текста по ядру. Пустой текст - язык по умолчанию."""
+    if not re.search(r"[A-Za-zА-Яа-яЁё]", text):
+        return default
+    return measure.detect_lang(text)
+
+
+def stop_words(where, text, problems, lang):
+    """Стоп-слова ядра с номером строки, где слово стоит."""
+    lines = text.split("\n")
+    for sentence, _item, _first, at in measure.sentences_at(text):
+        body = measure.strip_mentions(sentence)
+        for pattern, replacement in measure.STOP_WORDS[lang]:
+            for match in re.finditer(r"\b" + pattern + r"\b", body, re.IGNORECASE):
+                word = match.group(0)
+                if word.lower() in TERMS:
+                    continue
+                line_no = at
+                # Предложение может занимать несколько строк абзаца. Номер
+                # берётся у строки, где слово стоит на самом деле.
+                for k in range(max(at - 1, 0), len(lines)):
+                    if re.search(r"\b" + re.escape(word) + r"\b", lines[k],
+                                 re.IGNORECASE):
+                        line_no = k + 1
+                        break
+                problems.append(("%s:%d" % (where, line_no), word,
+                                 "стоп-слово -> %s" % replacement))
+
+
+def check_prose(where, text, problems, russian=True, lang=None):
+    """Пунктуация по строкам, стоп-слова ядра и слова плагина."""
     # Сущность HTML («&nbsp;») это знак, а не точка с запятой.
     plain = html.unescape(re.sub(r"<[^>]+>", " ", text))
     for number, line in enumerate(plain.split("\n"), 1):
@@ -178,9 +219,6 @@ def check_prose(where, text, problems, russian=True):
         if not russian:
             continue
         low = line.lower()
-        for word in STOP_WORDS:
-            if re.search(r"\b%s" % re.escape(word), low):
-                problems.append((place, word, "стоп-слово"))
         for word in STOP_WHOLE:
             if re.search(r"\b%s\b" % re.escape(word), low):
                 problems.append((place, word, "стоп-слово"))
@@ -191,70 +229,51 @@ def check_prose(where, text, problems, russian=True):
             quote = line[max(0, match.start() - 18):match.end() + 18]
             problems.append((place, quote.strip(),
                              "«число» вместо «количества»"))
-
-
-def blocks(text):
-    """Абзацы и пункты перечня: пустая строка и маркер пункта их делят."""
-    out, current = [], []
-    for line in text.split("\n"):
-        if BLOCK_START.match(line):
-            if current:
-                out.append(" ".join(current))
-            current = []
-            line = BLOCK_START.sub("", line)
-        if line.strip():
-            current.append(line.strip())
-    if current:
-        out.append(" ".join(current))
-    return out
+    if lang is not None:
+        stop_words(where, plain, problems, lang)
 
 
 def sentences(text):
-    """
-    Предложения текста. Внутри абзаца или пункта перечня граница - знак
-    конца перед заглавной, цифрой или скобкой. Хвост абзаца без знака
-    конца, например строка перечня, считается отдельным предложением.
-    """
-    plain = html.unescape(re.sub(r"<[^>]+>", " ", text))
-    plain = LINK.sub(r"\1", plain)
-    out = []
-    for block in blocks(plain):
-        block = re.sub(r"\s+", " ", block)
-        start = 0
-        for match in SENTENCE_END.finditer(block):
-            piece = block[start:match.end()].strip()
-            if piece:
-                out.append(piece)
-            start = match.end()
-        tail = block[start:].strip()
-        if tail:
-            out.append(tail)
-    return out
+    """Предложения текста по ядру."""
+    return [s for s, _item, _first in measure.sentences(text)]
 
 
 def sentence_lengths(text):
-    """Длины предложений в словах. Слово - то, что разделено пробелами
-    и содержит букву или цифру."""
-    return [len([w for w in s.split() if re.search(r"\w", w)])
-            for s in sentences(text)]
+    """Длины предложений в словах по ядру."""
+    return [measure.word_count(s) for s in sentences(text)]
 
 
-def sentence_stats(text):
+def sentence_stats(text, lang="ru"):
+    """Средняя, количество, длиннее предела warn и длиннее предела error.
+
+    Пределы берутся из ядра по языку: русский 28 и 34, английский 38 и 45.
+    """
     lengths = [n for n in sentence_lengths(text) if n]
     if not lengths:
         return 0.0, 0, 0, 0
+    limit = measure.LIMITS[lang]
     mean = sum(lengths) / len(lengths)
-    return mean, len(lengths), sum(1 for n in lengths if n > 28), \
-        sum(1 for n in lengths if n > 34)
+    return (mean, len(lengths),
+            sum(1 for n in lengths if n > limit["warn"]),
+            sum(1 for n in lengths if n > limit["error"]))
 
 
 def git_path():
-    """Путь к git. В среде QGIS его нет в PATH, поэтому ищем и по местам."""
+    """Путь к git. В среде QGIS его нет в PATH, поэтому ищем и по местам.
+
+    На рабочей машине git стоит только в составе GitHub Desktop.
+    """
     found = shutil.which("git")
     if found:
         return found
-    for path in (r"C:\Program Files\Git\cmd\git.exe",
-                 r"C:\Program Files (x86)\Git\cmd\git.exe"):
+    places = [r"C:\Program Files\Git\cmd\git.exe",
+              r"C:\Program Files (x86)\Git\cmd\git.exe"]
+    local = os.environ.get("LOCALAPPDATA", "")
+    if local:
+        places += sorted(glob.glob(os.path.join(
+            local, "GitHubDesktop", "app-*", "resources", "app", "git", "cmd",
+            "git.exe")), reverse=True)
+    for path in places:
         if os.path.exists(path):
             return path
     return ""
@@ -293,16 +312,24 @@ def main():
         with open(path, encoding="utf-8") as fh:
             raw = fh.read()
         body = clean_markdown(raw)
-        russian = not name.endswith(".en.md") and name != "AGENTS.md"
-        check_prose(name, body, problems, russian=russian)
-        texts.append((name, body))
+        # Язык по тексту, а не по имени: README.md написан по-английски.
+        lang = language(body)
+        russian = lang == "ru" and name != "AGENTS.md"
+        check_prose(name, body, problems, russian=russian,
+                    lang=None if name == "AGENTS.md" else lang)
+        texts.append((name, raw, lang))
 
-    for name, key, line, text in help_strings():
-        where = "%s (%s, строка %d)" % (name, key, line)
-        russian = not re.search(r"[A-Za-z]{4,}\s+[A-Za-z]{4,}", text[:80]) \
-            or bool(re.search(r"[А-Яа-я]", text))
-        check_prose(where, text, problems, russian=russian)
-        texts.append((where, text))
+    help_files = {os.path.join(PLUGIN, "help_texts.py"), os.path.join(PLUGIN, "i18n.py")}
+    code_touched = touched is None or any(
+        p.startswith(PLUGIN) and p.endswith(".py") for p in touched) \
+        or bool(help_files & touched)
+    if code_touched:
+        for name, key, line, text in help_strings():
+            where = "%s (%s, строка %d)" % (name, key, line)
+            plain = html_to_text(text)
+            lang = language(plain)
+            check_prose(where, text, problems, russian=(lang == "ru"), lang=lang)
+            texts.append((where, plain, lang))
 
     print("Проверка текстов")
     print("")
@@ -314,16 +341,21 @@ def main():
         print("Находок нет.")
 
     print("")
-    print("Длина предложений")
+    print("Длина предложений, пределы по языку из measure.py: "
+          "ru %d и %d, en %d и %d" % (
+              measure.LIMITS["ru"]["warn"], measure.LIMITS["ru"]["error"],
+              measure.LIMITS["en"]["warn"], measure.LIMITS["en"]["error"]))
     worst = []
-    for name, text in texts:
-        mean, total, over28, over34 = sentence_stats(text)
+    for name, text, lang in texts:
+        mean, total, over_warn, over_error = sentence_stats(text, lang)
         if total:
-            worst.append((over34, over28, mean, total, name))
+            worst.append((over_error, over_warn, mean, total, name, lang))
     worst.sort(reverse=True)
-    for over34, over28, mean, total, name in worst[:12]:
-        print("  %-46s средняя %4.1f, предложений %4d, длиннее 28: %d, "
-              "длиннее 34: %d" % (name, mean, total, over28, over34))
+    for over_error, over_warn, mean, total, name, lang in worst[:12]:
+        limit = measure.LIMITS[lang]
+        print("  %-46s %s средняя %4.1f, предложений %4d, длиннее %d: %d, "
+              "длиннее %d: %d" % (name, lang, mean, total, limit["warn"],
+                                  over_warn, limit["error"], over_error))
     return 1 if (problems and strict) else 0
 
 
