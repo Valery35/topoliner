@@ -116,6 +116,29 @@ MEASURE_SHA256 = "053e3d1a990820268131ba2aafb3658a7b94ce9f1919c1357cfbb5ec1c6bad
                      "tools/measure.py нет рядом")
 class TestMeasureCopy(unittest.TestCase):
 
+    def test_core_is_loaded_from_tools(self):
+        # Ядро грузится по пути файла. Чужой модуль measure, уже лежащий
+        # в sys.modules общего прогона, не должен подменить копию.
+        import types
+        saved = sys.modules.get("measure")
+        fake = types.ModuleType("measure")
+        fake.__file__ = "FAKE"
+        sys.modules["measure"] = fake
+        try:
+            if TOOLS not in sys.path:
+                sys.path.insert(0, TOOLS)
+            import importlib
+            import check_texts
+            check_texts = importlib.reload(check_texts)
+            loaded = os.path.normcase(os.path.abspath(check_texts.measure.__file__))
+            print("measure loaded from", loaded)
+            self.assertEqual(loaded, os.path.normcase(os.path.join(TOOLS, "measure.py")))
+        finally:
+            if saved is None:
+                sys.modules.pop("measure", None)
+            else:
+                sys.modules["measure"] = saved
+
     def test_core_copy_is_unchanged(self):
         import hashlib
         with open(os.path.join(TOOLS, "measure.py"), "rb") as fh:

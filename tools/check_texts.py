@@ -48,8 +48,25 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PLUGIN = os.path.join(ROOT, "topoliner")
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import measure  # noqa: E402
+MEASURE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "measure.py")
+
+
+def _load_measure():
+    """Ядро грузится по пути файла и под своим именем.
+
+    Обычный import measure берёт первый попавшийся модуль с этим именем:
+    уже загруженный в общем прогоне или лежащий раньше по sys.path. Тогда
+    меряет чужой код, а заметно это только случайно.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("topoliner_measure", MEASURE_PATH)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+measure = _load_measure()
 
 # Слова сверх ядра. «Прямо» ловится только целиком: у него есть законные
 # родственники (прямой, прямого, напрямую).
