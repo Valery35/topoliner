@@ -49,6 +49,18 @@ class TestSentenceSplit(unittest.TestCase):
         lengths, _stats = self.lengths("sentences_brackets.md")
         self.assertEqual(lengths, [5, 5, 6])
 
+    def test_bold_entity_and_list_continuation(self):
+        # Перед жирным словом предложение делится. «&nbsp;» - пробел, а не
+        # склейка слов и не точка с запятой. Продолжение пункта перечня
+        # с отступом остаётся в своём пункте.
+        lengths, _stats = self.lengths("sentences_markup.md")
+        self.assertEqual(lengths, [3, 4, 4, 10, 3])
+        with open(os.path.join(SAMPLES, "sentences_markup.md"), encoding="utf-8") as fh:
+            body = self.ct.clean_markdown(fh.read())
+        problems = []
+        self.ct.check_prose("sample", body, problems)
+        self.assertEqual(problems, [])
+
 
 if __name__ == "__main__":
     unittest.main()

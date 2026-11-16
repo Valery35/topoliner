@@ -22,6 +22,7 @@
 """
 
 import ast
+import html
 import os
 import re
 import shutil
@@ -161,7 +162,8 @@ def colon_is_fine(before, after):
 
 def check_prose(where, text, problems, russian=True):
     """Пунктуация и лексика в одном куске текста."""
-    plain = re.sub(r"<[^>]+>", " ", text)
+    # Сущность HTML («&nbsp;») это знак, а не точка с запятой.
+    plain = html.unescape(re.sub(r"<[^>]+>", " ", text))
     for number, line in enumerate(plain.split("\n"), 1):
         place = "%s:%d" % (where, number)
         if LONG_DASH.search(line):
@@ -213,7 +215,7 @@ def sentences(text):
     конца перед заглавной, цифрой или скобкой. Хвост абзаца без знака
     конца, например строка перечня, считается отдельным предложением.
     """
-    plain = re.sub(r"<[^>]+>", " ", text)
+    plain = html.unescape(re.sub(r"<[^>]+>", " ", text))
     plain = LINK.sub(r"\1", plain)
     out = []
     for block in blocks(plain):
