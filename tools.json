@@ -1627,7 +1627,7 @@
     },
     {
      "ru": "Чтобы понять природу, запустите ещё раз со снятой галочкой об узлах в пересечениях рёбер. Если откаты исчезнут, дело в пересечениях, если останутся, в самих вершинах на рёбрах.",
-     "en": "To understand the cause, run again with the edge intersection nodes option turned off. If the rollbacks disappear, the intersections are to blame; if they remain, the vertices on edges are."
+     "en": "To understand the cause, run again with the edge intersection nodes option turned off. If the rollbacks disappear, the intersections are to blame. If they remain, the vertices on edges are."
     },
     {
      "ru": "Объектов на входе/выходе: %d / %d",

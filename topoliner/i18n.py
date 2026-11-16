@@ -326,7 +326,7 @@ EN = {
     "Сшивка: колец %d, вершин %d, допуск %g":
         "Snapping: %d rings, %d vertices, tolerance %g",
     "Чтобы понять природу, запустите ещё раз со снятой галочкой об узлах в пересечениях рёбер. Если откаты исчезнут, дело в пересечениях, если останутся, в самих вершинах на рёбрах.":
-        "To understand the cause, run again with the edge intersection nodes option turned off. If the rollbacks disappear, the intersections are to blame; if they remain, the vertices on edges are.",
+        "To understand the cause, run again with the edge intersection nodes option turned off. If the rollbacks disappear, the intersections are to blame. If they remain, the vertices on edges are.",
     "Ширина колец: минимум %s, медиана %s":
         "Ring width: minimum %s, median %s",
     "GEOS считает геометрию некорректной, подробностей нет":
@@ -425,10 +425,6 @@ EN = {
         "Topology of polygon and line coverages. The tools find violations and "
         "separate certain debris from what may carry meaning. The debris is "
         "repaired into a new layer.",
-    "Одиннадцать инструментов стоят в панели Processing, в группах «1. Топология» и «2. Генерализация». Врезка контура работает кнопкой, прямо в режиме редактирования.":
-        "Eleven tools stand in the Processing panel, in the groups "
-        "\"1. Topology\" and \"2. Generalisation\". Cutting a contour in works "
-        "from a button, right in edit mode.",
     "Исходный слой не изменяется никогда. Автоматика не решает, чья граница верна, она смотрит только на масштаб расхождения.":
         "The input layer is never changed. The automatic part does not decide "
         "whose border is right, it looks only at the scale of the discrepancy.",

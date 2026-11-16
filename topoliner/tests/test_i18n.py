@@ -579,8 +579,6 @@ class TestWording(unittest.TestCase):
     а «полость крупнее порога» это описание. Тест держит границу.
     """
 
-    STOP_WORDS = ("законн", "честн", "врёт", "legitimat")
-
     def user_visible_text(self):
         """Строки интерфейса и справки. Комментарии в коде не проверяются."""
         import ast
@@ -606,15 +604,35 @@ class TestWording(unittest.TestCase):
         return chunks
 
     def test_no_stop_words_in_user_text(self):
+        """Стоп-слова свода, список в tests/prose_rules.py."""
+        import re
+        try:
+            from prose_rules import STOP_WORDS
+        except ImportError:
+            from tests.prose_rules import STOP_WORDS
+        patterns = [re.compile(p) for p in STOP_WORDS]
         found = []
         for text in self.user_visible_text():
             if not isinstance(text, str):
                 continue
             low = text.lower()
-            for word in self.STOP_WORDS:
-                if word in low:
-                    found.append("%s: %s" % (word, text[:60]))
+            for pattern in patterns:
+                if pattern.search(low):
+                    found.append("%s: %s" % (pattern.pattern, text[:60]))
         self.assertEqual(found, [], "Стоп-слова: %r" % found)
+
+    def test_no_semicolon(self):
+        """
+        Точки с запятой в тексте для человека нет.
+
+        Не считаются сущности HTML в справках («&nbsp;») и разделитель
+        вариантов в фильтре файлов Qt («;;»): это разметка, а не проза.
+        """
+        import re
+        markup = re.compile(r"&#?\w+;|;;")
+        found = [t[:60] for t in self.user_visible_text()
+                 if isinstance(t, str) and ";" in markup.sub("", t)]
+        self.assertEqual(found, [], "Точка с запятой: %r" % found)
 
     def test_no_em_dash(self):
         """Длинное тире не используется, вместо него дефис с пробелами."""
