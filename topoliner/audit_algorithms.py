@@ -492,7 +492,7 @@ class TopologyFixAlgorithm(QgsProcessingAlgorithm):
             self.AREA, tr("Порог площади мусора (в кв. единицах CRS)"),
             type=QgsProcessingParameterNumber.Double, defaultValue=1.0, minValue=0.0)
         p.setHelp(
-            tr("Фрагменты мельче этого порога считаются мусором и убираются молча.\n"
+            tr("Фрагменты мельче этого порога считаются мусором и убираются без сообщения.\n"
                "Перекрытия и щели крупнее порога не изменяются.")
         )
         self.addParameter(p)

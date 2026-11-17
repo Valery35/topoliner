@@ -785,7 +785,7 @@ EN = {
     "Предельное смещение вершины и радиус поиска соседних рёбер.":
         "The maximum displacement of a vertex and the search radius for\n"
         "neighbouring edges.",
-    "Фрагменты мельче этого порога считаются мусором и убираются молча.\n"
+    "Фрагменты мельче этого порога считаются мусором и убираются без сообщения.\n"
     "Перекрытия и щели крупнее порога не изменяются.":
         "Fragments smaller than this threshold count as debris and are\n"
         "removed silently. Overlaps and gaps larger than the threshold are\n"
