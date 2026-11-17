@@ -244,11 +244,11 @@ TEXTS = {
 "rg.c2.h":    ("Чем отличается от модуля", "How it differs from the plugin"),
 "rg.c2.p":    ("Работает внутри RustGIS, у расширения своя вкладка ленты. "
                "Ставится из файла, пункт Install From File в окне Plugin Manager. "
-               "Нужен RustGIS 0.6.0 или новее и Windows.",
+               "Нужен RustGIS 0.7.0 или новее и Windows.",
                "It runs inside RustGIS and has its own ribbon tab. It is installed "
                "from a file, the Install From File item in the Plugin Manager "
-               "window. RustGIS 0.6.0 or newer and Windows are required."),
-"rg.release": ("Выпуск 0.1.0", "Release 0.1.0"),
+               "window. RustGIS 0.7.0 or newer and Windows are required."),
+"rg.release": ("Выпуск 0.1.1", "Release 0.1.1"),
 "rg.code":    ("Исходный код расширения", "Extension source code"),
 
 "docs.eyebrow":("Документация", "Documentation"),
@@ -501,7 +501,7 @@ figcaption{margin-top:10px;font-size:14px;color:var(--ink-soft)}
     </div>
     <div class="cta">
       <a class="btn btn-main" data-i18n="rg.release"
-         href="https://github.com/Valery35/topoliner-rustgis/releases/tag/rustgis-v0.1.0"></a>
+         href="https://github.com/Valery35/topoliner-rustgis/releases/tag/rustgis-v0.1.1"></a>
       <a class="btn btn-ghost" data-i18n="rg.code"
          href="https://github.com/Valery35/topoliner-rustgis"></a>
     </div>
